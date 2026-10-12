@@ -105,10 +105,12 @@ public sealed class HistoryChart
     }
 
     /// <summary>True when the lines stop before point <paramref name="index"/> and start again at it:
-    /// the gap is over three times the slower of the two points' refresh intervals (sleep, failed
-    /// samples), so the chart does not draw values nobody measured.</summary>
+    /// the gap is over three times the expected spacing (sleep, failed samples), so the chart does
+    /// not draw values nobody measured. The expected spacing is the slower of the two points'
+    /// refresh intervals, and never less than the history's one point per second.</summary>
     public bool BreaksBefore(int index) =>
-        index > 0 && Points[index].Taken - Points[index - 1].Taken > 3 * Max(Points[index].Interval, Points[index - 1].Interval);
+        index > 0 && Points[index].Taken - Points[index - 1].Taken
+            > 3 * Max(MemoryHistory.Resolution, Max(Points[index].Interval, Points[index - 1].Interval));
 
     private static TimeSpan Max(TimeSpan a, TimeSpan b) => a > b ? a : b;
 

@@ -17,6 +17,8 @@ if (-not $NoInstall) {
     if (Get-Process MemoryMap -ErrorAction SilentlyContinue | Where-Object Path -eq (Join-Path $Install 'MemoryMap.exe')) {
         throw "MemoryMap.exe is running from $Install; exit it (tray menu > Exit) and run this again."
     }
-    Copy-Item $exe $Install -Force
+    # Into the folder, never as a file named after it.
+    New-Item -ItemType Directory -Force $Install | Out-Null
+    Copy-Item $exe (Join-Path $Install 'MemoryMap.exe') -Force
     "Installed $(Join-Path $Install 'MemoryMap.exe')"
 }

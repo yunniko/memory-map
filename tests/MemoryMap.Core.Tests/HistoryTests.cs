@@ -135,6 +135,20 @@ public class HistoryTests
     }
 
     [Fact]
+    public void A_half_second_refresh_does_not_break_lines_between_the_points_a_second_apart_it_keeps()
+    {
+        var history = new MemoryHistory();
+        // The last sample of each second is kept, so kept points can sit up to about 1.5 s apart.
+        foreach (var ms in new[] { 0, 520, 1000, 1520, 2010, 3540, 4000, 4500 })
+        {
+            history.Add(At(TimeSpan.FromMilliseconds(ms)), TimeSpan.FromSeconds(0.5));
+        }
+        var chart = HistoryChart.Build(history, TimeSpan.FromMinutes(5), new SeriesSlots());
+
+        Assert.DoesNotContain(Enumerable.Range(0, chart.Points.Count), chart.BreaksBefore);
+    }
+
+    [Fact]
     public void An_empty_history_draws_an_empty_chart()
     {
         var chart = HistoryChart.Build(new MemoryHistory(), TimeSpan.FromMinutes(30), new SeriesSlots());
