@@ -49,11 +49,18 @@
 - [x] M4 — History graph and tray. In-memory ring buffer of samples, a timeline view
   (used, kernel pools, top apps), tray icon with live % tooltip, low-memory alert,
   close-to-tray, settings (refresh interval, alert threshold).
-- [ ] M5 — Finish and hand over. Footprint measured against criterion 9, self-contained
+- [x] M5 — Finish and hand over. Footprint measured against criterion 9, self-contained
   single-file build installed to `C:\bin\MemoryMap.exe` (local only), README/HANDOVER
   final, full end-to-end pass.
 
 **Progress log** (newest first):
+- 2026-10-12 — M5 done (27ddf24); goal complete, awaiting the Owner's sign-off. An hour on the
+  History tab on the fixed build: 1.42% of one core, 64-67 MB private, so criterion 9 is met
+  on either CPU reading. Optional slower refresh while hidden, off by default (D016,
+  Owner): minimised CPU 0.98% off, 0.37% at 5 s. Skipping unchanged map frames was measured
+  and dropped (D017). Review: 2 simplify depth fixes, 2 code-review fixes, 8 findings
+  rejected with reasons. Gate 147/147; installed exe checked on the Map and Settings tabs.
+  PENDING APPROVAL: Owner sign-off on G-001.
 - 2026-10-12 — M5 in progress (7720d4e). Single-file exe built and installed to C:\bin
   (D014); WMI cross-check 0.15% (limit 2%). Hour run found History-tab memory growing
   under GPU rendering (135 to 231 MB in 10 min); software rendering holds 48-55 MB at equal
@@ -89,3 +96,55 @@
 - 2026-10-12 — Goal created on Owner request ("realtime memory map written on c#").
   Owner chose Avalonia and all four extras (drill-down, process actions, tray, history).
   Plan presented; awaiting acceptance.
+
+### G-002 · Startup view: see and switch other programs' autostart — DRAFT
+- **What:** A Startup tab listing every program that starts at sign-in, with how much
+  memory each is using right now, and switches to turn them off and on again.
+- **Why:** The Owner wants to manage autostart from the app that shows what memory those
+  programs cost (2026-10-12), and to run it on other PCs too.
+- **Acceptance criteria:**
+  1. The tab lists the entries Task Manager's Startup apps page lists: the Run keys (user,
+     machine, and machine 32-bit), both Startup folders, and Store apps' startup tasks.
+     Each shows name, publisher, command, where it is registered, and enabled or disabled.
+     The state agrees with Task Manager on this PC.
+  2. Each entry shows whether it is running now and its memory (private working set, the
+     same measure as the map). One click shows it on the map.
+  3. Turning a user entry off or on uses the same switch Task Manager uses (the
+     `StartupApproved` flags), so Task Manager and Windows Settings show the same state.
+     Nothing is ever deleted, and every change can be undone from here or from Task Manager.
+  4. A machine-wide entry is changed through a Windows administrator prompt for that one
+     change. If the prompt is declined, nothing changes and the app says so.
+  5. Store apps' startup tasks are shown, but their switch opens Windows Settings → Startup
+     apps instead. Windows offers no documented way to change them from outside the app.
+  6. It runs on other PCs, not only this one:
+     - Windows 10 and 11 x64, any display language, a standard account without admin rights;
+     - missing keys, entries without a flag, orphaned flags and broken shortcuts are
+       handled, never crashing or guessing.
+     Verified by tests over synthetic registry and folder fixtures, and by the Owner
+     running the exe on a second PC.
+- **Constraints:**
+  - The app stays unelevated. Admin rights are asked per change, only for criterion 4
+    (VALUES.md → Restraint: least privilege, reversible actions).
+  - Tests never touch the real autostart entries; they use a scratch registry root and
+    temp folders (VALUES.md → prefer reversible actions).
+  - Windows only, like G-001.
+  - Nothing is published or signed without Owner approval. An unsigned exe shows a
+    SmartScreen warning on other PCs; code signing costs money.
+
+**Milestones:**
+- [ ] M1 — Startup data engine. Core model and rules: command-line to executable, flag
+  bytes to state, matching entries to running processes. A Windows reader for the Run
+  keys, the Startup folders (shortcut targets) and Store startup tasks. Tests over fixtures,
+  including the odd cases in criterion 6. A cross-check against Task Manager on this PC.
+- [ ] M2 — Startup tab. The list with memory now, running state and *Show on map*. A switch
+  for user entries, with exactly the bytes Task Manager writes. *Open file location*.
+  Headless UI tests; a real round trip on a test entry the app creates and removes.
+- [ ] M3 — Machine-wide entries and Store apps. A per-change administrator prompt through a
+  one-shot elevated `MemoryMap.exe` helper; a declined prompt changes nothing. Store tasks
+  link to Windows Settings.
+- [ ] M4 — Finish. Publish and install to C:\bin, README and handover, an end-to-end pass,
+  and a short checklist for the Owner's second-PC run.
+
+**Progress log** (newest first):
+- 2026-10-12 — Goal created on Owner request ("manage other apps' autostart"; "it should be
+  able to run on other pcs too"). Plan presented; awaiting acceptance.

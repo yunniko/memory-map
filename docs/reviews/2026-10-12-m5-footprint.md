@@ -10,6 +10,12 @@ Published single-file exe, History tab, sampled every 5 minutes: private memory 
 169 → 229 → 241 → 211 → 228 → 229 MB over 30 minutes. Live managed heap after a full GC
 was 14.6 MB (dotnet-gcdump) with 42 MB committed, so the rest was native.
 
+## The hour on the fixed build (software rendering, 7720d4e, History tab, 1 s refresh)
+
+Private memory every 5 minutes: 52, 53, 62, 66, 66, 66, 67, 64, 64, 64, 64, 65 MB; 66 MB at
+62 minutes (peak working set 152 MB). CPU over the whole 62 minutes: 1.42% of one core,
+0.12% of the 12 cores; the last 120 s: 0.83% of one core. Criterion 9 is met on either reading.
+
 ## Rendering variants, side by side for 10 minutes (private MB at 1, 5 and 10 min; CPU)
 
 | Variant | 1 min | 5 min | 10 min | CPU, one core |
