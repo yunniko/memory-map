@@ -22,8 +22,8 @@ public sealed class HistoryChart
     private const long Mib = 1024 * 1024;
 
     /// <summary>A longer pause between points (sleep, failed samples) breaks the lines: the chart
-    /// does not draw values nobody measured. Three times the slowest refresh.</summary>
-    public static readonly TimeSpan MaxGap = TimeSpan.FromSeconds(3 * AppSettings.RefreshChoices.Max());
+    /// does not draw values nobody measured. Three times the slowest refresh, hidden included.</summary>
+    public static readonly TimeSpan MaxGap = TimeSpan.FromSeconds(3 * AppSettings.SlowestRefreshSeconds);
 
     private HistoryChart(DateTimeOffset from, TimeSpan window, IReadOnlyList<HistoryPoint> points,
         IReadOnlyList<ChartSeries> series, long yMax)

@@ -8,12 +8,19 @@ public sealed record AppSettings
 {
     public static readonly IReadOnlyList<double> RefreshChoices = [0.5, 1, 2, 5];
 
+    /// <summary>The refresh while the window is hidden or minimised, in seconds; 0 (the default)
+    /// keeps the shown rate. Nothing is drawn then, so only the tray, alert and history need samples (D016).</summary>
+    public static readonly IReadOnlyList<double> HiddenRefreshChoices = [0, 5, 10, 30];
+
     /// <summary>The history chart's windows, in minutes; the history keeps the longest.</summary>
     public static readonly IReadOnlyList<double> WindowChoices = [5, 15, 30, 60];
     public const int MinAlertPercent = 1;
     public const int MaxAlertPercent = 50;
 
     public double RefreshSeconds { get; init; } = 1;
+
+    /// <summary>One of <see cref="HiddenRefreshChoices"/>; see <see cref="IntervalSeconds"/>.</summary>
+    public double HiddenRefreshSeconds { get; init; }
 
     /// <summary>Warn when available memory falls below this share of RAM.</summary>
     public int AlertBelowPercent { get; init; } = 10;
@@ -28,11 +35,21 @@ public sealed record AppSettings
 
     public static string RefreshLabel(double seconds) => seconds.ToString("0.#", System.Globalization.CultureInfo.CurrentCulture) + " s";
 
+    public static string HiddenRefreshLabel(double seconds) => seconds == 0 ? "Same as shown" : "Every " + RefreshLabel(seconds);
+
     public static string WindowLabel(double minutes) => $"Last {minutes} minutes";
+
+    /// <summary>The slowest refresh any setting can produce.</summary>
+    public static double SlowestRefreshSeconds => Math.Max(RefreshChoices.Max(), HiddenRefreshChoices.Max());
+
+    /// <summary>Seconds between samples. Hiding the window never samples faster than showing it.</summary>
+    public double IntervalSeconds(bool onScreen) =>
+        onScreen || HiddenRefreshSeconds == 0 ? RefreshSeconds : Math.Max(RefreshSeconds, HiddenRefreshSeconds);
 
     public AppSettings Normalized() => this with
     {
         RefreshSeconds = Nearest(RefreshChoices, RefreshSeconds),
+        HiddenRefreshSeconds = Nearest(HiddenRefreshChoices, HiddenRefreshSeconds),
         AlertBelowPercent = Math.Clamp(AlertBelowPercent, MinAlertPercent, MaxAlertPercent),
         HistoryMinutes = (int)Nearest(WindowChoices, HistoryMinutes),
     };

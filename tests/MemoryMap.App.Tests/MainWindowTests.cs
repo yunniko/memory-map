@@ -138,6 +138,30 @@ public class MainWindowTests
         Assert.StartsWith("Updated", window.StatusText.Text);
     }
 
+    [AvaloniaFact]
+    public void Hiding_the_window_slows_sampling_and_showing_it_samples_at_once()
+    {
+        using var sampler = new OneSnapshotSampler(Snapshot());
+        using var live = new LiveMemory(sampler, TimeSpan.FromSeconds(1));
+        var model = new MainViewModel(live, settings: new SettingsViewModel(new AppSettings { HiddenRefreshSeconds = 10 }));
+        var window = new MainWindow { DataContext = model };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(TimeSpan.FromSeconds(1), live.Interval);
+
+        window.WindowState = WindowState.Minimized;
+        Assert.Equal(TimeSpan.FromSeconds(10), live.Interval);
+
+        model.Settings.HiddenRefreshIndex = 0; // same as shown
+        Assert.Equal(TimeSpan.FromSeconds(1), live.Interval);
+        model.Settings.HiddenRefreshIndex = 3;
+        Assert.Equal(TimeSpan.FromSeconds(30), live.Interval);
+
+        window.WindowState = WindowState.Normal;
+        Assert.Equal(TimeSpan.FromSeconds(1), live.Interval);
+        Assert.True(SpinWait.SpinUntil(() => live.Latest is not null, TimeSpan.FromSeconds(5)), "no sample on coming back");
+    }
+
     [AvaloniaTheory]
     [InlineData("Light")]
     [InlineData("Dark")]

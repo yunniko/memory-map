@@ -15,3 +15,5 @@
 - D013 — Settings live in %APPDATA%\MemoryMap\settings.json and save on every change — active
 - D014 — The installed app is one self-contained, uncompressed, untrimmed exe — active
 - D015 — The app renders in software, not on the GPU — active
+- D016 — A Settings option slows sampling while the window is hidden; off by default — active
+- D017 — The map redraws on every refresh; skipping unchanged frames was measured and dropped — active

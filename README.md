@@ -18,8 +18,8 @@ and verified; it awaits the Owner's sign-off (see `GOALS.md`).
 - **History:** the last 5–60 minutes of memory in use, kernel pools and the five biggest apps.
 - **Tray:** a gauge of RAM in use; an alert when available memory runs low; closing the
   window hides it to the tray (*Exit* on the tray menu quits).
-- **Settings:** refresh interval, alert threshold, close-to-tray; saved in
-  `%APPDATA%\MemoryMap\settings.json`.
+- **Settings:** refresh interval, a slower refresh while hidden (off by default), alert
+  threshold, close-to-tray; saved in `%APPDATA%\MemoryMap\settings.json`.
 
 ## Use
 

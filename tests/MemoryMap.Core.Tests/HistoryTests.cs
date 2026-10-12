@@ -121,16 +121,16 @@ public class HistoryTests
     }
 
     [Fact]
-    public void Lines_break_across_a_gap_in_sampling()
+    public void Lines_break_across_a_gap_in_sampling_but_not_across_the_slowest_hidden_refresh()
     {
         var history = new MemoryHistory();
-        foreach (var s in new[] { 0, 1, 2, 60, 61 }) // asleep from 2 s to 60 s
+        foreach (var s in new[] { 0, 1, 2, 32, 62, 300, 301 }) // hidden at 30 s from 2 s, asleep from 62 s to 300 s
         {
             history.Add(At(TimeSpan.FromSeconds(s)));
         }
-        var chart = HistoryChart.Build(history, TimeSpan.FromMinutes(5), new SeriesSlots());
+        var chart = HistoryChart.Build(history, TimeSpan.FromMinutes(10), new SeriesSlots());
 
-        Assert.Equal([3], Enumerable.Range(0, chart.Points.Count).Where(chart.BreaksBefore));
+        Assert.Equal([5], Enumerable.Range(0, chart.Points.Count).Where(chart.BreaksBefore));
     }
 
     [Fact]

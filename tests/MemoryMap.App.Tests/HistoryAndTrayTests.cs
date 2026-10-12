@@ -118,13 +118,14 @@ public class HistoryAndTrayTests
             Dispatcher.UIThread.RunJobs();
 
             window.RefreshPicker.SelectedIndex = 2;
+            window.HiddenRefreshPicker.SelectedIndex = 3;
             window.AlertPercentBox.Value = 20;
             window.TrayBox.IsChecked = false;
             window.WindowPicker.SelectedIndex = 3;
             Dispatcher.UIThread.RunJobs();
             Capture(window, "settings");
 
-            var expected = new AppSettings { RefreshSeconds = 2, AlertBelowPercent = 20, CloseToTray = false, HistoryMinutes = 60 };
+            var expected = new AppSettings { RefreshSeconds = 2, HiddenRefreshSeconds = 30, AlertBelowPercent = 20, CloseToTray = false, HistoryMinutes = 60 };
             Assert.Equal(expected, settings.Current);
             Assert.Equal((expected, (string?)null), SettingsStore.Load(path));
             Assert.Equal(TimeSpan.FromMinutes(60), model.History.Window);

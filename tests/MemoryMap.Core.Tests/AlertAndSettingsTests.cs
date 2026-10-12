@@ -52,6 +52,20 @@ public class AlertAndSettingsTests
         Assert.True(tip.Length < 128, "Windows cuts tray tooltips at 127 characters");
     }
 
+    [Theory]
+    [InlineData(1, 5, true, 1)]
+    [InlineData(1, 5, false, 5)]
+    [InlineData(1, 0, false, 1)] // "same as shown"
+    [InlineData(5, 5, false, 5)]
+    [InlineData(5, 0, false, 5)]
+    [InlineData(2, 30, false, 30)]
+    public void Hiding_the_window_slows_sampling_but_never_speeds_it_up(double shown, double hidden, bool onScreen, double expected) =>
+        Assert.Equal(expected, new AppSettings { RefreshSeconds = shown, HiddenRefreshSeconds = hidden }.IntervalSeconds(onScreen));
+
+    [Fact]
+    public void Slower_hidden_refresh_is_off_by_default() =>
+        Assert.Equal(new AppSettings().RefreshSeconds, new AppSettings().IntervalSeconds(onScreen: false));
+
     [Fact]
     public void Settings_round_trip_and_a_missing_file_means_defaults()
     {
@@ -60,7 +74,7 @@ public class AlertAndSettingsTests
         {
             Assert.Equal((new AppSettings(), (string?)null), SettingsStore.Load(path));
 
-            var changed = new AppSettings { RefreshSeconds = 2, AlertBelowPercent = 15, AlertsEnabled = false, CloseToTray = false, HistoryMinutes = 60 };
+            var changed = new AppSettings { RefreshSeconds = 2, HiddenRefreshSeconds = 30, AlertBelowPercent = 15, AlertsEnabled = false, CloseToTray = false, HistoryMinutes = 60 };
             SettingsStore.Save(path, changed);
 
             Assert.Equal((changed, (string?)null), SettingsStore.Load(path));
@@ -85,10 +99,11 @@ public class AlertAndSettingsTests
             Assert.StartsWith("Settings could not be read", problem, StringComparison.Ordinal);
 
             var odd = Path.Combine(dir, "odd.json");
-            File.WriteAllText(odd, """{ "RefreshSeconds": 0.1, "AlertBelowPercent": 99, "HistoryMinutes": 40 }""");
+            File.WriteAllText(odd, """{ "RefreshSeconds": 0.1, "HiddenRefreshSeconds": 7, "AlertBelowPercent": 99, "HistoryMinutes": 40 }""");
             var (fixedUp, none) = SettingsStore.Load(odd);
             Assert.Null(none);
             Assert.Equal(0.5, fixedUp.RefreshSeconds);
+            Assert.Equal(5, fixedUp.HiddenRefreshSeconds);
             Assert.Equal(AppSettings.MaxAlertPercent, fixedUp.AlertBelowPercent);
             Assert.Contains(fixedUp.HistoryMinutes, AppSettings.WindowChoices);
         }

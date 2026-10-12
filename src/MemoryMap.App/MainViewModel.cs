@@ -88,13 +88,17 @@ public sealed class MainViewModel : ObservableObject
     public string TrayTip { get => _trayTip; private set => Set(ref _trayTip, value); }
 
     /// <summary>False while the window is hidden in the tray or minimised: nothing is drawn, so
-    /// nothing is built to be drawn. The window sets it.</summary>
+    /// nothing is built to be drawn, and sampling slows to the hidden refresh (D016). The window sets it.</summary>
     public bool IsOnScreen
     {
         get => _isOnScreen;
         set
         {
-            Set(ref _isOnScreen, value);
+            if (!Set(ref _isOnScreen, value))
+            {
+                return;
+            }
+            UpdateInterval();
             UpdateChart();
         }
     }
@@ -319,20 +323,43 @@ public sealed class MainViewModel : ObservableObject
 
     private void ApplySettings(AppSettings settings)
     {
-        if (_live is { } live && live.Interval != TimeSpan.FromSeconds(settings.RefreshSeconds))
-        {
-            try
-            {
-                live.Interval = TimeSpan.FromSeconds(settings.RefreshSeconds);
-            }
-            catch (ObjectDisposedException)
-            {
-                // The app is closing.
-            }
-        }
+        UpdateInterval();
         History.Window = TimeSpan.FromMinutes(settings.HistoryMinutes);
         UpdateChart();
         UpdateAlert();
+    }
+
+    private void UpdateInterval()
+    {
+        var interval = TimeSpan.FromSeconds(Settings.Current.IntervalSeconds(IsOnScreen));
+        if (_live is not { } live || live.Interval == interval)
+        {
+            return;
+        }
+        try
+        {
+            var sooner = interval < live.Interval;
+            live.Interval = interval;
+            if (sooner)
+            {
+                // Coming back on screen: show the present now rather than up to a hidden refresh later.
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        live.RefreshNow();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Closed meanwhile.
+                    }
+                });
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // The app is closing.
+        }
     }
 
     private void UpdateAlert()

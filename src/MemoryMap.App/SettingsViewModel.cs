@@ -34,6 +34,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<string> RefreshLabels { get; } = [.. AppSettings.RefreshChoices.Select(AppSettings.RefreshLabel)];
 
+    public IReadOnlyList<string> HiddenRefreshLabels { get; } = [.. AppSettings.HiddenRefreshChoices.Select(AppSettings.HiddenRefreshLabel)];
+
     public IReadOnlyList<string> WindowLabels { get; } = [.. AppSettings.WindowChoices.Select(AppSettings.WindowLabel)];
 
     // A ComboBox reports -1 while its items are replaced; that is not a choice.
@@ -45,6 +47,18 @@ public sealed class SettingsViewModel : ObservableObject
             if (value >= 0 && value < AppSettings.RefreshChoices.Count)
             {
                 Update(Current with { RefreshSeconds = AppSettings.RefreshChoices[value] });
+            }
+        }
+    }
+
+    public int HiddenRefreshIndex
+    {
+        get => IndexOf(AppSettings.HiddenRefreshChoices, Current.HiddenRefreshSeconds);
+        set
+        {
+            if (value >= 0 && value < AppSettings.HiddenRefreshChoices.Count)
+            {
+                Update(Current with { HiddenRefreshSeconds = AppSettings.HiddenRefreshChoices[value] });
             }
         }
     }
