@@ -54,6 +54,11 @@
   final, full end-to-end pass.
 
 **Progress log** (newest first):
+- 2026-10-12 — M5 in progress (7720d4e). Single-file exe built and installed to C:\bin
+  (D014); WMI cross-check 0.15% (limit 2%). Hour run found History-tab memory growing
+  under GPU rendering (135 to 231 MB in 10 min); software rendering holds 48-55 MB at equal
+  CPU (D015, docs/reviews/2026-10-12-m5-footprint.md). Gate 137/137. Next: hour run on the
+  fixed build, then the M5 check-in and end-of-goal report.
 - 2026-10-12 — M4 done (a89c100). History tab (per-second ring, 60 min; used, kernel pools,
   top 5 apps on one axis, gap breaks, hover), tray gauge icon with % tooltip, low-memory
   alert window, close-to-tray, Settings tab saved to %APPDATA% (D010–D013). Review
