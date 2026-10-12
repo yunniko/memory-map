@@ -46,7 +46,7 @@
 - [x] M3 — Drill-down and process actions. Click to zoom app → processes, breadcrumb/Back;
   context menu with confirmed *End process* and *Open file location*; clear handling of
   protected/elevated processes.
-- [ ] M4 — History graph and tray. In-memory ring buffer of samples, a timeline view
+- [x] M4 — History graph and tray. In-memory ring buffer of samples, a timeline view
   (used, kernel pools, top apps), tray icon with live % tooltip, low-memory alert,
   close-to-tray, settings (refresh interval, alert threshold).
 - [ ] M5 — Finish and hand over. Footprint measured against criterion 9, self-contained
@@ -54,6 +54,13 @@
   final, full end-to-end pass.
 
 **Progress log** (newest first):
+- 2026-10-12 — M4 done (a89c100). History tab (per-second ring, 60 min; used, kernel pools,
+  top 5 apps on one axis, gap breaks, hover), tray gauge icon with % tooltip, low-memory
+  alert window, close-to-tray, Settings tab saved to %APPDATA% (D010–D013). Review
+  (/simplify + code-review) fixes in a89c100. Verified: check.ps1 137/137 (Core 79,
+  Windows 20, App 38), 0 warnings; live: History tab shows real data, close hides to tray
+  with the process alive; 60 s on History after 20 s warm-up: 2.71% of one core, 129 MB
+  private. Next: M5.
 - 2026-10-12 — M3 done (6a53bec). Drill-down with breadcrumb, Back and back gestures;
   context menu with confirmed End (one process, start-time guard) and Open file location;
   denied/exited/failed outcomes in a notice bar. Verified with `scripts/check.ps1`: format
