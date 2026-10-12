@@ -35,6 +35,8 @@ public sealed class LiveMemory : IDisposable
     public MemoryBreakdown? Latest { get; private set; }
 
 
+    /// <summary>A change restarts the wait. A shorter interval also samples at once, so a view
+    /// back from a slow hidden refresh shows the present rather than waiting out the old interval.</summary>
     public TimeSpan Interval
     {
         get => _timer.Period;
@@ -42,7 +44,12 @@ public sealed class LiveMemory : IDisposable
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             Validate(value);
+            var sooner = value < _timer.Period;
             _timer.Period = value;
+            if (sooner && _loop is not null)
+            {
+                _ = Task.Run(Tick);
+            }
         }
     }
 
@@ -94,18 +101,22 @@ public sealed class LiveMemory : IDisposable
         }
         catch (ObjectDisposedException)
         {
-            // The sampler was disposed under a tick that was already running: shutting down.
+            // The timer was disposed under the wait: shutting down.
         }
     }
 
     // A subscriber that throws is a bug in the subscriber; it must not stop the sampling for everyone.
+    // Disposed under a tick means shutting down, which needs no report.
     private void Tick()
     {
         try
         {
             RefreshNow();
         }
-        catch (Exception e) when (e is not ObjectDisposedException)
+        catch (ObjectDisposedException)
+        {
+        }
+        catch (Exception e)
         {
             Trace.TraceError($"LiveMemory: a subscriber threw: {e}");
         }

@@ -139,7 +139,7 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
-    public void Hiding_the_window_slows_sampling_and_showing_it_samples_at_once()
+    public void Hiding_the_window_slows_sampling_until_it_is_shown()
     {
         using var sampler = new OneSnapshotSampler(Snapshot());
         using var live = new LiveMemory(sampler, TimeSpan.FromSeconds(1));
@@ -159,7 +159,6 @@ public class MainWindowTests
 
         window.WindowState = WindowState.Normal;
         Assert.Equal(TimeSpan.FromSeconds(1), live.Interval);
-        Assert.True(SpinWait.SpinUntil(() => live.Latest is not null, TimeSpan.FromSeconds(5)), "no sample on coming back");
     }
 
     [AvaloniaTheory]

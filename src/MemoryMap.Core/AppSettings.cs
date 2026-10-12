@@ -39,12 +39,9 @@ public sealed record AppSettings
 
     public static string WindowLabel(double minutes) => $"Last {minutes} minutes";
 
-    /// <summary>The slowest refresh any setting can produce.</summary>
-    public static double SlowestRefreshSeconds => Math.Max(RefreshChoices.Max(), HiddenRefreshChoices.Max());
-
     /// <summary>Seconds between samples. Hiding the window never samples faster than showing it.</summary>
     public double IntervalSeconds(bool onScreen) =>
-        onScreen || HiddenRefreshSeconds == 0 ? RefreshSeconds : Math.Max(RefreshSeconds, HiddenRefreshSeconds);
+        onScreen ? RefreshSeconds : Math.Max(RefreshSeconds, HiddenRefreshSeconds);
 
     public AppSettings Normalized() => this with
     {

@@ -21,10 +21,6 @@ public sealed class HistoryChart
 
     private const long Mib = 1024 * 1024;
 
-    /// <summary>A longer pause between points (sleep, failed samples) breaks the lines: the chart
-    /// does not draw values nobody measured. Three times the slowest refresh, hidden included.</summary>
-    public static readonly TimeSpan MaxGap = TimeSpan.FromSeconds(3 * AppSettings.SlowestRefreshSeconds);
-
     private HistoryChart(DateTimeOffset from, TimeSpan window, IReadOnlyList<HistoryPoint> points,
         IReadOnlyList<ChartSeries> series, long yMax)
     {
@@ -108,8 +104,13 @@ public sealed class HistoryChart
         return lo > 0 && at - Points[lo - 1].Taken < Points[lo].Taken - at ? lo - 1 : lo;
     }
 
-    /// <summary>True when the lines stop before point <paramref name="index"/> and start again at it.</summary>
-    public bool BreaksBefore(int index) => index > 0 && Points[index].Taken - Points[index - 1].Taken > MaxGap;
+    /// <summary>True when the lines stop before point <paramref name="index"/> and start again at it:
+    /// the gap is over three times the slower of the two points' refresh intervals (sleep, failed
+    /// samples), so the chart does not draw values nobody measured.</summary>
+    public bool BreaksBefore(int index) =>
+        index > 0 && Points[index].Taken - Points[index - 1].Taken > 3 * Max(Points[index].Interval, Points[index - 1].Interval);
+
+    private static TimeSpan Max(TimeSpan a, TimeSpan b) => a > b ? a : b;
 
     /// <summary>Round sizes from 0 to <see cref="YMax"/>, one per step.</summary>
     public IReadOnlyList<ChartTick<long>> YTicks()

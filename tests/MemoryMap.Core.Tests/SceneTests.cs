@@ -208,6 +208,26 @@ public class LiveMemoryTests
     }
 
     [Fact]
+    public async Task A_shorter_interval_samples_at_once_and_a_longer_one_does_not()
+    {
+        using var sampler = new ScriptedSampler(() => Snapshot(Sys(), Proc(1, "chrome", 100)));
+        var updates = 0;
+        var first = new TaskCompletionSource();
+        var second = new TaskCompletionSource();
+        using var live = new LiveMemory(sampler, TimeSpan.FromSeconds(60));
+        live.Updated += _ => (Interlocked.Increment(ref updates) == 1 ? first : second).TrySetResult();
+
+        live.Start();
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        live.Interval = TimeSpan.FromSeconds(120);
+        await Task.Delay(300, TestContext.Current.CancellationToken);
+        Assert.Equal(1, Volatile.Read(ref updates));
+
+        live.Interval = TimeSpan.FromSeconds(30); // the timer alone would wait 30 s
+        await second.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public void A_disposed_loop_refuses_to_start_or_sample()
     {
         using var sampler = new ScriptedSampler(() => Snapshot(Sys()));

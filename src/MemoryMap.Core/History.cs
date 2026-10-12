@@ -11,9 +11,10 @@ public sealed class HistoryPoint
     private readonly int[] _ids;
     private readonly int[] _kib;
 
-    internal HistoryPoint(DateTimeOffset taken, long used, long kernelPools, long total, int[] ids, int[] kib)
+    internal HistoryPoint(DateTimeOffset taken, TimeSpan interval, long used, long kernelPools, long total, int[] ids, int[] kib)
     {
         Taken = taken;
+        Interval = interval;
         Used = used;
         KernelPools = kernelPools;
         Total = total;
@@ -22,6 +23,9 @@ public sealed class HistoryPoint
     }
 
     public DateTimeOffset Taken { get; }
+
+    /// <summary>The refresh interval in force when this point was taken.</summary>
+    public TimeSpan Interval { get; }
 
     public long Used { get; }
 
@@ -84,13 +88,15 @@ public sealed class MemoryHistory
     /// <summary>The app's map key and name, for an id from a point.</summary>
     public (string Key, string Name) App(int id) => _apps[id];
 
-    public void Add(MemoryBreakdown breakdown)
+    /// <param name="interval">The refresh interval in force, so the chart can tell a pause from
+    /// slow sampling; one <see cref="Resolution"/> when not given.</param>
+    public void Add(MemoryBreakdown breakdown, TimeSpan? interval = null)
     {
         var sys = breakdown.Snapshot.System;
         // Apps folded into "Other" are still apps: their lines must not vanish when they shrink.
         var apps = breakdown.Root.Apps().Select(a => (Id: IdOf(a), Kib: (int)Math.Min(int.MaxValue, a.Bytes / 1024))).ToList();
         apps.Sort((a, b) => a.Id.CompareTo(b.Id));
-        var point = new HistoryPoint(breakdown.Snapshot.Taken, sys.Used, sys.NonpagedPool + sys.PagedPoolResident,
+        var point = new HistoryPoint(breakdown.Snapshot.Taken, interval ?? Resolution, sys.Used, sys.NonpagedPool + sys.PagedPoolResident,
             sys.TotalPhysical, [.. apps.Select(a => a.Id)], [.. apps.Select(a => a.Kib)]);
 
         // Same resolution slot as the newest point: replace it. Comparing slots, not the gap to the

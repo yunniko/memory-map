@@ -167,7 +167,7 @@ public sealed class MainViewModel : ObservableObject
         UpdateView();
         Legend = [.. breakdown.Groups.Select(g => new LegendItem(g.Group, g.Name, Format.Bytes(g.Bytes), Format.Percent(g.Bytes, breakdown.Total)))];
         UpdateRows();
-        History.History.Add(breakdown);
+        History.History.Add(breakdown, _live?.Interval);
         UpdateChart();
         TrayTip = LowMemoryAlert.TrayTip(sys);
         UsedPercent = (int)Math.Round(sys.UsedPercent);
@@ -338,23 +338,7 @@ public sealed class MainViewModel : ObservableObject
         }
         try
         {
-            var sooner = interval < live.Interval;
             live.Interval = interval;
-            if (sooner)
-            {
-                // Coming back on screen: show the present now rather than up to a hidden refresh later.
-                _ = Task.Run(() =>
-                {
-                    try
-                    {
-                        live.RefreshNow();
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        // Closed meanwhile.
-                    }
-                });
-            }
         }
         catch (ObjectDisposedException)
         {
