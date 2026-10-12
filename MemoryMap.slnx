@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MemoryMap.Cli/MemoryMap.Cli.csproj" />
+    <Project Path="src/MemoryMap.Core/MemoryMap.Core.csproj" />
+    <Project Path="src/MemoryMap.Windows/MemoryMap.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MemoryMap.Core.Tests/MemoryMap.Core.Tests.csproj" />
+    <Project Path="tests/MemoryMap.Windows.Tests/MemoryMap.Windows.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MemoryMap.Cli</RootNamespace>
+    <AssemblyName>memmap-dump</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MemoryMap.Core\MemoryMap.Core.csproj" />
+    <ProjectReference Include="..\MemoryMap.Windows\MemoryMap.Windows.csproj" />
+  </ItemGroup>
+
+</Project>
