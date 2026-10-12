@@ -9,3 +9,7 @@
 - D007 — Scene arrangement, hit-testing and tooltip text live in Core, not the UI — active
 - D008 — Process actions re-check the start time and never end several processes at once — active
 - D009 — Drill-down keeps a chain of node keys and falls back to the nearest ancestor — active
+- D010 — History keeps one point a second for an hour, with every app's size — active
+- D011 — The low-memory alert warns once, re-arms 2 points higher, and shows its own window — active
+- D012 — Chart lines use the validated categorical palette, and an app keeps its slot — active
+- D013 — Settings live in %APPDATA%\MemoryMap\settings.json and save on every change — active

@@ -10,6 +10,7 @@ public partial class MainWindow : Window
 {
     private const double TipOffset = 16;
     private Point _pointer;
+    private Point _chartPointer;
 
     public MainWindow()
     {
@@ -20,10 +21,19 @@ public partial class MainWindow : Window
             if (e.Property == TreemapControl.HoveredNodeProperty)
             {
                 Model?.SetHover(Map.HoveredNode);
-                PlaceTip(_pointer);
+                PlaceTip(Tip, Map, _pointer);
             }
         };
-        Map.PointerMoved += (_, e) => PlaceTip(_pointer = e.GetPosition(Map));
+        Map.PointerMoved += (_, e) => PlaceTip(Tip, Map, _pointer = e.GetPosition(Map));
+        Chart.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == HistoryChartControl.HoveredIndexProperty)
+            {
+                Model?.History.SetHover(Chart.HoveredIndex);
+                PlaceTip(ChartTip, Chart, _chartPointer);
+            }
+        };
+        Chart.PointerMoved += (_, e) => PlaceTip(ChartTip, Chart, _chartPointer = e.GetPosition(Chart));
         Map.NodeClicked += (_, node) => Model?.ZoomInto(node);
         Map.ContextRequested += OnMapContextRequested;
         // Tunnel, so the mouse back button works wherever the pointer is.
@@ -35,6 +45,35 @@ public partial class MainWindow : Window
                 model.Confirm = request => new ConfirmDialog(request).ShowDialog<bool>(this);
             }
         };
+    }
+
+    /// <summary>Set when a tray icon exists to bring a hidden window back.</summary>
+    public bool CanHideToTray { get; set; }
+
+    /// <summary>Whether a close should hide the window instead: only the user's own close (the
+    /// X, Alt+F4), only with somewhere to come back from, and never when Windows is shutting down.</summary>
+    internal static bool HidesInstead(WindowCloseReason reason, bool programmatic, bool closeToTray, bool canHide) =>
+        canHide && closeToTray && !programmatic && reason == WindowCloseReason.WindowClosing;
+
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (!e.Cancel && HidesInstead(e.CloseReason, e.IsProgrammatic, Model?.Settings.CloseToTray == true, CanHideToTray))
+        {
+            e.Cancel = true;
+            Hide();
+        }
+    }
+
+    /// <summary>Brings the window back from the tray or from behind other windows.</summary>
+    public void Reveal()
+    {
+        Show();
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+        Activate();
     }
 
     /// <summary>The menu a right-click on <paramref name="node"/> opens; null when it has no commands.</summary>
@@ -114,14 +153,14 @@ public partial class MainWindow : Window
 
     private void OnDismiss(object? sender, RoutedEventArgs e) => Model?.DismissNotice();
 
-    // Beside the pointer, flipped to the other side near the right or bottom edge.
-    private void PlaceTip(Point at)
+    // Beside the pointer, flipped to the other side near the right or bottom edge of its host.
+    private static void PlaceTip(Control tip, Control host, Point at)
     {
-        Tip.Measure(Size.Infinity);
-        var size = Tip.DesiredSize;
-        var x = at.X + TipOffset + size.Width > Map.Bounds.Width ? at.X - TipOffset - size.Width : at.X + TipOffset;
-        var y = at.Y + TipOffset + size.Height > Map.Bounds.Height ? at.Y - TipOffset - size.Height : at.Y + TipOffset;
-        Canvas.SetLeft(Tip, Math.Max(0, x));
-        Canvas.SetTop(Tip, Math.Max(0, y));
+        tip.Measure(Size.Infinity);
+        var size = tip.DesiredSize;
+        var x = at.X + TipOffset + size.Width > host.Bounds.Width ? at.X - TipOffset - size.Width : at.X + TipOffset;
+        var y = at.Y + TipOffset + size.Height > host.Bounds.Height ? at.Y - TipOffset - size.Height : at.Y + TipOffset;
+        Canvas.SetLeft(tip, Math.Max(0, x));
+        Canvas.SetTop(tip, Math.Max(0, y));
     }
 }

@@ -24,7 +24,8 @@
       </Border>
     </StackPanel>
 
-    <ItemsControl x:Name="LegendList" DockPanel.Dock="Top" Margin="0,10,0,6" ItemsSource="{Binding Legend}">
+    <ItemsControl x:Name="LegendList" DockPanel.Dock="Top" Margin="0,10,0,6" ItemsSource="{Binding Legend}"
+                   IsVisible="{Binding ShowsGroupLegend}">
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>
           <WrapPanel ItemSpacing="18" LineSpacing="4" />
@@ -130,6 +131,82 @@
             </ItemsControl>
           </ScrollViewer>
         </DockPanel>
+      </TabItem>
+      <TabItem Header="History">
+        <DockPanel>
+          <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <ComboBox x:Name="WindowPicker" DockPanel.Dock="Right" VerticalAlignment="Top"
+                      ItemsSource="{Binding Settings.WindowLabels}" SelectedIndex="{Binding Settings.WindowIndex, Mode=TwoWay}" />
+            <!-- The legend always names every line and its newest value: identity is never colour alone. -->
+            <ItemsControl x:Name="SeriesLegend" ItemsSource="{Binding History.Legend}" VerticalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel ItemSpacing="18" LineSpacing="4" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="app:SeriesLegendItem">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <app:SeriesSwatch Slot="{Binding Slot}" VerticalAlignment="Center" />
+                    <TextBlock Foreground="{DynamicResource Map.Ink2}" FontSize="13">
+                      <Run Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Map.Ink}" />
+                      <Run Text="{Binding Latest}" />
+                    </TextBlock>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </DockPanel>
+          <Panel>
+            <app:HistoryChartControl x:Name="Chart" Chart="{Binding History.Chart}" />
+            <Canvas IsHitTestVisible="False">
+              <Border x:Name="ChartTip" IsVisible="{Binding History.Hover, Converter={x:Static ObjectConverters.IsNotNull}}"
+                      Background="{DynamicResource Map.Surface}" BorderBrush="{DynamicResource Map.Border}"
+                      BorderThickness="1" CornerRadius="6" Padding="10,8" BoxShadow="0 4 16 0 #2E000000">
+                <StackPanel Spacing="2">
+                  <TextBlock x:Name="ChartTipTitle" Text="{Binding History.Hover.Title, FallbackValue=''}" FontWeight="SemiBold" FontSize="13"
+                             Foreground="{DynamicResource Map.Ink}" />
+                  <TextBlock x:Name="ChartTipText" Text="{Binding History.Hover.Text, FallbackValue=''}" FontSize="12"
+                             Foreground="{DynamicResource Map.Ink2}" />
+                </StackPanel>
+              </Border>
+            </Canvas>
+          </Panel>
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Settings">
+        <ScrollViewer>
+          <StackPanel x:Name="SettingsPanel" Spacing="14" Margin="4,8" MaxWidth="560" HorizontalAlignment="Left">
+            <StackPanel.Styles>
+              <Style Selector="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource Map.Ink}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+              </Style>
+            </StackPanel.Styles>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="Refresh every" />
+              <ComboBox x:Name="RefreshPicker" ItemsSource="{Binding Settings.RefreshLabels}"
+                        SelectedIndex="{Binding Settings.RefreshIndex, Mode=TwoWay}" />
+            </StackPanel>
+            <CheckBox x:Name="AlertsBox" IsChecked="{Binding Settings.AlertsEnabled, Mode=TwoWay}"
+                      Content="Warn when available memory runs low" />
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="28,0,0,0" IsEnabled="{Binding Settings.AlertsEnabled}">
+              <TextBlock Text="Warn below" />
+              <NumericUpDown x:Name="AlertPercentBox" Value="{Binding Settings.AlertBelowPercent, Mode=TwoWay}"
+                             Minimum="{x:Static app:SettingsViewModel.MinAlertPercent}" Maximum="{x:Static app:SettingsViewModel.MaxAlertPercent}"
+                             Increment="1" FormatString="0" Width="130" />
+              <TextBlock Text="% of RAM available" />
+            </StackPanel>
+            <CheckBox x:Name="TrayBox" IsChecked="{Binding Settings.CloseToTray, Mode=TwoWay}"
+                      Content="Closing the window keeps Memory Map running in the tray" />
+            <TextBlock x:Name="SettingsProblem" Text="{Binding Settings.Problem, FallbackValue=''}"
+                       IsVisible="{Binding Settings.Problem, Converter={x:Static ObjectConverters.IsNotNull}}"
+                       Foreground="{DynamicResource Map.Critical}" />
+            <TextBlock FontSize="12" Foreground="{DynamicResource Map.Ink2}"
+                       Text="Changes apply at once and are saved to %APPDATA%\MemoryMap\settings.json." />
+          </StackPanel>
+        </ScrollViewer>
       </TabItem>
     </TabControl>
   </DockPanel>

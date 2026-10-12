@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MemoryMap.App.AlertWindow"
+        Title="Memory Map: memory is low"
+        Width="380" SizeToContent="Height" CanResize="False" CanMinimize="False" CanMaximize="False"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False"
+        WindowStartupLocation="Manual"
+        Background="{DynamicResource Map.Page}">
+  <!-- Shown beside the tray rather than as a Windows toast: no notification registration or
+       AppUserModelID is needed, and it works the same in the headless tests (D011). -->
+  <StackPanel Margin="16,14" Spacing="10">
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <!-- Status ships with an icon and a label, never colour alone. -->
+      <Border Width="18" Height="18" CornerRadius="9" Background="{DynamicResource Map.Critical}" VerticalAlignment="Center">
+        <TextBlock Text="!" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <TextBlock Text="Memory is low" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Map.Ink}" />
+    </StackPanel>
+    <TextBlock x:Name="Message" TextWrapping="Wrap" Foreground="{DynamicResource Map.Ink2}" />
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button x:Name="DismissButton" Content="Dismiss" IsCancel="True" />
+      <Button x:Name="ShowButton" Content="Show map" Classes="accent" />
+    </StackPanel>
+  </StackPanel>
+</Window>

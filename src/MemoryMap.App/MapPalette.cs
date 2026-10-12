@@ -17,6 +17,8 @@ internal sealed class MapPalette
 
     private readonly Dictionary<MemoryGroup, IImmutableSolidColorBrush> _colour;
     private readonly Dictionary<MemoryGroup, IImmutableSolidColorBrush> _fill;
+    private readonly IImmutableSolidColorBrush[] _series;
+    private readonly IPen[] _seriesPens;
 
     private MapPalette(Func<string, Color> get, double tint)
     {
@@ -28,7 +30,28 @@ internal sealed class MapPalette
         _colour = groups.ToDictionary(g => g, g => (IImmutableSolidColorBrush)new ImmutableSolidColorBrush(get($"Map.{g}")));
         _fill = groups.ToDictionary(g => g, g => (IImmutableSolidColorBrush)new ImmutableSolidColorBrush(Mix(Surface.Color, _colour[g].Color, tint)));
         AvailableOutline = new ImmutablePen(_colour[MemoryGroup.Available], 1, new ImmutableDashStyle([2, 2], 0));
+        _series = [.. Enumerable.Range(0, SeriesCount).Select(i => new ImmutableSolidColorBrush(get($"Series.{i}")))];
+        _seriesPens = [.. _series.Select(b => new ImmutablePen(b, 2, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round))];
+        Grid = new ImmutablePen(new ImmutableSolidColorBrush(get("Map.Grid")), 1);
+        Baseline = new ImmutablePen(new ImmutableSolidColorBrush(get("Map.Baseline")), 1);
+        Muted = new ImmutableSolidColorBrush(get("Map.Muted"));
     }
+
+    /// <summary>History chart lines: <see cref="SeriesSlots"/> numbers them.</summary>
+    public const int SeriesCount = SeriesSlots.FirstApp + HistoryChart.TopApps;
+
+    public IImmutableSolidColorBrush Muted { get; }
+
+    /// <summary>Horizontal gridlines: hairlines that recede behind the data.</summary>
+    public IPen Grid { get; }
+
+    /// <summary>The zero line.</summary>
+    public IPen Baseline { get; }
+
+    public IImmutableSolidColorBrush Series(int slot) => _series[slot];
+
+    /// <summary>A history line: 2 px, round joins.</summary>
+    public IPen SeriesPen(int slot) => _seriesPens[slot];
 
     public IImmutableSolidColorBrush Surface { get; }
 
@@ -65,6 +88,31 @@ internal sealed class MapPalette
         (byte)Math.Round(a.R + ((b.R - a.R) * t)),
         (byte)Math.Round(a.G + ((b.G - a.G) * t)),
         (byte)Math.Round(a.B + ((b.B - a.B) * t)));
+}
+
+/// <summary>A short line in a history series' colour, for the chart legend. Follows theme changes.</summary>
+public sealed class SeriesSwatch : Control
+{
+    public static readonly StyledProperty<int> SlotProperty =
+        AvaloniaProperty.Register<SeriesSwatch, int>(nameof(Slot));
+
+    static SeriesSwatch() => AffectsRender<SeriesSwatch>(SlotProperty);
+
+    public SeriesSwatch()
+    {
+        Width = 14;
+        Height = 12;
+        ActualThemeVariantChanged += (_, _) => InvalidateVisual();
+    }
+
+    public int Slot
+    {
+        get => GetValue(SlotProperty);
+        set => SetValue(SlotProperty, value);
+    }
+
+    public override void Render(DrawingContext context) =>
+        context.DrawRectangle(MapPalette.For(this, ActualThemeVariant).Series(Slot), null, new Rect(0, (Bounds.Height / 2) - 1.5, Bounds.Width, 3), 1.5, 1.5);
 }
 
 /// <summary>A small square in a group's colour, for the legend. Follows theme changes.</summary>

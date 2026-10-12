@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using MemoryMap.Core;
@@ -29,11 +30,18 @@ public partial class App : Application
                 base.OnFrameworkInitializationCompleted();
                 return;
             }
-            var live = new LiveMemory(sampler, TimeSpan.FromSeconds(1));
-            var model = new MainViewModel(live, new WindowsProcessActions());
-            desktop.MainWindow = new MainWindow { DataContext = model };
+            var (stored, problem) = SettingsStore.Load(SettingsViewModel.DefaultPath);
+            var settings = new SettingsViewModel(stored, SettingsViewModel.DefaultPath, problem);
+            var live = new LiveMemory(sampler, TimeSpan.FromSeconds(stored.RefreshSeconds));
+            var model = new MainViewModel(live, new WindowsProcessActions(), settings);
+            var window = new MainWindow { DataContext = model, CanHideToTray = true };
+            desktop.MainWindow = window;
+            // Closing the window may only hide it; the app ends when it really closes (Exit, or tray off).
+            desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+            var tray = new TrayController(this, model, window.Reveal, () => desktop.Shutdown());
             desktop.ShutdownRequested += (_, _) =>
             {
+                tray.Dispose();
                 live.Dispose();
                 sampler.Dispose();
             };

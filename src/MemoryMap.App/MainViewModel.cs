@@ -24,11 +24,14 @@ public sealed record MenuEntry(string Header, Func<Task>? Run, bool StartsGroup 
 /// applies them on the UI thread; a failed sample shows in <see cref="Status"/> while the last
 /// good map stays on screen. Owns where the map is zoomed (<see cref="Navigation"/>) and runs
 /// process actions off the UI thread, ending a process only after <see cref="Confirm"/> agrees.
+/// Every sample also goes into the <see cref="History"/> and the low-memory alert, whichever tab is shown.
 /// </summary>
 public sealed class MainViewModel : INotifyPropertyChanged
 {
     public const int MapView = 0;
     public const int TableView = 1;
+    public const int HistoryView = 2;
+    public const int SettingsView = 3;
 
     private MemoryBreakdown? _breakdown;
     private MemoryBreakdown? _pending;
@@ -45,11 +48,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private MapNode? _viewRoot;
     private IReadOnlyList<Crumb> _ancestors = [];
     private string? _notice;
+    private readonly LowMemoryAlert _alert = new();
+    private bool _isLowMemory;
+    private string _alertMessage = "";
+    private string _trayTip = "Memory Map";
+    private int _usedPercent;
 
-    public MainViewModel(LiveMemory? live = null, IProcessActions? actions = null)
+    public MainViewModel(LiveMemory? live = null, IProcessActions? actions = null, SettingsViewModel? settings = null)
     {
         _live = live;
         _actions = actions;
+        Settings = settings ?? new SettingsViewModel();
+        _notice = Settings.Problem;
+        ApplySettings(Settings.Current);
+        Settings.Changed += ApplySettings;
         if (live is not null)
         {
             // Latest wins: if the UI thread falls behind, older breakdowns are dropped, not queued.
@@ -65,6 +77,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public SettingsViewModel Settings { get; }
+
+    public HistoryViewModel History { get; } = new();
+
+    /// <summary>True from the sample that crossed the alert line until memory recovers (D011).</summary>
+    public bool IsLowMemory { get => _isLowMemory; private set => Set(ref _isLowMemory, value); }
+
+    /// <summary>What the low-memory alert says; set before <see cref="IsLowMemory"/> turns true.</summary>
+    public string AlertMessage { get => _alertMessage; private set => Set(ref _alertMessage, value); }
+
+    public string TrayTip { get => _trayTip; private set => Set(ref _trayTip, value); }
+
+    /// <summary>Share of RAM in use, 0-100, for the tray icon.</summary>
+    public int UsedPercent { get => _usedPercent; private set => Set(ref _usedPercent, value); }
 
     public MemoryBreakdown? Breakdown { get => _breakdown; private set => Set(ref _breakdown, value); }
 
@@ -91,20 +118,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public IReadOnlyList<LegendItem> Legend { get => _legend; private set => SetList(ref _legend, value); }
 
+    /// <summary>The group legend explains the map and table; the chart has its own.</summary>
+    public bool ShowsGroupLegend => ViewIndex is MapView or TableView;
+
     /// <summary>The table view's rows; built only while that view is shown.</summary>
     public IReadOnlyList<TableRow> Rows { get => _rows; private set => SetList(ref _rows, value); }
 
     /// <summary>Null when nothing is under the pointer.</summary>
     public HoverTip? Hover { get => _hover; private set => Set(ref _hover, value); }
 
-    /// <summary>The selected tab: <see cref="MapView"/> or <see cref="TableView"/>.</summary>
+    /// <summary>The selected tab: <see cref="MapView"/>, <see cref="TableView"/>, <see cref="HistoryView"/> or <see cref="SettingsView"/>.</summary>
     public int ViewIndex
     {
         get => _viewIndex;
         set
         {
             Set(ref _viewIndex, value);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowsGroupLegend)));
             UpdateRows();
+            UpdateChart();
         }
     }
 
@@ -116,12 +148,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
             + $"  ·  Available {Format.Bytes(sys.Available, true)}"
             + $"  ·  Commit {Format.Bytes(sys.CommitTotal, true)} of {Format.Bytes(sys.CommitLimit, true)}"
             + $"  ·  {breakdown.Snapshot.Processes.Count} processes";
-        Status = $"Updated {breakdown.Snapshot.Taken.ToString("T", CultureInfo.CurrentCulture)}"
+        Status = $"Updated {breakdown.Snapshot.Taken.ToLocalTime().ToString("T", CultureInfo.CurrentCulture)}"
             + (breakdown.Skew > 0 ? $"  ·  sampling skew {Format.Bytes(breakdown.Skew)}" : "");
         IsStale = false;
         UpdateView();
         Legend = [.. breakdown.Groups.Select(g => new LegendItem(g.Group, g.Name, Format.Bytes(g.Bytes), Format.Percent(g.Bytes, breakdown.Total)))];
         UpdateRows();
+        History.Add(breakdown);
+        UpdateChart();
+        TrayTip = LowMemoryAlert.TrayTip(sys);
+        UsedPercent = sys.TotalPhysical > 0 ? (int)Math.Round(100.0 * sys.Used / sys.TotalPhysical) : 0;
+        UpdateAlert();
     }
 
     public void ShowFailure(Exception error, DateTimeOffset when)
@@ -270,6 +307,56 @@ public sealed class MainViewModel : INotifyPropertyChanged
         NodeCommand.Locate => () => ShowInExplorerAsync(node),
         _ => throw new ArgumentOutOfRangeException(nameof(option), option.Command, "no handler for this command"),
     };
+
+    private void ApplySettings(AppSettings settings)
+    {
+        if (_live is { } live && live.Interval != TimeSpan.FromSeconds(settings.RefreshSeconds))
+        {
+            try
+            {
+                live.Interval = TimeSpan.FromSeconds(settings.RefreshSeconds);
+            }
+            catch (ObjectDisposedException)
+            {
+                // The app is closing.
+            }
+        }
+        History.Window = TimeSpan.FromMinutes(settings.HistoryMinutes);
+        UpdateChart();
+        UpdateAlert();
+    }
+
+    private void UpdateAlert()
+    {
+        if (Breakdown is not { } breakdown)
+        {
+            return;
+        }
+        var settings = Settings.Current;
+        switch (_alert.Update(breakdown.Snapshot.System, settings.AlertBelowPercent, settings.AlertsEnabled))
+        {
+            case AlertChange.Raised:
+                AlertMessage = LowMemoryAlert.Message(breakdown, settings.AlertBelowPercent);
+                IsLowMemory = true;
+                break;
+            case AlertChange.Cleared:
+                IsLowMemory = false;
+                break;
+        }
+    }
+
+    // The chart is rebuilt only while its tab is shown; the history is recorded regardless.
+    private void UpdateChart()
+    {
+        if (ViewIndex == HistoryView)
+        {
+            History.Rebuild();
+        }
+        else
+        {
+            History.Release();
+        }
+    }
 
     private void UpdateRows() =>
         Rows = ViewIndex == TableView && Breakdown is not null ? Describe.Table(Breakdown) : [];

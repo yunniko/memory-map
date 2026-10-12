@@ -8,7 +8,8 @@
   </Application.Styles>
 
   <!-- Colours come from the validated dataviz palette used by C:\bin\memory-map.ps1.
-       Light and dark are separate steps, not one palette flipped. -->
+       Light and dark are separate steps, not one palette flipped. Series.0-6 are the history
+       chart's lines: the categorical slots in their validated order (D012). -->
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
@@ -26,6 +27,16 @@
           <Color x:Key="Map.SharedOther">#a3a29b</Color>
           <Color x:Key="Map.Available">#c3c2b7</Color>
           <x:Double x:Key="Map.Tint">0.20</x:Double>
+          <Color x:Key="Series.0">#2a78d6</Color>
+          <Color x:Key="Series.1">#eb6834</Color>
+          <Color x:Key="Series.2">#1baf7a</Color>
+          <Color x:Key="Series.3">#eda100</Color>
+          <Color x:Key="Series.4">#e87ba4</Color>
+          <Color x:Key="Series.5">#008300</Color>
+          <Color x:Key="Series.6">#6250d6</Color>
+          <Color x:Key="Map.Grid">#e1e0d9</Color>
+          <Color x:Key="Map.Baseline">#c3c2b7</Color>
+          <Color x:Key="Map.Critical">#d03b3b</Color>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <Color x:Key="Map.Page">#0d0d0d</Color>
@@ -41,6 +52,16 @@
           <Color x:Key="Map.SharedOther">#6e6d68</Color>
           <Color x:Key="Map.Available">#4a4a46</Color>
           <x:Double x:Key="Map.Tint">0.30</x:Double>
+          <Color x:Key="Series.0">#3987e5</Color>
+          <Color x:Key="Series.1">#d95926</Color>
+          <Color x:Key="Series.2">#199e70</Color>
+          <Color x:Key="Series.3">#c98500</Color>
+          <Color x:Key="Series.4">#d55181</Color>
+          <Color x:Key="Series.5">#008300</Color>
+          <Color x:Key="Series.6">#9085e9</Color>
+          <Color x:Key="Map.Grid">#2c2c2a</Color>
+          <Color x:Key="Map.Baseline">#383835</Color>
+          <Color x:Key="Map.Critical">#d03b3b</Color>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
