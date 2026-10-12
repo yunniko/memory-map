@@ -28,6 +28,7 @@ public sealed class HistoryChartControl : Control
     private int? _hovered;
     private Point? _pointer;
     private (HistoryChart? Chart, Size Size, Rect Plot) _plot;
+    private (HistoryChart? Chart, Rect Plot, Geometry?[] Geometry) _lines = (null, default, []);
 
     static HistoryChartControl() => AffectsRender<HistoryChartControl>(ChartProperty);
 
@@ -125,9 +126,9 @@ public sealed class HistoryChartControl : Control
         using (context.PushClip(plot.Inflate(2)))
         {
             // In use last, so the headline line is never covered by an app's.
-            foreach (var series in chart.Series.Reverse())
+            for (var s = chart.Series.Count - 1; s >= 0; s--)
             {
-                DrawLine(context, chart, series, plot, palette.SeriesPen(series.Slot));
+                context.DrawGeometry(null, palette.SeriesPen(chart.Series[s].Slot), Line(chart, s, plot));
             }
             if (_hovered is { } i && i < chart.Points.Count)
             {
@@ -143,8 +144,19 @@ public sealed class HistoryChartControl : Control
         }
     }
 
+    // Cached per chart and plot: hovering redraws every pointer move, but the lines change only
+    // with a new chart (once a sample) or a new size.
+    private Geometry Line(HistoryChart chart, int s, Rect plot)
+    {
+        if (!ReferenceEquals(chart, _lines.Chart) || plot != _lines.Plot)
+        {
+            _lines = (chart, plot, new Geometry?[chart.Series.Count]);
+        }
+        return _lines.Geometry[s] ??= BuildLine(chart, chart.Series[s], plot);
+    }
+
     // A run of points is one polyline; a gap starts a new figure, and a lone point is a dot.
-    private static void DrawLine(DrawingContext context, HistoryChart chart, ChartSeries series, Rect plot, IPen pen)
+    private static StreamGeometry BuildLine(HistoryChart chart, ChartSeries series, Rect plot)
     {
         Point At(int i) => new(plot.X + chart.X(chart.Points[i].Taken, plot.Width), plot.Y + chart.Y(series.Values[i], plot.Height));
         var geometry = new StreamGeometry();
@@ -168,7 +180,7 @@ public sealed class HistoryChartControl : Control
                 start = end;
             }
         }
-        context.DrawGeometry(null, pen, geometry);
+        return geometry;
     }
 
     // Cached: the hover asks on every pointer move, and the answer changes only with the chart or size.

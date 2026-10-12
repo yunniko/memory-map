@@ -25,6 +25,7 @@ public partial class AlertWindow : Window
             Close();
         };
         _timer.Tick += (_, _) => Close();
+        // Placed again once open, when the real frame size is known.
         Opened += (_, _) =>
         {
             PlaceInCorner();
@@ -51,6 +52,13 @@ public partial class AlertWindow : Window
         }
     }
 
+    /// <summary>Shows the alert in the corner above the tray.</summary>
+    public void ShowInCorner()
+    {
+        PlaceInCorner();
+        Show();
+    }
+
     private void PlaceInCorner()
     {
         if (Screens.Primary is not { } screen)
@@ -58,7 +66,8 @@ public partial class AlertWindow : Window
             return;
         }
         var area = screen.WorkingArea;
-        var size = PixelSize.FromSize(Bounds.Size, screen.Scaling);
+        // The frame, not the client area, must fit; before the first layout use the requested size.
+        var size = PixelSize.FromSize(FrameSize ?? (Bounds.Size == default ? new Size(Width, Height) : Bounds.Size), screen.Scaling);
         Position = new PixelPoint(area.Right - size.Width - Gap, area.Bottom - size.Height - Gap);
     }
 }

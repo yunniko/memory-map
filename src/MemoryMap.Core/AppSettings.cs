@@ -7,6 +7,9 @@ namespace MemoryMap.Core;
 public sealed record AppSettings
 {
     public static readonly IReadOnlyList<double> RefreshChoices = [0.5, 1, 2, 5];
+
+    /// <summary>The history chart's windows, in minutes; the history keeps the longest.</summary>
+    public static readonly IReadOnlyList<double> WindowChoices = [5, 15, 30, 60];
     public const int MinAlertPercent = 1;
     public const int MaxAlertPercent = 50;
 
@@ -20,14 +23,18 @@ public sealed record AppSettings
     /// <summary>Closing the window hides it to the tray; Exit is on the tray menu.</summary>
     public bool CloseToTray { get; init; } = true;
 
-    /// <summary>The history chart's window, one of <see cref="HistoryChart.WindowChoices"/>.</summary>
+    /// <summary>The history chart's window, one of <see cref="WindowChoices"/>.</summary>
     public int HistoryMinutes { get; init; } = 30;
+
+    public static string RefreshLabel(double seconds) => seconds.ToString("0.#", System.Globalization.CultureInfo.CurrentCulture) + " s";
+
+    public static string WindowLabel(double minutes) => $"Last {minutes} minutes";
 
     public AppSettings Normalized() => this with
     {
         RefreshSeconds = Nearest(RefreshChoices, RefreshSeconds),
         AlertBelowPercent = Math.Clamp(AlertBelowPercent, MinAlertPercent, MaxAlertPercent),
-        HistoryMinutes = (int)Nearest([.. HistoryChart.WindowChoices.Select(m => (double)m)], HistoryMinutes),
+        HistoryMinutes = (int)Nearest(WindowChoices, HistoryMinutes),
     };
 
     private static double Nearest(IReadOnlyList<double> choices, double value) =>
@@ -54,6 +61,20 @@ public static class SettingsStore
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
             return (new AppSettings(), $"Settings could not be read, so the defaults are in use ({e.Message}).");
+        }
+    }
+
+    /// <summary>Saves, or says why it could not; the settings stay in force either way.</summary>
+    public static string? TrySave(string path, AppSettings settings)
+    {
+        try
+        {
+            Save(path, settings);
+            return null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return $"Settings could not be saved, so they last until Memory Map closes ({e.Message}).";
         }
     }
 

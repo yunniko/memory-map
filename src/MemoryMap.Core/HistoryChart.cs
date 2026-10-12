@@ -23,10 +23,7 @@ public sealed class HistoryChart
 
     /// <summary>A longer pause between points (sleep, failed samples) breaks the lines: the chart
     /// does not draw values nobody measured. Three times the slowest refresh.</summary>
-    public static readonly TimeSpan MaxGap = TimeSpan.FromSeconds(15);
-
-    /// <summary>The windows the user can pick, in minutes; the history keeps the longest.</summary>
-    public static readonly IReadOnlyList<int> WindowChoices = [5, 15, 30, 60];
+    public static readonly TimeSpan MaxGap = TimeSpan.FromSeconds(3 * AppSettings.RefreshChoices.Max());
 
     private HistoryChart(DateTimeOffset from, TimeSpan window, IReadOnlyList<HistoryPoint> points,
         IReadOnlyList<ChartSeries> series, long yMax)
@@ -61,16 +58,15 @@ public sealed class HistoryChart
         var points = history.Since(to - window);
 
         // The window's biggest apps by average size: a brief spike does not push out a steady giant.
-        var totals = new Dictionary<int, long>();
+        // Ids are dense, so the totals are an array: this runs every second over up to an hour of points.
+        var totals = new long[history.AppCount];
         foreach (var point in points)
         {
-            foreach (var (id, bytes) in point.Apps())
-            {
-                totals[id] = totals.GetValueOrDefault(id) + bytes;
-            }
+            point.AddKibTo(totals);
         }
-        var top = totals.OrderByDescending(t => t.Value).ThenBy(t => history.App(t.Key).Key, StringComparer.Ordinal)
-            .Take(TopApps).Select(t => t.Key).ToList();
+        var top = Enumerable.Range(0, totals.Length).Where(id => totals[id] > 0)
+            .OrderByDescending(id => totals[id]).ThenBy(id => history.App(id).Key, StringComparer.Ordinal)
+            .Take(TopApps).ToList();
         var assigned = slots.Assign([.. top.Select(id => history.App(id).Key)]);
 
         List<ChartSeries> series =
@@ -102,15 +98,14 @@ public sealed class HistoryChart
             return null;
         }
         var at = From + (Window * Math.Clamp(x / width, 0, 1));
-        var best = 0;
-        for (var i = 1; i < Points.Count; i++)
+        // Points are in time order: find the first at or after the time, then take the nearer neighbour.
+        var (lo, hi) = (0, Points.Count - 1);
+        while (lo < hi)
         {
-            if (Math.Abs((Points[i].Taken - at).Ticks) < Math.Abs((Points[best].Taken - at).Ticks))
-            {
-                best = i;
-            }
+            var mid = (lo + hi) / 2;
+            (lo, hi) = Points[mid].Taken < at ? (mid + 1, hi) : (lo, mid);
         }
-        return best;
+        return lo > 0 && at - Points[lo - 1].Taken < Points[lo].Taken - at ? lo - 1 : lo;
     }
 
     /// <summary>True when the lines stop before point <paramref name="index"/> and start again at it.</summary>
@@ -131,17 +126,16 @@ public sealed class HistoryChart
     /// <summary>Clock times on whole minutes, a few per window.</summary>
     public IReadOnlyList<ChartTick<DateTimeOffset>> XTicks(TimeZoneInfo zone)
     {
+        // The first tick is a whole step of local time; later ticks step through real instants and
+        // are each labelled in the zone, so a window across a daylight-saving change shows the new clock.
         var step = TimeSpan.FromMinutes(Window.TotalMinutes switch { <= 5 => 1, <= 30 => 5, _ => 10 });
         var local = TimeZoneInfo.ConvertTime(From, zone);
-        var first = new DateTimeOffset(local.Ticks - (local.Ticks % step.Ticks), local.Offset);
-        if (first < local)
-        {
-            first += step;
-        }
+        var first = From.UtcTicks + ((step.Ticks - (local.Ticks % step.Ticks)) % step.Ticks);
         var ticks = new List<ChartTick<DateTimeOffset>>();
-        for (var t = first; t <= TimeZoneInfo.ConvertTime(To, zone); t += step)
+        for (var t = first; t <= To.UtcTicks; t += step.Ticks)
         {
-            ticks.Add(new(t, t.ToString("t", CultureInfo.CurrentCulture)));
+            var at = TimeZoneInfo.ConvertTime(new DateTimeOffset(t, TimeSpan.Zero), zone);
+            ticks.Add(new(at, at.ToString("t", CultureInfo.CurrentCulture)));
         }
         return ticks;
     }
@@ -150,7 +144,7 @@ public sealed class HistoryChart
     public (string Title, IReadOnlyList<string> Lines) Describe(int index)
     {
         var point = Points[index];
-        return (point.Taken.ToLocalTime().ToString("T", CultureInfo.CurrentCulture),
+        return (Format.Clock(point.Taken),
             [.. Series.Select(s => $"{s.Name}  {Format.SizeShare(s.Values[index], point.Total)}")]);
     }
 

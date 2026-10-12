@@ -90,7 +90,7 @@ public class AlertAndSettingsTests
             Assert.Null(none);
             Assert.Equal(0.5, fixedUp.RefreshSeconds);
             Assert.Equal(AppSettings.MaxAlertPercent, fixedUp.AlertBelowPercent);
-            Assert.Contains(fixedUp.HistoryMinutes, HistoryChart.WindowChoices);
+            Assert.Contains(fixedUp.HistoryMinutes, AppSettings.WindowChoices);
         }
         finally
         {

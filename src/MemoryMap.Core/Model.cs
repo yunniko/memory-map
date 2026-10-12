@@ -59,6 +59,11 @@ public sealed record SystemMemory(
     TimeSpan Uptime)
 {
     public long Used => TotalPhysical - Available;
+
+    /// <summary>Share of RAM available, 0-100; 100 when the total is unknown, so nothing looks low.</summary>
+    public double AvailablePercent => TotalPhysical > 0 ? 100.0 * Available / TotalPhysical : 100;
+
+    public double UsedPercent => 100 - AvailablePercent;
 }
 
 /// <summary>

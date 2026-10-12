@@ -196,8 +196,9 @@ public class HistoryAndTrayTests
     [AvaloniaFact]
     public void The_tray_icon_fills_to_the_share_in_use_and_turns_red_when_low()
     {
-        using var half = TrayController.Render(50, low: false);
-        using var low = TrayController.Render(90, low: true);
+        var palette = MapPalette.For(Application.Current!, ThemeVariant.Dark);
+        using var half = TrayController.Render(palette, 50, low: false);
+        using var low = TrayController.Render(palette, 90, low: true);
         using var halfFrame = Readable(half);
         using var lowFrame = Readable(low);
 

@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using MemoryMap.Core;
 
 namespace MemoryMap.App;
@@ -10,17 +8,15 @@ public sealed record SeriesLegendItem(int Slot, string Name, string Latest);
 /// <summary>
 /// The History tab: keeps every sample in <see cref="MemoryHistory"/> (always, so the chart has
 /// data whenever it is opened) and builds the <see cref="Chart"/> only when asked, which
-/// <see cref="MainViewModel"/> does while the tab is shown.
+/// <see cref="MainViewModel"/> does while the tab is on screen.
 /// </summary>
-public sealed class HistoryViewModel : INotifyPropertyChanged
+public sealed class HistoryViewModel : ObservableObject
 {
     private readonly SeriesSlots _slots = new();
     private HistoryChart? _chart;
     private IReadOnlyList<SeriesLegendItem> _legend = [];
     private HoverTip? _hover;
     private int? _hoverIndex;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     public MemoryHistory History { get; } = new();
 
@@ -29,12 +25,10 @@ public sealed class HistoryViewModel : INotifyPropertyChanged
 
     public HistoryChart? Chart { get => _chart; private set => Set(ref _chart, value); }
 
-    public IReadOnlyList<SeriesLegendItem> Legend { get => _legend; private set => Set(ref _legend, value); }
+    public IReadOnlyList<SeriesLegendItem> Legend { get => _legend; private set => SetList(ref _legend, value); }
 
     /// <summary>The tooltip for the hovered point: its time and every line's value.</summary>
     public HoverTip? Hover { get => _hover; private set => Set(ref _hover, value); }
-
-    public void Add(MemoryBreakdown breakdown) => History.Add(breakdown);
 
     public void Rebuild()
     {
@@ -46,7 +40,7 @@ public sealed class HistoryViewModel : INotifyPropertyChanged
         SetHover(_hoverIndex);
     }
 
-    /// <summary>Drops the chart while the tab is hidden; the history itself is kept.</summary>
+    /// <summary>Drops the chart while it is not on screen; the history itself is kept.</summary>
     public void Release()
     {
         Chart = null;
@@ -64,15 +58,5 @@ public sealed class HistoryViewModel : INotifyPropertyChanged
         }
         var (title, lines) = chart.Describe(i);
         Hover = new HoverTip(title, string.Join(Environment.NewLine, lines));
-    }
-
-    private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value))
-        {
-            return;
-        }
-        field = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

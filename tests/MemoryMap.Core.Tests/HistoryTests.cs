@@ -155,4 +155,22 @@ public class HistoryTests
         Assert.All(ticks, t => Assert.Equal(0, t.At.Minute % 5));
         Assert.All(ticks, t => Assert.Equal(0, t.At.Second));
     }
+
+    [Fact]
+    public void Time_ticks_after_a_daylight_saving_change_show_the_new_clock()
+    {
+        // Central European: clocks go back from 03:00 to 02:00 on the last Sunday of October.
+        var rule = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(new DateTime(2026, 1, 1), new DateTime(2026, 12, 31), TimeSpan.FromHours(1),
+            TimeZoneInfo.TransitionTime.CreateFloatingDateRule(new DateTime(1, 1, 1, 2, 0, 0), 3, 5, DayOfWeek.Sunday),
+            TimeZoneInfo.TransitionTime.CreateFloatingDateRule(new DateTime(1, 1, 1, 3, 0, 0), 10, 5, DayOfWeek.Sunday));
+        var zone = TimeZoneInfo.CreateCustomTimeZone("Test", TimeSpan.FromHours(1), "Test", "Test", "Test", [rule]);
+        var start = new DateTimeOffset(2026, 10, 25, 0, 40, 0, TimeSpan.Zero) - T0;
+        var history = Fill(1800, s => At(start + TimeSpan.FromSeconds(s)));
+
+        var ticks = HistoryChart.Build(history, TimeSpan.FromMinutes(30), new SeriesSlots()).XTicks(zone);
+
+        // 02:40 to 02:55 summer time, then 02:00 to 02:05 winter time: each label on a whole 5 minutes.
+        Assert.Equal(["02:40", "02:45", "02:50", "02:55", "02:00", "02:05"], ticks.Select(t => t.At.ToString("HH:mm")));
+        Assert.Equal(TimeSpan.FromHours(1), ticks[^1].At.Offset);
+    }
 }

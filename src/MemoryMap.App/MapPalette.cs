@@ -35,12 +35,16 @@ internal sealed class MapPalette
         Grid = new ImmutablePen(new ImmutableSolidColorBrush(get("Map.Grid")), 1);
         Baseline = new ImmutablePen(new ImmutableSolidColorBrush(get("Map.Baseline")), 1);
         Muted = new ImmutableSolidColorBrush(get("Map.Muted"));
+        Critical = new ImmutableSolidColorBrush(get("Map.Critical"));
     }
 
     /// <summary>History chart lines: <see cref="SeriesSlots"/> numbers them.</summary>
     public const int SeriesCount = SeriesSlots.FirstApp + HistoryChart.TopApps;
 
     public IImmutableSolidColorBrush Muted { get; }
+
+    /// <summary>The status colour for low memory; always shown with words, never alone.</summary>
+    public IImmutableSolidColorBrush Critical { get; }
 
     /// <summary>Horizontal gridlines: hairlines that recede behind the data.</summary>
     public IPen Grid { get; }

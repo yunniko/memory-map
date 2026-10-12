@@ -47,6 +47,14 @@ public sealed record MapNode(
 {
     public int ProcessCount => Process is not null ? 1 : Children.Sum(c => c.ProcessCount);
 
+    /// <summary>Every app at or below this node, including apps folded into an "Other".</summary>
+    public IEnumerable<MapNode> Apps() => Kind switch
+    {
+        NodeKind.App => [this],
+        NodeKind.Root or NodeKind.Group or NodeKind.Folded => Children.SelectMany(c => c.Apps()),
+        _ => [],
+    };
+
     /// <summary>Every process sample at or below this node.</summary>
     public IEnumerable<ProcessSample> Processes() =>
         Process is { } p ? [p] : Children.SelectMany(c => c.Processes());

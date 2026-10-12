@@ -3,7 +3,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Media.Immutable;
+using Avalonia.Styling;
+using MemoryMap.Core;
 
 namespace MemoryMap.App;
 
@@ -18,11 +19,8 @@ internal sealed class TrayController : IDisposable
     /// <summary>The gauge moves in steps of this many percent, so the icon is redrawn only on a visible change.</summary>
     public const int Step = 5;
 
-    private static readonly IImmutableSolidColorBrush Body = new ImmutableSolidColorBrush(Color.Parse("#383835"));
-    private static readonly IImmutableSolidColorBrush Level = new ImmutableSolidColorBrush(Color.Parse("#3987e5"));
-    private static readonly IImmutableSolidColorBrush Critical = new ImmutableSolidColorBrush(Color.Parse("#d03b3b"));
-
     private readonly MainViewModel _model;
+    private readonly MapPalette _palette;
     private readonly Action _show;
     private readonly TrayIcon _icon;
     private (int Level, bool Low)? _drawn;
@@ -31,6 +29,8 @@ internal sealed class TrayController : IDisposable
     {
         _model = model;
         _show = show;
+        // The taskbar is dark in both Windows themes the app is likely to sit beside: dark colours.
+        _palette = MapPalette.For(app, ThemeVariant.Dark);
         var showItem = new NativeMenuItem("Show Memory Map");
         showItem.Click += (_, _) => show();
         var exitItem = new NativeMenuItem("Exit");
@@ -45,16 +45,17 @@ internal sealed class TrayController : IDisposable
     /// <summary>The alert on screen, if any.</summary>
     public AlertWindow? Alert { get; private set; }
 
-    /// <summary>Draws the gauge: <paramref name="percent"/> of the body filled from the bottom.</summary>
-    public static RenderTargetBitmap Render(int percent, bool low, int size = 32)
+    /// <summary>Draws the gauge: <paramref name="percent"/> of the body filled from the bottom,
+    /// in the first history colour (In use), or critical red while memory is low.</summary>
+    internal static RenderTargetBitmap Render(MapPalette palette, int percent, bool low, int size = 32)
     {
         var bitmap = new RenderTargetBitmap(new PixelSize(size, size));
         using var context = bitmap.CreateDrawingContext();
         var body = new Rect(0, 0, size, size);
-        context.DrawRectangle(Body, null, body, size / 6.0, size / 6.0);
+        context.DrawRectangle(palette.Baseline.Brush, null, body, size / 6.0, size / 6.0);
         var inner = body.Deflate(size / 8.0);
         var height = inner.Height * Math.Clamp(percent, 0, 100) / 100;
-        context.DrawRectangle(low ? Critical : Level, null, new Rect(inner.X, inner.Bottom - height, inner.Width, height), 1.5, 1.5);
+        context.DrawRectangle(low ? palette.Critical : palette.Series(SeriesSlots.Used), null, new Rect(inner.X, inner.Bottom - height, inner.Width, height), 1.5, 1.5);
         return bitmap;
     }
 
@@ -98,8 +99,9 @@ internal sealed class TrayController : IDisposable
             return;
         }
         _drawn = state;
-        // Not disposed here: the platform may read the bitmap after this returns.
-        _icon.Icon = new WindowIcon(Render(state.Item1, state.IsLowMemory));
+        // WindowIcon copies the pixels into its own PNG stream, so the bitmap can go at once.
+        using var bitmap = Render(_palette, state.Item1, state.IsLowMemory);
+        _icon.Icon = new WindowIcon(bitmap);
     }
 
     // One alert at a time: a new warning replaces the text of one still on screen.
@@ -114,6 +116,6 @@ internal sealed class TrayController : IDisposable
         alert.ShowRequested += (_, _) => _show();
         alert.Closed += (_, _) => Alert = null;
         Alert = alert;
-        alert.Show();
+        alert.ShowInCorner();
     }
 }

@@ -9,8 +9,8 @@ namespace MemoryMap.App;
 public partial class MainWindow : Window
 {
     private const double TipOffset = 16;
+    // Where the pointer last was over the map or the chart: only one can be under it at a time.
     private Point _pointer;
-    private Point _chartPointer;
 
     public MainWindow()
     {
@@ -30,10 +30,10 @@ public partial class MainWindow : Window
             if (e.Property == HistoryChartControl.HoveredIndexProperty)
             {
                 Model?.History.SetHover(Chart.HoveredIndex);
-                PlaceTip(ChartTip, Chart, _chartPointer);
+                PlaceTip(ChartTip, Chart, _pointer);
             }
         };
-        Chart.PointerMoved += (_, e) => PlaceTip(ChartTip, Chart, _chartPointer = e.GetPosition(Chart));
+        Chart.PointerMoved += (_, e) => PlaceTip(ChartTip, Chart, _pointer = e.GetPosition(Chart));
         Map.NodeClicked += (_, node) => Model?.ZoomInto(node);
         Map.ContextRequested += OnMapContextRequested;
         // Tunnel, so the mouse back button works wherever the pointer is.
@@ -43,9 +43,19 @@ public partial class MainWindow : Window
             if (Model is { } model)
             {
                 model.Confirm = request => new ConfirmDialog(request).ShowDialog<bool>(this);
+                model.IsOnScreen = IsOnScreen;
+            }
+        };
+        PropertyChanged += (_, e) =>
+        {
+            if ((e.Property == IsVisibleProperty || e.Property == WindowStateProperty) && Model is { } model)
+            {
+                model.IsOnScreen = IsOnScreen;
             }
         };
     }
+
+    private bool IsOnScreen => IsVisible && WindowState != WindowState.Minimized;
 
     /// <summary>Set when a tray icon exists to bring a hidden window back.</summary>
     public bool CanHideToTray { get; set; }

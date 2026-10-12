@@ -37,11 +37,12 @@ public sealed class HistoryPoint
         return i < 0 ? 0 : _kib[i] * 1024L;
     }
 
-    internal IEnumerable<(int Id, long Bytes)> Apps()
+    /// <summary>Adds every app's KiB to <paramref name="totals"/>, indexed by app id.</summary>
+    internal void AddKibTo(long[] totals)
     {
         for (var i = 0; i < _ids.Length; i++)
         {
-            yield return (_ids[i], _kib[i] * 1024L);
+            totals[_ids[i]] += _kib[i];
         }
     }
 }
@@ -55,7 +56,8 @@ public sealed class HistoryPoint
 public sealed class MemoryHistory
 {
     public static readonly TimeSpan Resolution = TimeSpan.FromSeconds(1);
-    public static readonly TimeSpan Retention = TimeSpan.FromMinutes(60);
+    /// <summary>The longest chart window the settings offer.</summary>
+    public static readonly TimeSpan Retention = TimeSpan.FromMinutes(AppSettings.WindowChoices.Max());
 
     private readonly HistoryPoint?[] _ring;
     private readonly Dictionary<string, int> _ids = new(StringComparer.Ordinal);
@@ -71,6 +73,9 @@ public sealed class MemoryHistory
 
     public int Count => _count;
 
+    /// <summary>How many distinct apps have been seen; ids run from 0 to this.</summary>
+    public int AppCount => _apps.Count;
+
     public HistoryPoint this[int index] =>
         (uint)index < (uint)_count ? _ring[(_start + index) % _ring.Length]! : throw new ArgumentOutOfRangeException(nameof(index));
 
@@ -82,14 +87,11 @@ public sealed class MemoryHistory
     public void Add(MemoryBreakdown breakdown)
     {
         var sys = breakdown.Snapshot.System;
-        var apps = new SortedDictionary<int, int>();
-        foreach (var app in AppsOf(breakdown.Root))
-        {
-            var id = IdOf(app);
-            apps[id] = apps.GetValueOrDefault(id) + (int)Math.Min(int.MaxValue, app.Bytes / 1024);
-        }
+        // Apps folded into "Other" are still apps: their lines must not vanish when they shrink.
+        var apps = breakdown.Root.Apps().Select(a => (Id: IdOf(a), Kib: (int)Math.Min(int.MaxValue, a.Bytes / 1024))).ToList();
+        apps.Sort((a, b) => a.Id.CompareTo(b.Id));
         var point = new HistoryPoint(breakdown.Snapshot.Taken, sys.Used, sys.NonpagedPool + sys.PagedPoolResident,
-            sys.TotalPhysical, [.. apps.Keys], [.. apps.Values]);
+            sys.TotalPhysical, [.. apps.Select(a => a.Id)], [.. apps.Select(a => a.Kib)]);
 
         // Same resolution slot as the newest point: replace it. Comparing slots, not the gap to the
         // newest point, keeps a fast refresh from replacing the same point forever.
@@ -118,26 +120,22 @@ public sealed class MemoryHistory
     /// <summary>The points taken at or after <paramref name="from"/>, oldest first.</summary>
     public IReadOnlyList<HistoryPoint> Since(DateTimeOffset from)
     {
-        var list = new List<HistoryPoint>(_count);
-        for (var i = 0; i < _count; i++)
+        // Points are in time order: binary-search the first one in the window.
+        var (lo, hi) = (0, _count);
+        while (lo < hi)
         {
-            if (this[i].Taken >= from)
-            {
-                list.Add(this[i]);
-            }
+            var mid = (lo + hi) / 2;
+            (lo, hi) = this[mid].Taken < from ? (mid + 1, hi) : (lo, mid);
+        }
+        var list = new List<HistoryPoint>(_count - lo);
+        for (var i = lo; i < _count; i++)
+        {
+            list.Add(this[i]);
         }
         return list;
     }
 
     private static long Slot(DateTimeOffset taken) => taken.UtcTicks / Resolution.Ticks;
-
-    // Apps folded into "Other" are still apps: their lines must not vanish when they shrink.
-    private static IEnumerable<MapNode> AppsOf(MapNode node) => node.Kind switch
-    {
-        NodeKind.App => [node],
-        NodeKind.Root or NodeKind.Group or NodeKind.Folded => node.Children.SelectMany(AppsOf),
-        _ => [],
-    };
 
     private int IdOf(MapNode app)
     {

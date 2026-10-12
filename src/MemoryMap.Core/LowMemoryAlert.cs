@@ -21,7 +21,7 @@ public sealed class LowMemoryAlert
 
     public AlertChange Update(SystemMemory system, int thresholdPercent, bool enabled)
     {
-        var available = system.TotalPhysical <= 0 ? 100 : 100.0 * system.Available / system.TotalPhysical;
+        var available = system.AvailablePercent;
         var low = enabled && available < thresholdPercent;
         var recovered = !enabled || available >= thresholdPercent + RearmMargin;
         if (!IsActive && low)
@@ -43,7 +43,7 @@ public sealed class LowMemoryAlert
         var sys = breakdown.Snapshot.System;
         var text = $"Only {Format.Bytes(sys.Available, true)} of RAM is available ({Format.Percent(sys.Available, sys.TotalPhysical)}), "
             + $"below the {thresholdPercent}% alert.";
-        var biggest = Apps(breakdown.Root).MaxBy(a => a.Bytes);
+        var biggest = breakdown.Root.Apps().MaxBy(a => a.Bytes);
         return biggest is null ? text : $"{text} The biggest app is {biggest.Name} at {Format.Bytes(biggest.Bytes)}.";
     }
 
@@ -51,6 +51,4 @@ public sealed class LowMemoryAlert
     public static string TrayTip(SystemMemory sys) =>
         $"Memory Map: {Format.Percent(sys.Used, sys.TotalPhysical)} in use"
         + $"{Environment.NewLine}{Format.Bytes(sys.Used, true)} of {Format.Bytes(sys.TotalPhysical, true)}, {Format.Bytes(sys.Available, true)} available";
-
-    private static IEnumerable<MapNode> Apps(MapNode node) => node.Kind == NodeKind.App ? [node] : node.Children.SelectMany(Apps);
 }

@@ -1,6 +1,4 @@
-using System.ComponentModel;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using Avalonia.Threading;
 using MemoryMap.Core;
 
@@ -26,7 +24,7 @@ public sealed record MenuEntry(string Header, Func<Task>? Run, bool StartsGroup 
 /// process actions off the UI thread, ending a process only after <see cref="Confirm"/> agrees.
 /// Every sample also goes into the <see cref="History"/> and the low-memory alert, whichever tab is shown.
 /// </summary>
-public sealed class MainViewModel : INotifyPropertyChanged
+public sealed class MainViewModel : ObservableObject
 {
     public const int MapView = 0;
     public const int TableView = 1;
@@ -53,6 +51,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _alertMessage = "";
     private string _trayTip = "Memory Map";
     private int _usedPercent;
+    private bool _isOnScreen = true;
 
     public MainViewModel(LiveMemory? live = null, IProcessActions? actions = null, SettingsViewModel? settings = null)
     {
@@ -76,8 +75,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-
     public SettingsViewModel Settings { get; }
 
     public HistoryViewModel History { get; } = new();
@@ -89,6 +86,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string AlertMessage { get => _alertMessage; private set => Set(ref _alertMessage, value); }
 
     public string TrayTip { get => _trayTip; private set => Set(ref _trayTip, value); }
+
+    /// <summary>False while the window is hidden in the tray or minimised: nothing is drawn, so
+    /// nothing is built to be drawn. The window sets it.</summary>
+    public bool IsOnScreen
+    {
+        get => _isOnScreen;
+        set
+        {
+            Set(ref _isOnScreen, value);
+            UpdateChart();
+        }
+    }
 
     /// <summary>Share of RAM in use, 0-100, for the tray icon.</summary>
     public int UsedPercent { get => _usedPercent; private set => Set(ref _usedPercent, value); }
@@ -134,7 +143,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         set
         {
             Set(ref _viewIndex, value);
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowsGroupLegend)));
+            Raise(nameof(ShowsGroupLegend));
             UpdateRows();
             UpdateChart();
         }
@@ -148,16 +157,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
             + $"  ·  Available {Format.Bytes(sys.Available, true)}"
             + $"  ·  Commit {Format.Bytes(sys.CommitTotal, true)} of {Format.Bytes(sys.CommitLimit, true)}"
             + $"  ·  {breakdown.Snapshot.Processes.Count} processes";
-        Status = $"Updated {breakdown.Snapshot.Taken.ToLocalTime().ToString("T", CultureInfo.CurrentCulture)}"
+        Status = $"Updated {Format.Clock(breakdown.Snapshot.Taken)}"
             + (breakdown.Skew > 0 ? $"  ·  sampling skew {Format.Bytes(breakdown.Skew)}" : "");
         IsStale = false;
         UpdateView();
         Legend = [.. breakdown.Groups.Select(g => new LegendItem(g.Group, g.Name, Format.Bytes(g.Bytes), Format.Percent(g.Bytes, breakdown.Total)))];
         UpdateRows();
-        History.Add(breakdown);
+        History.History.Add(breakdown);
         UpdateChart();
         TrayTip = LowMemoryAlert.TrayTip(sys);
-        UsedPercent = sys.TotalPhysical > 0 ? (int)Math.Round(100.0 * sys.Used / sys.TotalPhysical) : 0;
+        UsedPercent = (int)Math.Round(sys.UsedPercent);
         UpdateAlert();
     }
 
@@ -295,7 +304,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Ancestors = [.. path.SkipLast(1).Select(n => new Crumb(n.Key, n.Name))];
         if (couldGoBack != CanGoBack)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanGoBack)));
+            Raise(nameof(CanGoBack));
         }
     }
 
@@ -345,10 +354,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    // The chart is rebuilt only while its tab is shown; the history is recorded regardless.
+    // The chart is rebuilt only while it is on screen; the history is recorded regardless.
     private void UpdateChart()
     {
-        if (ViewIndex == HistoryView)
+        if (ViewIndex == HistoryView && IsOnScreen)
         {
             History.Rebuild();
         }
@@ -360,23 +369,4 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void UpdateRows() =>
         Rows = ViewIndex == TableView && Breakdown is not null ? Describe.Table(Breakdown) : [];
-
-    // Rows are records: an unchanged list keeps the old instance, so the view does not rebuild its items.
-    private void SetList<T>(ref IReadOnlyList<T> field, IReadOnlyList<T> value, [CallerMemberName] string? name = null)
-    {
-        if (!field.SequenceEqual(value))
-        {
-            Set(ref field, value, name);
-        }
-    }
-
-    private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value))
-        {
-            return;
-        }
-        field = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
 }

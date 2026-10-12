@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Globalization;
 using MemoryMap.Core;
 
 namespace MemoryMap.App;
@@ -9,7 +7,7 @@ namespace MemoryMap.App;
 /// Every change is normalised, saved to <see cref="Path"/> at once (there is no OK button) and
 /// announced through <see cref="Changed"/>; a failed save is reported in <see cref="Problem"/>.
 /// </summary>
-public sealed class SettingsViewModel : INotifyPropertyChanged
+public sealed class SettingsViewModel : ObservableObject
 {
     private string? _problem;
 
@@ -20,8 +18,6 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         Path = path;
         _problem = loadProblem;
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     public event Action<AppSettings>? Changed;
 
@@ -34,41 +30,53 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     public string? Path { get; }
 
     /// <summary>Why the settings could not be read or saved; null when all is well.</summary>
-    public string? Problem
+    public string? Problem { get => _problem; private set => Set(ref _problem, value); }
+
+    public IReadOnlyList<string> RefreshLabels { get; } = [.. AppSettings.RefreshChoices.Select(AppSettings.RefreshLabel)];
+
+    public IReadOnlyList<string> WindowLabels { get; } = [.. AppSettings.WindowChoices.Select(AppSettings.WindowLabel)];
+
+    // A ComboBox reports -1 while its items are replaced; that is not a choice.
+    public int RefreshIndex
     {
-        get => _problem;
-        private set
+        get => IndexOf(AppSettings.RefreshChoices, Current.RefreshSeconds);
+        set
         {
-            if (_problem != value)
+            if (value >= 0 && value < AppSettings.RefreshChoices.Count)
             {
-                _problem = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Problem)));
+                Update(Current with { RefreshSeconds = AppSettings.RefreshChoices[value] });
             }
         }
     }
 
-    public IReadOnlyList<string> RefreshLabels { get; } =
-        [.. AppSettings.RefreshChoices.Select(s => s.ToString("0.#", CultureInfo.CurrentCulture) + " s")];
-
-    public IReadOnlyList<string> WindowLabels { get; } = [.. HistoryChart.WindowChoices.Select(m => $"Last {m} minutes")];
-
-    public int RefreshIndex
-    {
-        get => IndexOf(AppSettings.RefreshChoices, Current.RefreshSeconds);
-        set => Update(Current with { RefreshSeconds = AppSettings.RefreshChoices[Math.Clamp(value, 0, AppSettings.RefreshChoices.Count - 1)] });
-    }
-
     public int WindowIndex
     {
-        get => IndexOf(HistoryChart.WindowChoices, Current.HistoryMinutes);
-        set => Update(Current with { HistoryMinutes = HistoryChart.WindowChoices[Math.Clamp(value, 0, HistoryChart.WindowChoices.Count - 1)] });
+        get => IndexOf(AppSettings.WindowChoices, Current.HistoryMinutes);
+        set
+        {
+            if (value >= 0 && value < AppSettings.WindowChoices.Count)
+            {
+                Update(Current with { HistoryMinutes = (int)AppSettings.WindowChoices[value] });
+            }
+        }
     }
 
     /// <summary>Decimal because that is what NumericUpDown binds; null (a cleared box) keeps the old value.</summary>
     public decimal? AlertBelowPercent
     {
         get => Current.AlertBelowPercent;
-        set => Update(Current with { AlertBelowPercent = value is { } v ? (int)Math.Round(v) : Current.AlertBelowPercent });
+        set
+        {
+            if (value is { } v)
+            {
+                Update(Current with { AlertBelowPercent = (int)Math.Round(v) });
+            }
+            else
+            {
+                // Nothing changed, but the cleared box must show the value still in force.
+                Raise(nameof(AlertBelowPercent));
+            }
+        }
     }
 
     public bool AlertsEnabled { get => Current.AlertsEnabled; set => Update(Current with { AlertsEnabled = value }); }
@@ -89,26 +97,18 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
         Current = next;
         if (Path is { } path)
         {
-            try
-            {
-                SettingsStore.Save(path, next);
-                Problem = null;
-            }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-            {
-                Problem = $"Settings could not be saved, so they last until Memory Map closes ({e.Message}).";
-            }
+            Problem = SettingsStore.TrySave(path, next);
         }
         // Every bound property derives from Current: one notification for all of them.
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+        Raise(string.Empty);
         Changed?.Invoke(next);
     }
 
-    private static int IndexOf<T>(IReadOnlyList<T> choices, T value)
+    private static int IndexOf(IReadOnlyList<double> choices, double value)
     {
         for (var i = 0; i < choices.Count; i++)
         {
-            if (EqualityComparer<T>.Default.Equals(choices[i], value))
+            if (choices[i] == value)
             {
                 return i;
             }
