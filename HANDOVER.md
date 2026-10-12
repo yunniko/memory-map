@@ -1,8 +1,9 @@
 # memory-map — Handover
 Last verified: 2026-10-12 at 27ddf24
 
-A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. Goal: `GOALS.md` G-001
-(ACTIVE; M1–M5 done, awaiting the Owner's sign-off). Charter: `E:\CLAUDE\COMPANY\`.
+A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is done
+(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md`. Charter:
+`E:\CLAUDE\COMPANY\`.
 
 ## Current state
 
@@ -86,10 +87,9 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. Goal: `GOALS
 
 ## Next steps and open questions
 
-- PENDING APPROVAL: the Owner's sign-off on G-001.
 - Open: a GitHub remote, needed for CI, has not been requested. Ask the Owner first.
-- G-002, a Startup view for other programs' autostart, is planned in `GOALS.md` and awaits
-  the Owner's acceptance. It must work on other PCs, not just this one (Owner, 2026-10-12).
+- G-002 M1: the startup data engine (see `GOALS.md`). G-002 must work on other PCs, not
+  just this one (Owner, 2026-10-12).
 - Proposed later goal (Owner's call): Linux. It needs a `/proc` sampler behind `IMemorySampler`,
   Linux groups, a Linux rendering choice, and a check of tray support on GNOME.
 - Not measured: software rendering on a 4K or maximised window. Re-measure before relying
