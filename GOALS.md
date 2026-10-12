@@ -87,3 +87,61 @@ Completed goals: `docs/goals-archive.md`.
   marked review-before-continuing. Starting M1.
 - 2026-10-12 — Goal created on Owner request ("manage other apps' autostart"; "it should be
   able to run on other pcs too"). Plan presented; awaiting acceptance.
+
+### G-003 · Linux version — DRAFT
+- **What:** Memory Map running on desktop Linux: the map, table, history, low-memory alert,
+  settings, tray where the desktop has one, and the Startup tab for the desktop's autostart
+  entries. Built as one self-contained file, like the Windows exe.
+- **Why:** The Owner wants to run it on Linux (2026-10-12: "Add version for linux please";
+  earlier, "we will want to run it on linux soon"). The Linux machine and desktop are not
+  decided yet, so it targets any x64 desktop Linux.
+- **Acceptance criteria:**
+  1. On Linux the map shows RAM in groups that mean something there: apps in the user's
+     session, system services, VMs and containers, kernel memory (slab, page tables, kernel
+     stacks), shared memory and cache, and available. The totals agree with `/proc/meminfo`
+     and `free`, and each app's size uses one stated per-process measure that works without
+     root, so other users' processes are sized too.
+  2. The table, history, low-memory alert and settings work as on Windows. Settings are
+     saved in `~/.config/MemoryMap/`. *End process* (always confirmed) and *Open file
+     location* (the desktop's file manager) work for the user's own processes, and refuse
+     clearly for others'.
+  3. Tray: where the desktop shows tray icons (KDE, GNOME with the AppIndicator extension
+     Ubuntu ships), the gauge and close-to-tray work. Where it doesn't, close-to-tray turns
+     itself off and closing the window quits, so the app can never be hidden with no way back.
+  4. Startup tab: lists the XDG autostart entries (`~/.config/autostart`,
+     `/etc/xdg/autostart`), with running state and memory as on Windows. Switching writes a
+     per-user override (`Hidden=true` in `~/.config/autostart`), which the desktop's own
+     settings honour too. System files are never edited, nothing is deleted, no password
+     prompt. systemd user services that start at login are listed read-only.
+  5. Windows behaviour is unchanged: the Windows gate and CI stay green, and the Windows exe
+     is still built and installed as before.
+  6. It runs on Linux outside this PC: tests run in CI on an Ubuntu runner, the app is run
+     end to end on WSL Ubuntu 24.04 (WSLg), and the Owner runs it on their real Linux PC
+     from a checklist.
+- **Constraints:**
+  - No root for using or installing the app. Installing writes only to the user's home
+    (`~/.local/bin`, `~/.local/share/applications`) (VALUES.md → Restraint).
+  - Tests never touch the real autostart folders; they use temp folders, as in G-002
+    (VALUES.md → prefer reversible actions).
+  - Nothing is published (no release, package repository or store) without Owner approval.
+    The private repo stays the only remote.
+  - x64 only; arm64 is not asked for.
+
+**Milestones** (proposed):
+- [ ] M1 — Linux data engine. A `MemoryMap.Linux` project with a `/proc` sampler behind
+  `IMemorySampler`, Linux groups in Core, and the CLI (`--json`, table) running on Linux.
+  Checked against `/proc/meminfo`, `free` and `ps` on WSL Ubuntu. CI gets an Ubuntu job.
+- [ ] M2 — The app on Linux. One app project builds for both OSes and picks the OS services
+  at startup. Linux process actions, settings path, tray with fallback. Headless UI tests
+  run on both OSes; a real window run under WSLg.
+- [ ] M3 — Startup tab on Linux. An XDG autostart reader and per-user override switch, plus
+  systemd user services read-only. Fixture tests and a real round trip on a throwaway
+  entry, checked against how GNOME treats the override.
+- [ ] M4 — Finish. A self-contained linux-x64 file, an `install.sh` into `~/.local` with a
+  desktop entry, an end-to-end pass on WSL Ubuntu, a checklist for the Owner's Linux PC,
+  and README and handover.
+
+**Progress log** (newest first):
+- 2026-10-12 — Goal created on Owner request ("Add version for linux please"). The Owner
+  chose desktop autostart for the Startup tab and any desktop Linux as the target, since
+  the machine is not decided. Plan presented; awaiting acceptance.
