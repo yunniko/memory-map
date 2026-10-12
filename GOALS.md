@@ -37,7 +37,7 @@ Completed goals: `docs/goals-archive.md`.
     SmartScreen warning on other PCs; code signing costs money.
 
 **Milestones:**
-- [ ] M1 — Startup data engine. Core model and rules: command-line to executable, flag
+- [x] M1 — Startup data engine. Core model and rules: command-line to executable, flag
   bytes to state, matching entries to running processes. A Windows reader for the Run
   keys, the Startup folders (shortcut targets) and Store startup tasks. Tests over fixtures,
   including the odd cases in criterion 6. A cross-check against Task Manager on this PC.
@@ -51,6 +51,13 @@ Completed goals: `docs/goals-archive.md`.
   and a short checklist for the Owner's second-PC run.
 
 **Progress log** (newest first):
+- 2026-10-12 — **M1 done** (startup data engine, CLI `memmap-dump --startup`). Reads HKCU/HKLM
+  Run, HKLM Run 32-bit, both Startup folders and Store startup tasks; matches running processes
+  (D018–D020). Verified: `check.ps1` 192/192 (Core 100, Windows 53, App 39), tests use a scratch
+  key and temp folders only (cleanup checked); `startup-crosscheck.ps1` vs Settings 41/41 names,
+  1 state differs (Killer Control Center, open, D019); read 336 ms, match 26 ms. /simplify and
+  /code-review applied (shared path helper, host programs not counted, resource packages
+  skipped, duplicate ids, transient path failures retried). Next: M2, the Startup tab.
 - 2026-10-12 — Owner accepted the plan ("accept the G-002 plan, go ahead"); no milestone
   marked review-before-continuing. Starting M1.
 - 2026-10-12 — Goal created on Owner request ("manage other apps' autostart"; "it should be

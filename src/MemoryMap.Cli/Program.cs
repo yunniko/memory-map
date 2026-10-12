@@ -3,6 +3,7 @@
 using System.Text.Json;
 using MemoryMap.Core;
 using MemoryMap.Windows;
+using MemoryMap.Windows.Startup;
 
 if (!OperatingSystem.IsWindows())
 {
@@ -16,7 +17,7 @@ var top = 10;
 var topIndex = Array.IndexOf(args, "--top");
 if (topIndex >= 0 && (topIndex + 1 >= args.Length || !int.TryParse(args[topIndex + 1], out top)))
 {
-    Console.Error.WriteLine("Usage: memmap-dump [--json] [--top N] [--bench]");
+    Console.Error.WriteLine("Usage: memmap-dump [--json] [--top N] [--bench | --startup]");
     return 2;
 }
 
@@ -36,6 +37,58 @@ if (args.Contains("--bench"))
     watch.Stop();
     var cpu = Environment.CpuUsage.TotalTime - cpuBefore;
     Console.WriteLine($"{runs} refreshes: {watch.Elapsed.TotalMilliseconds / runs:N2} ms wall, {cpu.TotalMilliseconds / runs:N2} ms CPU per refresh");
+    return 0;
+}
+
+if (args.Contains("--startup"))
+{
+    // Every program that starts at sign-in, with what it costs now; scripts/startup-crosscheck.ps1
+    // compares this against Windows Settings' Startup apps page.
+    var watch = System.Diagnostics.Stopwatch.StartNew();
+    var list = new WindowsStartupReader().Read();
+    var readMs = watch.Elapsed.TotalMilliseconds;
+    var processes = sampler.Sample().Processes;
+    watch.Restart();
+    var usage = StartupMatching.Match(list.Entries, processes, new WindowsProcessPaths());
+    var matchMs = watch.Elapsed.TotalMilliseconds;
+    if (json)
+    {
+        var output = list.Entries.Select(e => new
+        {
+            e.Id,
+            e.Name,
+            e.Publisher,
+            e.Command,
+            e.Location,
+            source = e.Source.ToString(),
+            scope = e.Scope.ToString(),
+            e.Enabled,
+            @switch = e.Switch.ToString(),
+            e.ExecutablePath,
+            e.ProgramFolder,
+            e.Problem,
+            e.CountsProcesses,
+            running = usage[e.Id].Processes.Count,
+            privateWorkingSet = usage[e.Id].PrivateWorkingSet,
+        });
+        Console.WriteLine(JsonSerializer.Serialize(new { entries = output, list.Unreadable }, new JsonSerializerOptions { WriteIndented = true }));
+        return 0;
+    }
+    foreach (var e in list.Entries)
+    {
+        var use = usage[e.Id];
+        var running = !e.CountsProcesses ? "not counted" : use.Running ? $"{Format.Bytes(use.PrivateWorkingSet)} x{use.Processes.Count}" : "not running";
+        Console.WriteLine($"{(e.Enabled ? "on " : "off")} {e.Name,-40} {e.Switch,-10} {running,-16} {e.Location}");
+        if (e.Problem is not null)
+        {
+            Console.WriteLine($"    ! {e.Problem}");
+        }
+    }
+    foreach (var source in list.Unreadable)
+    {
+        Console.WriteLine($"Could not read {source}");
+    }
+    Console.WriteLine($"{list.Entries.Count} entries; read {readMs:N0} ms, matched to processes {matchMs:N0} ms");
     return 0;
 }
 

@@ -17,3 +17,6 @@
 - D015 — The app renders in software, not on the GPU — active
 - D016 — A Settings option slows sampling while the window is hidden; off by default — active
 - D017 — The map redraws on every refresh; skipping unchanged frames was measured and dropped — active
+- D018 — Startup entries come from the Run keys, Startup folders and Store tasks, with Explorer's StartupApproved flags — active
+- D019 — Store apps' startup tasks are read from the AppModel registry and package manifests — active
+- D020 — An entry that starts a host program (cmd, rundll32, a script host) is credited with no processes — active

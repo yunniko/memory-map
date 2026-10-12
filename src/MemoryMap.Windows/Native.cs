@@ -67,6 +67,14 @@ internal static partial class Native
     [return: MarshalAs(UnmanagedType.Bool)]
     public static unsafe partial bool QueryFullProcessImageName(SafeProcessHandle process, uint flags, char* buffer, ref uint size);
 
+    /// <summary>Resolves "@{PackageFullName?ms-resource://...}" and "@file.dll,-id" strings; 0 (S_OK) on success.</summary>
+    [LibraryImport("shlwapi.dll", EntryPoint = "SHLoadIndirectString", StringMarshalling = StringMarshalling.Utf16)]
+    public static unsafe partial int SHLoadIndirectString(string source, char* buffer, uint size, nint reserved);
+
+    /// <summary>Where Windows installed a package (its manifest's folder); 0 (ERROR_SUCCESS) on success.</summary>
+    [LibraryImport("kernel32.dll", EntryPoint = "GetPackagePathByFullName", StringMarshalling = StringMarshalling.Utf16)]
+    public static unsafe partial int GetPackagePathByFullName(string packageFullName, ref uint pathLength, char* path);
+
     [StructLayout(LayoutKind.Sequential)]
     public struct PerformanceInformation
     {

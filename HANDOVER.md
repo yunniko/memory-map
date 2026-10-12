@@ -2,7 +2,7 @@
 Last verified: 2026-10-12 at 27ddf24
 
 A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is done
-(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md`. Charter:
+(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md` (M1 done). Charter:
 `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -36,8 +36,15 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is don
     150 MB) is met even on a one-core reading.
   - Minimised for 300 s: 0.98% of one core with the hidden refresh off, 0.37% at 5 s and
     0.24% at 30 s.
-- `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 147/147 tests
-  (Core 88, Windows integration 20, App headless 39).
+- **Startup data engine (G-002 M1), CLI only so far.** `memmap-dump --startup` lists the
+  programs Windows starts at sign-in, with on/off state, publisher, running processes and
+  their private working set (D018, D019; host programs not counted, D020). On this PC:
+  41 entries, read 336 ms, matched to processes 26 ms.
+  `scripts/startup-crosscheck.ps1` against Settings → Startup apps: 41/41 names, one state
+  differs (Killer Control Center: registry on, Settings Off; unexplained, D019). Record:
+  `docs/reviews/2026-10-12-g002-m1-startup-crosscheck.md`. Nothing switches entries yet.
+- `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 192/192 tests
+  (Core 100, Windows integration 53, App headless 39).
 - `scripts/crosscheck.ps1` against WMI: worst difference 0.15% of RAM (limit 2%).
 - Not run: the critical-process refusal, because it needs an elevated session.
 - "Shared & other" is about 3.5 GB (23% of RAM) on this PC. It is real shared memory (D003).
@@ -54,6 +61,10 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is don
   - `History.cs` is the ring; each point records the refresh interval it was taken at.
     `HistoryChart.cs` builds series, ticks, the tooltip and the line-break rule.
   - `LowMemoryAlert.cs` holds the alert rule; `AppSettings.cs` holds the choices and JSON store.
+- Startup: `src/MemoryMap.Core/Startup.cs` holds the entry model, `IStartupReader`, `IProcessPaths` (which
+  also says how the OS compares paths) and `StartupMatching` (a process counts for the
+  entry with its exact file, else the deepest program folder). `src/MemoryMap.Windows/Startup/` reads
+  the sources; `StartupLocations` lets tests point it at a scratch key and temp folders.
 - `MemoryMap.Windows` holds `WindowsMemorySampler` (native APIs, D002) and
   `WindowsProcessActions` (D008). The `Native.cs` offsets are 64-bit only. Of a sample's
   7.2 ms, the kernel's process list is 4.8 ms.
@@ -82,14 +93,21 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is don
 - Ending a process is always confirmed and acts on one process only, on a handle whose start
   time matches the sample (G-001 criterion 6; D008).
 - xunit.v3 stays at the version `Avalonia.Headless.XUnit` is built against, 3.2.2 today (D006).
+- Tests never touch real autostart entries: they read and write only the `StartupFixture`
+  scratch key and temp folders (G-002 constraint).
+- The app stays unelevated; machine-wide startup changes will go through a per-change admin
+  prompt (G-002 constraint).
 - `scripts/check.ps1` is the merge gate until there is CI, because no remote exists
   (STANDARDS.md → formatter in CI).
 
 ## Next steps and open questions
 
 - Open: a GitHub remote, needed for CI, has not been requested. Ask the Owner first.
-- G-002 M1: the startup data engine (see `GOALS.md`). G-002 must work on other PCs, not
-  just this one (Owner, 2026-10-12).
+- G-002 M2: the Startup tab with user toggles (see `GOALS.md`). G-002 must work on other
+  PCs, not just this one (Owner, 2026-10-12); the second-PC run is in M4.
+- Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
+- For the M4 second-PC run: whether switching a machine-wide entry off in Settings writes a
+  user-key flag (none exists here; the reader reads machine flags only, D018).
 - Proposed later goal (Owner's call): Linux. It needs a `/proc` sampler behind `IMemorySampler`,
   Linux groups, a Linux rendering choice, and a check of tray support on GNOME.
 - Not measured: software rendering on a 4K or maximised window. Re-measure before relying

@@ -4,8 +4,8 @@ A Windows desktop app that shows the PC's RAM as a live treemap — like Sequoia
 for disk space — so you can see at a glance what is using memory, including memory no
 app owns (kernel pools, shared pages).
 
-Built in C# (.NET 10) with Avalonia. **State:** goal G-001's five milestones are built
-and verified; it awaits the Owner's sign-off (see `GOALS.md`).
+Built in C# (.NET 10) with Avalonia. **State:** G-001 (the map) is done; G-002 (managing other
+programs' autostart) is in progress — so far its data engine, in the CLI only (see `GOALS.md`).
 
 ## What it does
 
@@ -27,10 +27,12 @@ and verified; it awaits the Owner's sign-off (see `GOALS.md`).
 - `./scripts/publish.ps1` — rebuild that exe into `publish\` and copy it to `C:\bin`
   (`-NoInstall` to skip the copy; exit the running app first).
 - `dotnet run --project src/MemoryMap.App -c Release` — run from source.
-- `dotnet run --project src/MemoryMap.Cli -- --json` — one snapshot as text or JSON.
+- `dotnet run --project src/MemoryMap.Cli -- --json` — one snapshot as text or JSON;
+  `-- --startup` lists the programs Windows starts at sign-in, with their state and memory.
 - `./scripts/check.ps1` — format check, warnings-as-errors build, all tests.
   Set `MEMORYMAP_SCREENSHOTS=<folder>` to have the window tests save PNGs there.
 - `./scripts/crosscheck.ps1` — compare the sampler's totals with Windows' own (WMI).
+- `./scripts/startup-crosscheck.ps1` — compare the startup list with Settings → Apps → Startup (read-only).
 
 Predecessors (one-off snapshots, PowerShell): `C:\bin\memory-report.ps1` (text report)
 and `C:\bin\memory-map.ps1` (HTML treemap).
