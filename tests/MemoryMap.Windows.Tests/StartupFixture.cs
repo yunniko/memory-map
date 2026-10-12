@@ -7,9 +7,11 @@ using Microsoft.Win32;
 namespace MemoryMap.Windows.Tests;
 
 /// <summary>
-/// A stand-in machine for the startup reader: a scratch registry key under HKCU\Software\
-/// MemoryMap.Tests with "user" and "machine" roots laid out like the real hives, and temp
-/// folders. Nothing the tests do reaches the real autostart entries. Removed on dispose.
+/// A stand-in machine for the startup reader: a scratch registry key HKCU\Software\
+/// MemoryMap.Tests-&lt;guid&gt; with "user" and "machine" roots laid out like the real hives, and
+/// temp folders. Nothing the tests do reaches the real autostart entries. Removed on dispose.
+/// Each fixture has its own top-level key: a shared parent, deleted when it looked empty, raced
+/// with a fixture in a test class running in parallel creating its key under it.
 /// </summary>
 [SupportedOSPlatform("windows")]
 internal sealed class StartupFixture : IDisposable
@@ -23,7 +25,7 @@ internal sealed class StartupFixture : IDisposable
     public static readonly byte[] Off = [3, 0, 0, 0, 0xf5, 0x6b, 0x2d, 0xd0, 0xbd, 0x7e, 0xda, 0x01];
 
     private FakeLauncher? _launcher;
-    private readonly string _keyPath = $@"Software\MemoryMap.Tests\{Guid.NewGuid():N}";
+    private readonly string _keyPath = $@"Software\MemoryMap.Tests-{Guid.NewGuid():N}";
 
     public StartupFixture()
     {
@@ -123,13 +125,6 @@ internal sealed class StartupFixture : IDisposable
         Machine.Dispose();
         Scratch.Dispose();
         Registry.CurrentUser.DeleteSubKeyTree(_keyPath, throwOnMissingSubKey: false);
-        using (var parent = Registry.CurrentUser.OpenSubKey(@"Software\MemoryMap.Tests", writable: true))
-        {
-            if (parent is { SubKeyCount: 0 })
-            {
-                Registry.CurrentUser.DeleteSubKey(@"Software\MemoryMap.Tests", throwOnMissingSubKey: false);
-            }
-        }
         Directory.Delete(Root, recursive: true);
     }
 }

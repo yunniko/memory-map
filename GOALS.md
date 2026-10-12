@@ -88,10 +88,11 @@ Completed goals: `docs/goals-archive.md`.
 - 2026-10-12 — Goal created on Owner request ("manage other apps' autostart"; "it should be
   able to run on other pcs too"). Plan presented; awaiting acceptance.
 
-### G-003 · Linux version — DRAFT
+### G-003 · Linux version — ACTIVE
 - **What:** Memory Map running on desktop Linux: the map, table, history, low-memory alert,
   settings, tray where the desktop has one, and the Startup tab for the desktop's autostart
-  entries. Built as one self-contained file, like the Windows exe.
+  entries. Built as one self-contained file, like the Windows exe, and as a `.deb` package
+  for Debian-family systems (Owner, 2026-10-12: "can we have deb package?").
 - **Why:** The Owner wants to run it on Linux (2026-10-12: "Add version for linux please";
   earlier, "we will want to run it on linux soon"). The Linux machine and desktop are not
   decided yet, so it targets any x64 desktop Linux.
@@ -115,12 +116,15 @@ Completed goals: `docs/goals-archive.md`.
      prompt. systemd user services that start at login are listed read-only.
   5. Windows behaviour is unchanged: the Windows gate and CI stay green, and the Windows exe
      is still built and installed as before.
-  6. It runs on Linux outside this PC: tests run in CI on an Ubuntu runner, the app is run
+  6. A `.deb` (amd64) installs the app with a menu entry and a `memory-map` command, declares
+     the system libraries it needs, and removes cleanly with `apt remove`. It is checked with
+     `lintian` and by installing, running and removing it on WSL Ubuntu 24.04.
+  7. It runs on Linux outside this PC: tests run in CI on an Ubuntu runner, the app is run
      end to end on WSL Ubuntu 24.04 (WSLg), and the Owner runs it on their real Linux PC
      from a checklist.
 - **Constraints:**
-  - No root for using or installing the app. Installing writes only to the user's home
-    (`~/.local/bin`, `~/.local/share/applications`) (VALUES.md → Restraint).
+  - No root for using the app (VALUES.md → Restraint: least privilege). Installing the
+    `.deb` needs `sudo`, as every system package does; the single file needs no install.
   - Tests never touch the real autostart folders; they use temp folders, as in G-002
     (VALUES.md → prefer reversible actions).
   - Nothing is published (no release, package repository or store) without Owner approval.
@@ -137,11 +141,15 @@ Completed goals: `docs/goals-archive.md`.
 - [ ] M3 — Startup tab on Linux. An XDG autostart reader and per-user override switch, plus
   systemd user services read-only. Fixture tests and a real round trip on a throwaway
   entry, checked against how GNOME treats the override.
-- [ ] M4 — Finish. A self-contained linux-x64 file, an `install.sh` into `~/.local` with a
-  desktop entry, an end-to-end pass on WSL Ubuntu, a checklist for the Owner's Linux PC,
-  and README and handover.
+- [ ] M4 — Finish. A self-contained linux-x64 file and a `.deb` built from it (desktop
+  entry, icon, `memory-map` command), `lintian`-clean; install, run and remove on WSL
+  Ubuntu; a checklist for the Owner's Linux PC; README and handover.
 
 **Progress log** (newest first):
+- 2026-10-12 — Owner accepted the plan ("go ahead"); no milestone marked
+  review-before-continuing. Owner then asked for a `.deb` package: added as criterion 6 and
+  to M4; the `install.sh` into `~/.local` is dropped (the `.deb` gives the menu entry, the
+  single file runs anywhere without install). Starting M1.
 - 2026-10-12 — Goal created on Owner request ("Add version for linux please"). The Owner
   chose desktop autostart for the Startup tab and any desktop Linux as the target, since
   the machine is not decided. Plan presented; awaiting acceptance.

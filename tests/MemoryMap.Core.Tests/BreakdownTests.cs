@@ -10,7 +10,7 @@ public class BreakdownTests
 
     [Theory]
     [InlineData(ProcessKind.App, MemoryGroup.Apps)]
-    [InlineData(ProcessKind.Service, MemoryGroup.Windows)]
+    [InlineData(ProcessKind.Service, MemoryGroup.System)]
     [InlineData(ProcessKind.VirtualMachine, MemoryGroup.VirtualMachines)]
     public void Processes_land_in_the_group_of_their_kind(ProcessKind kind, MemoryGroup expected)
     {
@@ -154,6 +154,41 @@ public class BreakdownTests
         var b = Breakdown.Build(Snapshot(Sys(availableMb: 4096, standbyMb: 3000)));
 
         Assert.Equal([3000 * Mb, 1096 * Mb], Group(b, MemoryGroup.Available).Children.Select(i => i.Bytes));
+    }
+
+    [Fact]
+    public void Named_parts_are_taken_in_order_from_what_is_left_and_keep_their_notes()
+    {
+        // Used 12288 MB, attributed 1230 MB kernel: 11058 MB left. 11000 MB fits, the second
+        // part is capped at the 58 MB that remain, and nothing is left for the rest.
+        var sys = Sys() with
+        {
+            InUseNamed = [new("a", "First", 11000 * Mb, "first note"), new("b", "Second", 500 * Mb, "second note")],
+        };
+        var b = Breakdown.Build(Snapshot(sys));
+        var other = Group(b, MemoryGroup.SharedOther);
+
+        Assert.Equal([11000 * Mb, 58 * Mb], other.Children.Select(c => c.Bytes));
+        Assert.Equal(["first note", "second note"], other.Children.Select(c => c.Note));
+        Assert.Equal(b.Total, b.Root.Bytes);
+    }
+
+    [Fact]
+    public void The_snapshot_names_the_os_specific_groups_and_remainder()
+    {
+        var sys = Sys() with { Names = new("Sys", "Guests", "Rest", "rest note"), InUseNamed = [] };
+        var b = Breakdown.Build(Snapshot(sys, Proc(1, "sshd", 100, ProcessKind.Service), Proc(2, "qemu", 100, ProcessKind.VirtualMachine)));
+
+        Assert.Equal("Sys", Group(b, MemoryGroup.System).Name);
+        Assert.Equal("Guests", Group(b, MemoryGroup.VirtualMachines).Name);
+        var rest = Assert.Single(Group(b, MemoryGroup.SharedOther).Children);
+        Assert.Equal(("Rest", "rest note"), (rest.Name, rest.Note));
+    }
+
+    [Fact]
+    public void The_kernel_line_counts_only_figures_marked_as_kernel_allocations()
+    {
+        Assert.Equal(900 * Mb, Sys(nonpagedMb: 500, pagedResidentMb: 400).KernelAllocations);
     }
 
     [Fact]

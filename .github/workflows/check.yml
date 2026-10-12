@@ -1,5 +1,5 @@
-# The merge gate (scripts/check.ps1): format check, warnings-as-errors build, every test.
-# Windows only: the sampler, startup reader and their integration tests use Windows APIs.
+# The merge gate (scripts/check.ps1): format check, warnings-as-errors build, every test that runs on
+# the OS. Windows runs the whole solution; Ubuntu runs MemoryMap.Linux.slnf, including the live /proc test.
 name: check
 on:
   push:
@@ -9,7 +9,11 @@ permissions:
   contents: read
 jobs:
   check:
-    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -17,3 +21,6 @@ jobs:
         with:
           global-json-file: global.json
       - run: pwsh scripts/check.ps1
+      - name: Cross-check against free and ps
+        if: runner.os == 'Linux'
+        run: python3 scripts/crosscheck-linux.py

@@ -20,10 +20,12 @@ public class WindowsMemorySamplerTests : IDisposable
 
         Assert.True(s.TotalPhysical > 1L << 30, "less than 1 GB of RAM reported");
         Assert.InRange(s.Available, 1, s.TotalPhysical);
-        Assert.InRange(s.Standby, 0, s.Available);
+        Assert.Same(WindowsMemorySampler.Names, s.Names);
+        Assert.InRange(Assert.Single(s.AvailableNamed, f => f.Id == "standby").Bytes, 0, s.Available);
         Assert.True(s.CommitLimit >= s.TotalPhysical / 2);
-        Assert.True(s.NonpagedPool > 0 && s.PagedPoolResident > 0);
-        Assert.True(s.PagedPoolResident <= s.PagedPoolTotal);
+        Assert.Equal(["nonpaged-pool", "paged-pool", "file-cache", "driver-code", "kernel-code"], s.Kernel.Select(f => f.Id));
+        Assert.True(s.Kernel[0].Bytes > 0 && s.Kernel[1].Bytes > 0);
+        Assert.Equal(s.Kernel[0].Bytes + s.Kernel[1].Bytes, s.KernelAllocations);
         Assert.True(s.Uptime > TimeSpan.Zero);
     }
 
@@ -45,7 +47,6 @@ public class WindowsMemorySamplerTests : IDisposable
         var self = Assert.Single(sample.Processes, p => p.Pid == me.Id);
 
         Assert.Equal(me.ProcessName, self.Name, ignoreCase: true);
-        Assert.Equal(me.SessionId, self.SessionId);
         Assert.InRange(self.PrivateWorkingSet, 1, self.WorkingSet);
         // Working set moves while the test runs: compare loosely.
         Assert.InRange(self.WorkingSet, me.WorkingSet64 / 2, me.WorkingSet64 * 2);

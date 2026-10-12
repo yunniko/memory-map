@@ -21,7 +21,7 @@
           <Color x:Key="Map.Muted">#898781</Color>
           <Color x:Key="Map.Border">#1a0b0b0b</Color>
           <Color x:Key="Map.Apps">#2a78d6</Color>
-          <Color x:Key="Map.Windows">#eb6834</Color>
+          <Color x:Key="Map.System">#eb6834</Color>
           <Color x:Key="Map.VirtualMachines">#1baf7a</Color>
           <Color x:Key="Map.Kernel">#52514e</Color>
           <Color x:Key="Map.SharedOther">#a3a29b</Color>
@@ -46,7 +46,7 @@
           <Color x:Key="Map.Muted">#898781</Color>
           <Color x:Key="Map.Border">#1affffff</Color>
           <Color x:Key="Map.Apps">#3987e5</Color>
-          <Color x:Key="Map.Windows">#d95926</Color>
+          <Color x:Key="Map.System">#d95926</Color>
           <Color x:Key="Map.VirtualMachines">#199e70</Color>
           <Color x:Key="Map.Kernel">#c3c2b7</Color>
           <Color x:Key="Map.SharedOther">#6e6d68</Color>

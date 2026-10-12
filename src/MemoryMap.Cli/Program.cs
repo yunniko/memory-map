@@ -1,20 +1,20 @@
 // memmap-dump: prints one memory breakdown as text or JSON. Used to cross-check the
-// sampler against Windows' own figures and as a scriptable view of the same data the app shows.
+// sampler against the OS's own figures and as a scriptable view of the same data the app shows.
 using System.Text.Json;
 using MemoryMap.Core;
+using MemoryMap.Linux;
 using MemoryMap.Windows;
 using MemoryMap.Windows.Startup;
 
-if (!OperatingSystem.IsWindows())
-{
-    Console.Error.WriteLine("memmap-dump runs on Windows only.");
-    return 2;
-}
-
 // --startup-set on a machine-wide entry runs this exe again elevated, as the app does (D024).
-if (StartupHelper.Run(args) is { } helperExit)
+if (OperatingSystem.IsWindows() && StartupHelper.Run(args) is { } helperExit)
 {
     return helperExit;
+}
+if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux())
+{
+    Console.Error.WriteLine("memmap-dump runs on Windows and Linux only.");
+    return 2;
 }
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -27,7 +27,13 @@ if (topIndex >= 0 && (topIndex + 1 >= args.Length || !int.TryParse(args[topIndex
     return 2;
 }
 
-using var sampler = new WindowsMemorySampler();
+if (!OperatingSystem.IsWindows() && (args.Contains("--startup") || args.Contains("--startup-set")))
+{
+    Console.Error.WriteLine("The startup list is not available on Linux yet.");
+    return 2;
+}
+
+using IMemorySampler sampler = OperatingSystem.IsWindows() ? new WindowsMemorySampler() : new LinuxMemorySampler();
 
 if (args.Contains("--bench"))
 {
@@ -46,8 +52,10 @@ if (args.Contains("--bench"))
     return 0;
 }
 
+// The startup options returned above on Linux; the IsWindows() checks below are for the
+// platform analyzer, which cannot see that.
 var setIndex = Array.IndexOf(args, "--startup-set");
-if (setIndex >= 0)
+if (OperatingSystem.IsWindows() && setIndex >= 0)
 {
     // Switches one entry by id, through the app's own code; scripts/startup-roundtrip.ps1 uses it
     // on throwaway entries to check that Windows Settings agrees with the change.
@@ -67,7 +75,7 @@ if (setIndex >= 0)
     return result.Succeeded ? 0 : 1;
 }
 
-if (args.Contains("--startup"))
+if (OperatingSystem.IsWindows() && args.Contains("--startup"))
 {
     // Every program that starts at sign-in, with what it costs now; scripts/startup-crosscheck.ps1
     // compares this against Windows Settings' Startup apps page.
@@ -134,6 +142,7 @@ if (json)
         system = sys,
         used = sys.Used,
         skew = breakdown.Skew,
+        processCount = breakdown.Snapshot.Processes.Count,
         groups = breakdown.Groups.Select(g => new
         {
             group = g.Group.ToString(),
@@ -148,7 +157,7 @@ if (json)
 
 Console.WriteLine($"Snapshot {breakdown.Snapshot.Taken:yyyy-MM-dd HH:mm:ss}, uptime {sys.Uptime.TotalDays:N1} days");
 Console.WriteLine($"Total {Format.Bytes(sys.TotalPhysical, true)}  In use {Format.Bytes(sys.Used, true)} ({Format.Percent(sys.Used, sys.TotalPhysical)})  Available {Format.Bytes(sys.Available, true)}");
-Console.WriteLine($"Commit {Format.Bytes(sys.CommitTotal, true)} of {Format.Bytes(sys.CommitLimit, true)}  Paged pool total {Format.Bytes(sys.PagedPoolTotal)}");
+Console.WriteLine($"Commit {Format.Bytes(sys.CommitTotal, true)} of {Format.Bytes(sys.CommitLimit, true)}");
 Console.WriteLine($"Processes sampled: {breakdown.Snapshot.Processes.Count}");
 if (breakdown.Skew > 0)
 {

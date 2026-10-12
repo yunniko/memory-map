@@ -39,7 +39,7 @@ public sealed class HistoryChart
 
     public IReadOnlyList<HistoryPoint> Points { get; }
 
-    /// <summary>In use, kernel pools, then the window's biggest apps, biggest first.</summary>
+    /// <summary>In use, kernel, then the window's biggest apps, biggest first.</summary>
     public IReadOnlyList<ChartSeries> Series { get; }
 
     /// <summary>The top of the y-axis: a round size just above the largest value.</summary>
@@ -68,7 +68,7 @@ public sealed class HistoryChart
         List<ChartSeries> series =
         [
             new(UsedKey, "In use", SeriesSlots.Used, [.. points.Select(p => p.Used)]),
-            new(KernelKey, "Kernel pools", SeriesSlots.Kernel, [.. points.Select(p => p.KernelPools)]),
+            new(KernelKey, "Kernel allocations", SeriesSlots.Kernel, [.. points.Select(p => p.Kernel)]),
             .. top.Select(id =>
             {
                 var (key, name) = history.App(id);

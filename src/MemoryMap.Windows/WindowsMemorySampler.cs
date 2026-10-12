@@ -18,7 +18,6 @@ public sealed unsafe class WindowsMemorySampler : IMemorySampler
     {
         NonpagedPool,
         PagedPoolResident,
-        PagedPoolTotal,
         SystemCacheResident,
         DriverCodeResident,
         KernelCodeResident,
@@ -33,7 +32,6 @@ public sealed unsafe class WindowsMemorySampler : IMemorySampler
     [
         @"\Memory\Pool Nonpaged Bytes",
         @"\Memory\Pool Paged Resident Bytes",
-        @"\Memory\Pool Paged Bytes",
         @"\Memory\System Cache Resident Bytes",
         @"\Memory\System Driver Resident Bytes",
         @"\Memory\System Code Resident Bytes",
@@ -42,6 +40,10 @@ public sealed unsafe class WindowsMemorySampler : IMemorySampler
         @"\Memory\Standby Cache Reserve Bytes",
         @"\Memory\Modified Page List Bytes",
     ];
+
+    /// <summary>Windows' names for its groups and the rest of in-use memory (D025).</summary>
+    public static readonly PlatformNames Names = new("Windows & services", "WSL / Docker VMs", "Shared & other",
+        "In use but owned by no single process: shared DLLs and memory, page tables and the like.");
 
     private readonly TimeProvider _clock;
 
@@ -98,18 +100,31 @@ public sealed unsafe class WindowsMemorySampler : IMemorySampler
 
         Check(Native.PdhCollectQueryData(_query), "PdhCollectQueryData");
         return new SystemMemory(
+            Names: Names,
             TotalPhysical: (long)perf.PhysicalTotal * page,
             Available: (long)perf.PhysicalAvailable * page,
-            Standby: Read(Counter.StandbyCore) + Read(Counter.StandbyNormal) + Read(Counter.StandbyReserve),
             CommitTotal: (long)perf.CommitTotal * page,
             CommitLimit: (long)perf.CommitLimit * page,
-            NonpagedPool: Read(Counter.NonpagedPool),
-            PagedPoolResident: Read(Counter.PagedPoolResident),
-            PagedPoolTotal: Read(Counter.PagedPoolTotal),
-            SystemCacheResident: Read(Counter.SystemCacheResident),
-            DriverCodeResident: Read(Counter.DriverCodeResident),
-            KernelCodeResident: Read(Counter.KernelCodeResident),
-            ModifiedPages: Read(Counter.ModifiedPages),
+            Kernel:
+            [
+                new("nonpaged-pool", "Nonpaged pool", Read(Counter.NonpagedPool),
+                    "Kernel memory that can never be paged out; drivers allocate it.", IsKernelAllocation: true),
+                new("paged-pool", "Paged pool (resident)", Read(Counter.PagedPoolResident),
+                    "Kernel memory that may be paged out; this is the part in RAM now.", IsKernelAllocation: true),
+                new("file-cache", "File cache (resident)", Read(Counter.SystemCacheResident), "File data the system cache holds in RAM."),
+                new("driver-code", "Driver code", Read(Counter.DriverCodeResident), "Driver code loaded in RAM."),
+                new("kernel-code", "Kernel code", Read(Counter.KernelCodeResident), "Windows kernel code loaded in RAM."),
+            ],
+            InUseNamed:
+            [
+                new("modified", "Modified (waiting to be written)", Read(Counter.ModifiedPages),
+                    "Changed pages waiting to be written to disk before they can be reused."),
+            ],
+            AvailableNamed:
+            [
+                new("standby", "Standby cache", Read(Counter.StandbyCore) + Read(Counter.StandbyNormal) + Read(Counter.StandbyReserve),
+                    "Cached data Windows hands to programs as soon as they need it."),
+            ],
             Uptime: TimeSpan.FromMilliseconds(Environment.TickCount64));
     }
 
@@ -161,12 +176,10 @@ public sealed unsafe class WindowsMemorySampler : IMemorySampler
                 var image = info->ImageNameBuffer == 0
                     ? "System"
                     : new string((char*)info->ImageNameBuffer, 0, info->ImageNameLength / 2);
-                var session = (int)info->SessionId;
                 list.Add(new ProcessSample(
                     Pid: pid,
                     ImageName: image,
-                    Kind: KindOf(image, session),
-                    SessionId: session,
+                    Kind: KindOf(image, (int)info->SessionId),
                     // System and Registry report no creation time: 1601-01-01 then.
                     StartTime: DateTimeOffset.FromFileTime(Math.Max(0, info->CreateTime)),
                     PrivateWorkingSet: info->WorkingSetPrivateSize,

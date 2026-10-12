@@ -38,7 +38,7 @@ public class HistoryAndTrayTests
 
         var chart = window.Chart.Chart!;
         Assert.Equal(301, chart.Points.Count);
-        Assert.Equal(["In use", "Kernel pools", "chrome", "vmmemWSL", "code", "firefox", "svchost"], chart.Series.Select(s => s.Name));
+        Assert.Equal(["In use", "Kernel allocations", "chrome", "vmmemWSL", "code", "firefox", "svchost"], chart.Series.Select(s => s.Name));
         Assert.Equal(chart.Series.Count, window.SeriesLegend.ItemCount);
         Assert.Equal(Format.Bytes(3900 * Mb), model.History.Legend.Single(l => l.Name == "chrome").Latest);
 

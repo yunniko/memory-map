@@ -1,0 +1,13 @@
+{
+  "solution": {
+    "path": "MemoryMap.slnx",
+    "projects": [
+      "src/MemoryMap.Core/MemoryMap.Core.csproj",
+      "src/MemoryMap.Linux/MemoryMap.Linux.csproj",
+      "src/MemoryMap.Windows/MemoryMap.Windows.csproj",
+      "src/MemoryMap.Cli/MemoryMap.Cli.csproj",
+      "tests/MemoryMap.Core.Tests/MemoryMap.Core.Tests.csproj",
+      "tests/MemoryMap.Linux.Tests/MemoryMap.Linux.Tests.csproj"
+    ]
+  }
+}

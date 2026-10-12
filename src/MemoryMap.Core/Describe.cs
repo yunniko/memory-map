@@ -8,27 +8,10 @@ public static class Describe
 {
     private const int MaxPids = 8;
 
-    private static readonly Dictionary<string, string> FigureNotes = new(StringComparer.Ordinal)
-    {
-        ["Kernel/nonpaged-pool"] = "Kernel memory that can never be paged out; drivers allocate it.",
-        ["Kernel/paged-pool"] = "Kernel memory that may be paged out; this is the part in RAM now.",
-        ["Kernel/file-cache"] = "File data the system cache holds in RAM.",
-        ["Kernel/driver-code"] = "Driver code loaded in RAM.",
-        ["Kernel/kernel-code"] = "Windows kernel code loaded in RAM.",
-        ["SharedOther/shared"] = "In use but owned by no single process: shared DLLs and memory, page tables and the like.",
-        ["SharedOther/modified"] = "Changed pages waiting to be written to disk before they can be reused.",
-        ["Available/standby"] = "Cached data Windows hands to programs as soon as they need it.",
-        ["Available/free"] = "Unused RAM.",
-    };
-
     /// <summary>Title line and detail lines for a tooltip.</summary>
     public static (string Title, IReadOnlyList<string> Lines) Tooltip(MapNode node, long totalRam)
     {
         var lines = new List<string> { $"{Format.SizeShare(node.Bytes, totalRam)} of RAM" };
-        if (node.Kind == NodeKind.Group)
-        {
-            lines.Add(Breakdown.Label(node.Group));
-        }
         var count = node.ProcessCount;
         if (node.Process is { } process)
         {
@@ -39,7 +22,7 @@ public static class Describe
             lines.Add(count == 1 ? "1 process" : $"{count} processes");
             lines.Add(Pids(node));
         }
-        if (FigureNotes.TryGetValue(node.Key, out var note))
+        if (node.Note is { } note)
         {
             lines.Add(note);
         }

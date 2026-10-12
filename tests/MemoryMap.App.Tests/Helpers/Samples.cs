@@ -13,12 +13,21 @@ internal static class Samples
     public const long Mb = 1024 * 1024;
 
     public static ProcessSample Proc(int pid, string name, long mb, ProcessKind kind = ProcessKind.App) =>
-        new(pid, name + ".exe", kind, kind == ProcessKind.App ? 1 : 0, DateTimeOffset.UnixEpoch.AddSeconds(pid), mb * Mb, mb * Mb * 2, mb * Mb);
+        new(pid, name + ".exe", kind, DateTimeOffset.UnixEpoch.AddSeconds(pid), mb * Mb, mb * Mb * 2, mb * Mb);
 
     public static MemorySnapshot Snapshot(long chromeMb = 3000, long codeMb = 1500, long availableMb = 4096) => new(
         new DateTimeOffset(2026, 10, 12, 16, 0, 0, TimeSpan.Zero),
-        new SystemMemory(16L * 1024 * Mb, availableMb * Mb, 3000 * Mb, 20L * 1024 * Mb, 40L * 1024 * Mb,
-            500 * Mb, 400 * Mb, 800 * Mb, 300 * Mb, 20 * Mb, 10 * Mb, 100 * Mb, TimeSpan.FromHours(5)),
+        new SystemMemory(Windows.WindowsMemorySampler.Names, 16L * 1024 * Mb, availableMb * Mb, 20L * 1024 * Mb, 40L * 1024 * Mb,
+            [
+                new("nonpaged-pool", "Nonpaged pool", 500 * Mb, "Kernel memory that can never be paged out.", true),
+                new("paged-pool", "Paged pool (resident)", 400 * Mb, "Kernel memory that may be paged out.", true),
+                new("file-cache", "File cache (resident)", 300 * Mb, "File data the system cache holds in RAM."),
+                new("driver-code", "Driver code", 20 * Mb, "Driver code loaded in RAM."),
+                new("kernel-code", "Kernel code", 10 * Mb, "Windows kernel code loaded in RAM."),
+            ],
+            [new("modified", "Modified (waiting to be written)", 100 * Mb, "Changed pages waiting to be written.")],
+            [new("standby", "Standby cache", 3000 * Mb, "Cached data Windows hands to programs.")],
+            TimeSpan.FromHours(5)),
         [
             Proc(10, "chrome", chromeMb), Proc(11, "chrome", 400), Proc(12, "code", codeMb), Proc(13, "firefox", 900),
             Proc(20, "svchost", 300, ProcessKind.Service), Proc(21, "MsMpEng", 250, ProcessKind.Service),

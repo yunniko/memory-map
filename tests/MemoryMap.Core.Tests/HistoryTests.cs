@@ -54,7 +54,7 @@ public class HistoryTests
         var point = history.Newest!;
 
         Assert.Equal(12 * Gb, point.Used);
-        Assert.Equal(900 * Mb, point.KernelPools); // 500 nonpaged + 400 paged resident
+        Assert.Equal(900 * Mb, point.Kernel); // 500 nonpaged + 400 paged resident
         var chrome = Enumerable.Range(0, 2).Single(id => history.App(id).Name == "chrome");
         Assert.Equal(3500 * Mb, point.AppBytes(chrome));
         var tiny = Enumerable.Range(0, 2).Single(id => history.App(id).Name == "tiny"); // folded into "Other" on the map
@@ -69,7 +69,7 @@ public class HistoryTests
 
         var chart = HistoryChart.Build(history, TimeSpan.FromMinutes(5), new SeriesSlots());
 
-        Assert.Equal(["In use", "Kernel pools", "app8", "app7", "app6", "app5", "app4"], chart.Series.Select(s => s.Name));
+        Assert.Equal(["In use", "Kernel allocations", "app8", "app7", "app6", "app5", "app4"], chart.Series.Select(s => s.Name));
         Assert.All(chart.Series, s => Assert.Equal(chart.Points.Count, s.Values.Count));
         Assert.InRange(chart.Points.Count, 300, 301);
         Assert.True(chart.YMax >= 12 * Gb);

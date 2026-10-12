@@ -11,12 +11,12 @@ public sealed class HistoryPoint
     private readonly int[] _ids;
     private readonly int[] _kib;
 
-    internal HistoryPoint(DateTimeOffset taken, TimeSpan interval, long used, long kernelPools, long total, int[] ids, int[] kib)
+    internal HistoryPoint(DateTimeOffset taken, TimeSpan interval, long used, long kernel, long total, int[] ids, int[] kib)
     {
         Taken = taken;
         Interval = interval;
         Used = used;
-        KernelPools = kernelPools;
+        Kernel = kernel;
         Total = total;
         _ids = ids;
         _kib = kib;
@@ -29,8 +29,8 @@ public sealed class HistoryPoint
 
     public long Used { get; }
 
-    /// <summary>The nonpaged pool plus the paged pool's resident part: kernel memory in RAM.</summary>
-    public long KernelPools { get; }
+    /// <summary>The kernel's own allocations in RAM (<see cref="SystemMemory.KernelAllocations"/>).</summary>
+    public long Kernel { get; }
 
     public long Total { get; }
 
@@ -96,7 +96,7 @@ public sealed class MemoryHistory
         // Apps folded into "Other" are still apps: their lines must not vanish when they shrink.
         var apps = breakdown.Root.Apps().Select(a => (Id: IdOf(a), Kib: (int)Math.Min(int.MaxValue, a.Bytes / 1024))).ToList();
         apps.Sort((a, b) => a.Id.CompareTo(b.Id));
-        var point = new HistoryPoint(breakdown.Snapshot.Taken, interval ?? Resolution, sys.Used, sys.NonpagedPool + sys.PagedPoolResident,
+        var point = new HistoryPoint(breakdown.Snapshot.Taken, interval ?? Resolution, sys.Used, sys.KernelAllocations,
             sys.TotalPhysical, [.. apps.Select(a => a.Id)], [.. apps.Select(a => a.Kib)]);
 
         // Same resolution slot as the newest point: replace it. Comparing slots, not the gap to the

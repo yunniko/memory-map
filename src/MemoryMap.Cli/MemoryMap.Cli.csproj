@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MemoryMap.Core\MemoryMap.Core.csproj" />
+    <ProjectReference Include="..\MemoryMap.Linux\MemoryMap.Linux.csproj" />
     <ProjectReference Include="..\MemoryMap.Windows\MemoryMap.Windows.csproj" />
   </ItemGroup>
 

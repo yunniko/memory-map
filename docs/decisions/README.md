@@ -22,5 +22,9 @@
 - D020 — An entry that starts a host program (cmd, rundll32, a script host) is credited with no processes — active
 - D021 — A startup switch writes the same StartupApproved bytes Windows Settings writes — active
 - D022 — The startup list is read when the tab opens; samples are matched only while it is shown — active
-- D023 — The code lives in a private GitHub repo; CI runs the local gate on a Windows runner — active
+- D023 — The code lives in a private GitHub repo; CI runs the local gate on a Windows runner — runner superseded by D028
 - D024 — Machine-wide startup changes run this exe elevated in a one-shot helper mode — active
+- D025 — System memory is OS-neutral: totals, named figures and names, all supplied by the sampler — active
+- D026 — A Linux process is sized by RssAnon; memory of processes not visible is its own figure — active
+- D027 — A Linux process's kind comes from its name, cgroup and account — active
+- D028 — CI runs the gate on Windows and Ubuntu; Linux covers a solution filter until M2 — active

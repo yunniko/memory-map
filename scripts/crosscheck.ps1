@@ -23,14 +23,16 @@ function Row($name, $sampler, $wmi) {
     }
 }
 
-$processGroups = $dump.groups | Where-Object { $_.group -in 'Apps', 'Windows', 'VirtualMachines' }
+$processGroups = $dump.groups | Where-Object { $_.group -in 'Apps', 'System', 'VirtualMachines' }
+# The OS's named figures (D025), by id.
+function Figure($list, $id) { ($list | Where-Object Id -EQ $id).Bytes }
 $rows = @(
     Row 'Total' $dump.system.TotalPhysical $total
     Row 'Available' $dump.system.Available ($os.FreePhysicalMemory * 1KB)
-    Row 'Standby' $dump.system.Standby ($pm.StandbyCacheCoreBytes + $pm.StandbyCacheNormalPriorityBytes + $pm.StandbyCacheReserveBytes)
-    Row 'Nonpaged pool' $dump.system.NonpagedPool $pm.PoolNonpagedBytes
-    Row 'Paged pool resident' $dump.system.PagedPoolResident $pm.PoolPagedResidentBytes
-    Row 'Modified pages' $dump.system.ModifiedPages $pm.ModifiedPageListBytes
+    Row 'Standby' (Figure $dump.system.AvailableNamed 'standby') ($pm.StandbyCacheCoreBytes + $pm.StandbyCacheNormalPriorityBytes + $pm.StandbyCacheReserveBytes)
+    Row 'Nonpaged pool' (Figure $dump.system.Kernel 'nonpaged-pool') $pm.PoolNonpagedBytes
+    Row 'Paged pool resident' (Figure $dump.system.Kernel 'paged-pool') $pm.PoolPagedResidentBytes
+    Row 'Modified pages' (Figure $dump.system.InUseNamed 'modified') $pm.ModifiedPageListBytes
     Row 'Commit' $dump.system.CommitTotal (($os.TotalVirtualMemorySize - $os.FreeVirtualMemory) * 1KB)
     Row 'Sum of private WS' (($processGroups.Bytes | Measure-Object -Sum).Sum) (($wmiProcs | Measure-Object WorkingSetPrivate -Sum).Sum)
 )

@@ -17,7 +17,7 @@ public class WindowsProcessActionsTests
     }
 
     private static ProcessSample Sample(Process p, DateTimeOffset? startTime = null) =>
-        new(p.Id, "PING.EXE", ProcessKind.App, 1, startTime ?? new DateTimeOffset(p.StartTime), 1, 1, 1);
+        new(p.Id, "PING.EXE", ProcessKind.App, startTime ?? new DateTimeOffset(p.StartTime), 1, 1, 1);
 
     [Fact]
     public void Ends_the_sampled_process()
@@ -64,7 +64,7 @@ public class WindowsProcessActionsTests
     {
         // PID 4 is the System process. Unelevated, Windows denies access to it. Elevated, the
         // start-time check or the critical-process check stops it; that path is not run here.
-        var sample = new ProcessSample(4, "System", ProcessKind.Service, 0, DateTimeOffset.MinValue, 1, 1, 1);
+        var sample = new ProcessSample(4, "System", ProcessKind.Service, DateTimeOffset.MinValue, 1, 1, 1);
 
         var result = _actions.End(sample);
 
