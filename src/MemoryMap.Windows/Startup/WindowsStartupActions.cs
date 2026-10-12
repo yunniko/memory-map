@@ -30,7 +30,7 @@ public sealed class WindowsStartupActions(StartupLocations locations, IStartupLa
             : StartupResult.InSettings(entry),
     };
 
-    public ActionResult ShowInExplorer(StartupEntry entry)
+    public ActionResult ShowFileLocation(StartupEntry entry)
     {
         if (FileToShow(entry) is not { } path)
         {

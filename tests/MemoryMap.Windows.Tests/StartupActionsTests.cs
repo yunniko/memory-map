@@ -200,7 +200,7 @@ public sealed class StartupActionsTests : IDisposable
         Assert.Equal(tool, actions.FileToShow(Only("run/user/Tool")));
         Assert.Equal(broken, actions.FileToShow(Only("folder/user/Broken.lnk")));
         Assert.Null(actions.FileToShow(Only("run/user/Gone")));
-        var result = actions.ShowInExplorer(Only("run/user/Gone"));
+        var result = actions.ShowFileLocation(Only("run/user/Gone"));
         Assert.False(result.Succeeded);
         Assert.Contains("missing", result.Message);
     }

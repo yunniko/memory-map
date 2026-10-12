@@ -1,5 +1,6 @@
 # The merge gate (scripts/check.ps1): format check, warnings-as-errors build, every test that runs on
-# the OS. Windows runs the whole solution; Ubuntu runs MemoryMap.Linux.slnf, including the live /proc test.
+# the OS. Both build the whole solution; Ubuntu runs all but the Windows tests (D030), with the live /proc
+# and process-action tests.
 name: check
 on:
   push:

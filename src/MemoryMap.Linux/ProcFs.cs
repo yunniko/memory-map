@@ -16,9 +16,18 @@ public interface IProcFs
     IEnumerable<int> Pids();
 }
 
+internal static class ProcFsExtensions
+{
+    /// <summary>A file that must be there (meminfo, stat): unreadable is an error, not an exit.</summary>
+    public static string ReadRequired(this IProcFs proc, string path) =>
+        proc.ReadText(path) ?? throw new InvalidDataException($"/proc/{path} could not be read.");
+}
+
 /// <summary>The real <c>/proc</c>.</summary>
 public sealed class ProcFs(string root = "/proc") : IProcFs
 {
+    public string Root => root;
+
     public string? ReadText(string path) => OrNull(() => File.ReadAllText(Path.Combine(root, path)));
 
     public string? ReadLink(string path) => OrNull(() => new FileInfo(Path.Combine(root, path)).LinkTarget);

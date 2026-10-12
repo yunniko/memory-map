@@ -11,6 +11,8 @@ public partial class MainWindow : Window
     private const double TipOffset = 16;
     // Where the pointer last was over the map or the chart: only one can be under it at a time.
     private Point _pointer;
+    // A close waiting for the desktop to say whether it shows a tray icon; further closes wait too.
+    private Task? _pendingClose;
 
     public MainWindow()
     {
@@ -57,21 +59,68 @@ public partial class MainWindow : Window
 
     private bool IsOnScreen => IsVisible && WindowState != WindowState.Minimized;
 
-    /// <summary>Set when a tray icon exists to bring a hidden window back.</summary>
-    public bool CanHideToTray { get; set; }
-
-    /// <summary>Whether a close should hide the window instead: only the user's own close (the
-    /// X, Alt+F4), only with somewhere to come back from, and never when Windows is shutting down.</summary>
-    internal static bool HidesInstead(WindowCloseReason reason, bool programmatic, bool closeToTray, bool canHide) =>
-        canHide && closeToTray && !programmatic && reason == WindowCloseReason.WindowClosing;
+    /// <summary>Whether a close may hide the window instead: only the user's own close (the X,
+    /// Alt+F4) with the setting on, and never when the OS is shutting down. It then hides only if
+    /// a tray icon is there to come back from.</summary>
+    internal static bool HidesInstead(WindowCloseReason reason, bool programmatic, bool closeToTray) =>
+        closeToTray && !programmatic && reason == WindowCloseReason.WindowClosing;
 
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         base.OnClosing(e);
-        if (!e.Cancel && HidesInstead(e.CloseReason, e.IsProgrammatic, Model?.Settings.CloseToTray == true, CanHideToTray))
+        if (e.Cancel || Model is not { } model || !HidesInstead(e.CloseReason, e.IsProgrammatic, model.Settings.CloseToTray))
         {
-            e.Cancel = true;
+            return;
+        }
+        e.Cancel = HidesToTray(model.Tray);
+    }
+
+    /// <summary>Hides the window if <paramref name="tray"/> shows an icon to come back from, and
+    /// returns whether the close is to be cancelled. A fixed answer (Windows) decides at once, as
+    /// does a desktop already known to have no tray (quitting strands nothing); otherwise the
+    /// window stays while the desktop is asked, then hides or closes for real.</summary>
+    internal bool HidesToTray(TrayHost tray)
+    {
+        if (_pendingClose is { IsCompleted: false })
+        {
+            return true;
+        }
+        if (!tray.Shown)
+        {
+            _ = tray.RefreshAsync(); // for the Settings tab, should the window come back
+            return false;
+        }
+        var shown = tray.RefreshAsync();
+        if (!shown.IsCompletedSuccessfully)
+        {
+            _pendingClose = HideOrCloseAsync(shown);
+            return true;
+        }
+        if (shown.Result)
+        {
             Hide();
+        }
+        return shown.Result;
+    }
+
+    private async Task HideOrCloseAsync(Task<bool> trayShown)
+    {
+        bool hide;
+        try
+        {
+            hide = await trayShown;
+        }
+        catch (Exception)
+        {
+            hide = false; // no answer: quitting never strands the window where it cannot be reached
+        }
+        if (hide)
+        {
+            Hide();
+        }
+        else
+        {
+            Close(); // programmatic, so it is not hidden again
         }
     }
 

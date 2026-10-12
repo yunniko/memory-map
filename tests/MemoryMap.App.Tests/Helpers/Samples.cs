@@ -12,12 +12,17 @@ internal static class Samples
 {
     public const long Mb = 1024 * 1024;
 
+    /// <summary>Windows' names, as on the Windows sampler (whose type is Windows-only): the
+    /// window specs run on both OSes over this one Windows-shaped snapshot.</summary>
+    public static readonly PlatformNames Names = new("Windows & services", "WSL / Docker VMs", "Shared & other",
+        "In use but owned by no single process: shared DLLs and memory, page tables and the like.");
+
     public static ProcessSample Proc(int pid, string name, long mb, ProcessKind kind = ProcessKind.App) =>
         new(pid, name + ".exe", kind, DateTimeOffset.UnixEpoch.AddSeconds(pid), mb * Mb, mb * Mb * 2, mb * Mb);
 
     public static MemorySnapshot Snapshot(long chromeMb = 3000, long codeMb = 1500, long availableMb = 4096) => new(
         new DateTimeOffset(2026, 10, 12, 16, 0, 0, TimeSpan.Zero),
-        new SystemMemory(Windows.WindowsMemorySampler.Names, 16L * 1024 * Mb, availableMb * Mb, 20L * 1024 * Mb, 40L * 1024 * Mb,
+        new SystemMemory(Names, 16L * 1024 * Mb, availableMb * Mb, 20L * 1024 * Mb, 40L * 1024 * Mb,
             [
                 new("nonpaged-pool", "Nonpaged pool", 500 * Mb, "Kernel memory that can never be paged out.", true),
                 new("paged-pool", "Paged pool (resident)", 400 * Mb, "Kernel memory that may be paged out.", true),
@@ -38,10 +43,10 @@ internal static class Samples
         Core.Breakdown.Build(Snapshot(chromeMb, codeMb));
 
     public static (MainWindow Window, MainViewModel Model) Open(MemoryBreakdown? breakdown = null, ThemeVariant? theme = null,
-        IProcessActions? actions = null, StartupViewModel? startup = null)
+        IProcessActions? actions = null, StartupViewModel? startup = null, TrayHost? tray = null)
     {
         Avalonia.Application.Current!.RequestedThemeVariant = theme ?? ThemeVariant.Light;
-        var model = new MainViewModel(actions: actions, startup: startup);
+        var model = new MainViewModel(actions: actions, startup: startup, tray: tray);
         if (breakdown is not null)
         {
             model.Apply(breakdown);

@@ -13,7 +13,7 @@ if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 }
 $root = Split-Path $PSScriptRoot
 $exes = if ($Exe) { $Exe } else { @(
-        "$root\src\MemoryMap.App\bin\Release\net10.0-windows\MemoryMap.exe",
+        "$root\src\MemoryMap.App\bin\Release\net10.0\MemoryMap.exe",
         "$root\src\MemoryMap.Cli\bin\Release\net10.0\memmap-dump.exe"
     ) }
 $cases = @(

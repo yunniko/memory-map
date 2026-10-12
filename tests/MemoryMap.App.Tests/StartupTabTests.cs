@@ -250,7 +250,7 @@ public class StartupTabTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.Empty(model.Startup.Items);
-        Assert.Contains("Windows only", window.StartupMessage.Text);
+        Assert.Contains("no startup list", window.StartupMessage.Text);
     }
 
     private sealed class FakePaths(Dictionary<int, string> byPid) : IProcessPaths
@@ -315,7 +315,7 @@ public class StartupTabTests
             return new(ActionOutcome.Done, $"{entry.Name} {(enabled ? "on" : "off")}");
         }
 
-        public ActionResult ShowInExplorer(StartupEntry entry)
+        public ActionResult ShowFileLocation(StartupEntry entry)
         {
             Located.Add(entry.Id);
             return new(ActionOutcome.Failed, $"Could not show {entry.Name}");

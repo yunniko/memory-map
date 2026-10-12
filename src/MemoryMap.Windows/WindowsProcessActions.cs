@@ -44,7 +44,7 @@ public sealed class WindowsProcessActions : IProcessActions
         }
     }
 
-    public ActionResult ShowInExplorer(ProcessSample process)
+    public ActionResult ShowFileLocation(ProcessSample process)
     {
         if (!TryImagePath(process, out var path, out var failure))
         {

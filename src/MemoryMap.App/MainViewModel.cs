@@ -55,12 +55,13 @@ public sealed class MainViewModel : ObservableObject
     private bool _isOnScreen = true;
 
     public MainViewModel(LiveMemory? live = null, IProcessActions? actions = null, SettingsViewModel? settings = null,
-        StartupViewModel? startup = null)
+        StartupViewModel? startup = null, TrayHost? tray = null)
     {
         _live = live;
         _actions = actions;
         Settings = settings ?? new SettingsViewModel();
         Startup = startup ?? new StartupViewModel();
+        Tray = tray ?? TrayHost.Never();
         Startup.Noticed += message => Notice = message;
         Startup.ShowOnMapRequested += ShowOnMap;
         _notice = Settings.Problem;
@@ -85,6 +86,9 @@ public sealed class MainViewModel : ObservableObject
     public HistoryViewModel History { get; } = new();
 
     public StartupViewModel Startup { get; }
+
+    /// <summary>Whether a tray icon can bring the window back; closing quits without one.</summary>
+    public TrayHost Tray { get; }
 
     /// <summary>True from the sample that crossed the alert line until memory recovers (D011).</summary>
     public bool IsLowMemory { get => _isLowMemory; private set => Set(ref _isLowMemory, value); }
@@ -282,9 +286,9 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Opens Explorer at the node's executable; says why when it cannot. Every process
+    /// <summary>Opens the file manager at the node's executable; says why when it cannot. Every process
     /// of an app shares the file, so one that has exited since the sample hands over to the next.</summary>
-    public async Task ShowInExplorerAsync(MapNode node)
+    public async Task ShowFileLocationAsync(MapNode node)
     {
         if (_actions is not { } actions)
         {
@@ -293,7 +297,7 @@ public sealed class MainViewModel : ObservableObject
         ActionResult? result = null;
         foreach (var process in ProcessTarget.ToLocate(node))
         {
-            result = await Task.Run(() => actions.ShowInExplorer(process));
+            result = await Task.Run(() => actions.ShowFileLocation(process));
             if (result.Outcome != ActionOutcome.AlreadyExited)
             {
                 break;
@@ -340,7 +344,7 @@ public sealed class MainViewModel : ObservableObject
         NodeCommand.ZoomIn => () => Task.FromResult(ZoomInto(node)),
         NodeCommand.Back => () => Task.FromResult(Back()),
         NodeCommand.End => () => EndAsync(option.Target!),
-        NodeCommand.Locate => () => ShowInExplorerAsync(node),
+        NodeCommand.Locate => () => ShowFileLocationAsync(node),
         _ => throw new ArgumentOutOfRangeException(nameof(option), option.Command, "no handler for this command"),
     };
 

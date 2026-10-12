@@ -27,4 +27,7 @@
 - D025 — System memory is OS-neutral: totals, named figures and names, all supplied by the sampler — active
 - D026 — A Linux process is sized by RssAnon; memory of processes not visible is its own figure — active
 - D027 — A Linux process's kind comes from its name, cgroup and account — active
-- D028 — CI runs the gate on Windows and Ubuntu; Linux covers a solution filter until M2 — active
+- D028 — CI runs the gate on Windows and Ubuntu; Linux covers a solution filter until M2 — filter superseded by D030
+- D029 — Linux process actions act on the user's own processes, through a pidfd — active
+- D030 — The gate builds the whole solution on both OSes; Windows tests run only on Windows — active
+- D031 — Close-to-tray asks the desktop for a tray host at each close — active

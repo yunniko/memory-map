@@ -65,6 +65,17 @@ internal static class ProcText
         var end = token.IndexOfAny(' ', '\n');
         return double.Parse(end < 0 ? token : token[..end], NumberStyles.Float, CultureInfo.InvariantCulture);
     }
+
+    /// <summary>The real user id from a parsed status file; -1 if absent.</summary>
+    public static int Uid(Dictionary<string, long> status) => (int)status.GetValueOrDefault("Uid", -1);
+
+    /// <summary>The executable's path from a process's exe link, without the " (deleted)" the kernel
+    /// appends once the file has been replaced since the process started.</summary>
+    public static string ExePath(string link)
+    {
+        const string deleted = " (deleted)";
+        return link.EndsWith(deleted, StringComparison.Ordinal) ? link[..^deleted.Length] : link;
+    }
 }
 
 /// <param name="Comm">The kernel's name for the process: the executable's file name cut to 15 characters,

@@ -7,7 +7,7 @@ public enum ActionOutcome
     /// <summary>The process is gone, or its PID now belongs to a different process.</summary>
     AlreadyExited,
 
-    /// <summary>Windows refused: another user's or an elevated or protected process.</summary>
+    /// <summary>The OS refused: another user's process, or an elevated or protected one.</summary>
     AccessDenied,
 
     /// <summary>Memory Map will not do it (a critical system process, or itself).</summary>
@@ -34,8 +34,12 @@ public sealed record ActionResult(ActionOutcome Outcome, string Message)
         $"Windows denied access to {verb} {p.Label}. It runs as another user, elevated, or protected; "
         + "Memory Map would need to run as administrator, and protected processes refuse even then.");
 
+    /// <summary>Linux: the process belongs to another account, and the app never asks for root.</summary>
+    public static ActionResult NotYours(ProcessSample p, string verb) => new(ActionOutcome.AccessDenied,
+        $"{p.Label} runs as another user. Memory Map can {verb} only your own processes; it does not ask for root.");
+
     public static ActionResult Critical(ProcessSample p) => new(ActionOutcome.Refused,
-        $"{p.Label} is a critical Windows process: ending it would crash the system, so Memory Map will not.");
+        $"{p.Label} is a critical system process: ending it would crash the system, so Memory Map will not.");
 
     public static ActionResult Self() => new(ActionOutcome.Refused, "Memory Map does not end itself; close its window instead.");
 
@@ -51,7 +55,8 @@ public interface IProcessActions
 {
     ActionResult End(ProcessSample process);
 
-    ActionResult ShowInExplorer(ProcessSample process);
+    /// <summary>Opens the desktop's file manager at the process's executable.</summary>
+    ActionResult ShowFileLocation(ProcessSample process);
 }
 
 /// <summary>Which process an action on a map node would touch.</summary>

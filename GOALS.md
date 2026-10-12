@@ -135,7 +135,7 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M1 — Linux data engine. A `MemoryMap.Linux` project with a `/proc` sampler behind
   `IMemorySampler`, Linux groups in Core, and the CLI (`--json`, table) running on Linux.
   Checked against `/proc/meminfo`, `free` and `ps` on WSL Ubuntu. CI gets an Ubuntu job.
-- [ ] M2 — The app on Linux. One app project builds for both OSes and picks the OS services
+- [x] M2 — The app on Linux. One app project builds for both OSes and picks the OS services
   at startup. Linux process actions, settings path, tray with fallback. Headless UI tests
   run on both OSes; a real window run under WSLg.
 - [ ] M3 — Startup tab on Linux. An XDG autostart reader and per-user override switch, plus
@@ -146,6 +146,13 @@ Completed goals: `docs/goals-archive.md`.
   Ubuntu; a checklist for the Owner's Linux PC; README and handover.
 
 **Progress log** (newest first):
+- 2026-10-12 — **M2 done** (one app project for both OSes, `PlatformServices`; Linux process
+  actions through pidfds, own processes only, init refused; settings in `~/.config/MemoryMap/`;
+  close-to-tray asks the desktop at each close; slnf removed, whole solution gated on both OSes;
+  D029–D031). Verified: Windows `check.ps1` 285 (277 passed, 8 skipped); WSL Ubuntu gate 202/202
+  twice; `crosscheck-linux.py` PASS 0.17%; a WSLg window run (Map, Table, History, Settings save,
+  no-tray close quits). /simplify and /code-review applied; record
+  `docs/reviews/2026-10-12-g003-m2-app-on-linux.md`. Next: M3, the XDG Startup tab.
 - 2026-10-12 — **M1 done** (af255b9: `/proc` sampler without root, RssAnon sizes, kinds from
   name/cgroup/account, OS names supplied by the sampler; CLI on Linux; CI on windows-2025 and
   ubuntu-24.04; D025–D028). Verified: Windows `check.ps1` 275 (274 passed, 1 skipped); WSL

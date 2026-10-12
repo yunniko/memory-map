@@ -3,8 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using MemoryMap.Core;
-using MemoryMap.Windows;
-using MemoryMap.Windows.Startup;
 
 namespace MemoryMap.App;
 
@@ -17,10 +15,10 @@ public partial class App : Application
         // Only a real desktop run starts sampling; headless tests build their own window.
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            WindowsMemorySampler sampler;
+            PlatformServices os;
             try
             {
-                sampler = new WindowsMemorySampler();
+                os = PlatformServices.ForThisOs();
             }
             catch (Exception e)
             {
@@ -33,10 +31,9 @@ public partial class App : Application
             }
             var (stored, problem) = SettingsStore.Load(SettingsViewModel.DefaultPath);
             var settings = new SettingsViewModel(stored, SettingsViewModel.DefaultPath, problem);
-            var live = new LiveMemory(sampler, TimeSpan.FromSeconds(stored.RefreshSeconds));
-            var startup = new StartupViewModel(new WindowsStartupReader(), new WindowsStartupActions(), new WindowsProcessPaths());
-            var model = new MainViewModel(live, new WindowsProcessActions(), settings, startup);
-            var window = new MainWindow { DataContext = model, CanHideToTray = true };
+            var live = new LiveMemory(os.Sampler, TimeSpan.FromSeconds(stored.RefreshSeconds));
+            var model = new MainViewModel(live, os.Actions, settings, os.Startup, os.Tray);
+            var window = new MainWindow { DataContext = model };
             desktop.MainWindow = window;
             // Closing the window may only hide it; the app ends when it really closes (Exit, or tray off).
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
@@ -45,8 +42,10 @@ public partial class App : Application
             {
                 tray.Dispose();
                 live.Dispose();
-                sampler.Dispose();
+                os.Sampler.Dispose();
             };
+            // For the Settings tab; each close asks again (D031).
+            _ = os.Tray.RefreshAsync();
             live.Start();
         }
         base.OnFrameworkInitializationCompleted();

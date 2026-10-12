@@ -47,7 +47,7 @@ public class HistoryAndTrayTests
         var frame = Capture(window, "history-light");
         var origin = window.Chart.TranslatePoint(plot.TopLeft, window)!.Value;
         var y = origin.Y + chart.Y(chart.Series[0].Values[^1], plot.Height);
-        Assert.Equal(Color.Parse("#2a78d6"), PixelAt(frame, (int)(origin.X + plot.Width - 3), (int)Math.Round(y)));
+        Assert.Contains(Color.Parse("#2a78d6"), Column(frame, (int)(origin.X + plot.Width - 3), y));
     }
 
     [AvaloniaFact]
@@ -81,8 +81,13 @@ public class HistoryAndTrayTests
         var frame = Capture(window, "history-dark");
         var origin = window.Chart.TranslatePoint(plot.TopLeft, window)!.Value;
         var y = origin.Y + chart.Y(chart.Series[0].Values[^1], plot.Height);
-        Assert.Equal(Color.Parse("#3987e5"), PixelAt(frame, (int)(origin.X + plot.Width - 3), (int)Math.Round(y)));
+        Assert.Contains(Color.Parse("#3987e5"), Column(frame, (int)(origin.X + plot.Width - 3), y));
     }
+
+    // The pixels a 2 px line centred at y covers. Where y falls between rows (Linux's font metrics
+    // shift the plot by a fraction) only the middle row is wholly the line's colour, so all are looked at.
+    private static Color[] Column(Avalonia.Media.Imaging.WriteableBitmap frame, int x, double y) =>
+        [.. Enumerable.Range((int)Math.Floor(y) - 1, 3).Select(row => PixelAt(frame, x, row))];
 
     [AvaloniaFact]
     public void Samples_are_recorded_on_every_tab_but_the_chart_is_built_only_on_its_own()
@@ -209,14 +214,81 @@ public class HistoryAndTrayTests
     }
 
     [Theory]
-    [InlineData(WindowCloseReason.WindowClosing, false, true, true, true)]
-    [InlineData(WindowCloseReason.WindowClosing, true, true, true, false)] // Exit from the tray closes for real
-    [InlineData(WindowCloseReason.WindowClosing, false, false, true, false)] // the setting is off
-    [InlineData(WindowCloseReason.WindowClosing, false, true, false, false)] // no tray to come back from
-    [InlineData(WindowCloseReason.OSShutdown, false, true, true, false)]
-    [InlineData(WindowCloseReason.ApplicationShutdown, false, true, true, false)]
-    public void Closing_hides_to_the_tray_only_for_the_users_own_close(WindowCloseReason reason, bool programmatic, bool setting, bool canHide, bool hides) =>
-        Assert.Equal(hides, MainWindow.HidesInstead(reason, programmatic, setting, canHide));
+    [InlineData(WindowCloseReason.WindowClosing, false, true, true)]
+    [InlineData(WindowCloseReason.WindowClosing, true, true, false)] // Exit from the tray closes for real
+    [InlineData(WindowCloseReason.WindowClosing, false, false, false)] // the setting is off
+    [InlineData(WindowCloseReason.OSShutdown, false, true, false)]
+    [InlineData(WindowCloseReason.ApplicationShutdown, false, true, false)]
+    public void Closing_hides_to_the_tray_only_for_the_users_own_close(WindowCloseReason reason, bool programmatic, bool setting, bool hides) =>
+        Assert.Equal(hides, MainWindow.HidesInstead(reason, programmatic, setting));
+
+    [AvaloniaFact]
+    public void Closing_hides_the_window_while_a_tray_icon_is_shown()
+    {
+        var (window, model) = Open(tray: TrayHost.Always());
+
+        Assert.True(window.HidesToTray(model.Tray)); // the close is cancelled
+        Assert.False(window.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public void Without_a_tray_closing_quits_and_settings_say_why()
+    {
+        var (window, model) = Open(tray: TrayHost.Never());
+
+        Assert.False(window.HidesToTray(model.Tray)); // the close goes ahead
+        Assert.False(window.TrayBox.IsEnabled);
+        Assert.True(window.NoTrayNote.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public async Task A_desktop_that_lost_its_tray_is_asked_at_the_close_and_the_window_closes()
+    {
+        var trayThere = true;
+        using var answer = new ManualResetEventSlim(initialState: true);
+        var tray = TrayHost.Probed(() =>
+        {
+            answer.Wait();
+            return trayThere;
+        });
+        var (window, _) = Open(tray: tray);
+        Assert.True(await tray.RefreshAsync());
+        var closed = new TaskCompletionSource();
+        window.Closed += (_, _) => closed.TrySetResult();
+        trayThere = false;
+        answer.Reset(); // the desktop is slow to answer, so the close is seen waiting
+
+        Assert.True(window.HidesToTray(tray)); // cancelled for now, while the desktop is asked
+        Assert.True(window.IsVisible);
+        answer.Set();
+        await closed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.False(tray.Shown);
+        Assert.True(window.NoTrayNote.IsVisible);
+    }
+
+    [AvaloniaFact]
+    public async Task A_desktop_that_cannot_be_asked_closes_and_a_second_close_waits_for_the_first()
+    {
+        using var answer = new ManualResetEventSlim();
+        var probes = 0;
+        var tray = TrayHost.Probed(() =>
+        {
+            Interlocked.Increment(ref probes);
+            answer.Wait();
+            throw new InvalidOperationException("The session bus went away.");
+        });
+        var (window, _) = Open(tray: tray);
+        var closed = new TaskCompletionSource();
+        window.Closed += (_, _) => closed.TrySetResult();
+
+        Assert.True(window.HidesToTray(tray));
+        Assert.True(window.HidesToTray(tray)); // a second click waits for the same answer
+        answer.Set();
+        await closed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(1, probes);
+    }
 
     private static Avalonia.Media.Imaging.WriteableBitmap Readable(Avalonia.Media.Imaging.Bitmap bitmap)
     {

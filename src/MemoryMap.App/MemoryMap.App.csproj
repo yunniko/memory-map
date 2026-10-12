@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <!-- The app samples memory through the Windows-only sampler (G-001 constraint). -->
-    <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>MemoryMap.App</RootNamespace>
     <AssemblyName>MemoryMap</AssemblyName>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
@@ -17,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MemoryMap.Core\MemoryMap.Core.csproj" />
+    <ProjectReference Include="..\MemoryMap.Linux\MemoryMap.Linux.csproj" />
     <ProjectReference Include="..\MemoryMap.Windows\MemoryMap.Windows.csproj" />
   </ItemGroup>
 

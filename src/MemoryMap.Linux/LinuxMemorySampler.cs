@@ -1,4 +1,3 @@
-using System.Globalization;
 using MemoryMap.Core;
 
 namespace MemoryMap.Linux;
@@ -35,7 +34,6 @@ public sealed class LinuxMemorySampler : IMemorySampler
     // Name and kind of each process, read once per (pid, start ticks, comm, uid): pid and start
     // name one process, and comm and uid change when it execs or drops privileges after fork.
     private Dictionary<(int Pid, long Start, string Comm, int Uid), (string Image, ProcessKind Kind)> _identities = [];
-    private DateTimeOffset? _bootTime; // constant until the next boot
     private bool _disposed;
 
     public LinuxMemorySampler(IProcFs? proc = null, TimeProvider? clock = null)
@@ -53,8 +51,7 @@ public sealed class LinuxMemorySampler : IMemorySampler
         lock (_lock)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            _bootTime ??= BootTime();
-            var processes = ReadProcesses(_bootTime.Value);
+            var processes = ReadProcesses(ProcClock.BootTime(_proc));
             var system = ReadSystem(processes.Sum(p => p.PrivateWorkingSet));
             return new MemorySnapshot(_clock.GetLocalNow(), system, processes);
         }
@@ -63,7 +60,7 @@ public sealed class LinuxMemorySampler : IMemorySampler
     /// <param name="processAnon">The resident anonymous memory of every process sampled.</param>
     private SystemMemory ReadSystem(long processAnon)
     {
-        var m = ProcText.Fields(Required("meminfo"));
+        var m = ProcText.Fields(_proc.ReadRequired("meminfo"));
         long Get(string key) => m.GetValueOrDefault(key);
         if (Get("MemTotal") <= 0 || !m.ContainsKey("MemFree"))
         {
@@ -104,19 +101,7 @@ public sealed class LinuxMemorySampler : IMemorySampler
                 new("reclaimable", "Reclaimable cache", available - free,
                     "File and kernel caches Linux hands to programs as soon as they need them."),
             ],
-            Uptime: TimeSpan.FromSeconds(ProcText.FirstNumber(Required("uptime"))));
-    }
-
-    private DateTimeOffset BootTime()
-    {
-        foreach (var line in Required("stat").AsSpan().EnumerateLines())
-        {
-            if (line.StartsWith("btime ") && long.TryParse(line[6..].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var seconds))
-            {
-                return DateTimeOffset.FromUnixTimeSeconds(seconds);
-            }
-        }
-        throw new InvalidDataException("/proc/stat has no btime line.");
+            Uptime: TimeSpan.FromSeconds(ProcText.FirstNumber(_proc.ReadRequired("uptime"))));
     }
 
     private List<ProcessSample> ReadProcesses(DateTimeOffset bootTime)
@@ -132,7 +117,7 @@ public sealed class LinuxMemorySampler : IMemorySampler
                 continue;
             }
             var status = ProcText.Fields(statusText);
-            var key = (pid, stat.StartTicks, stat.Comm, (int)status.GetValueOrDefault("Uid", -1));
+            var key = (pid, stat.StartTicks, stat.Comm, ProcText.Uid(status));
             if (!_identities.TryGetValue(key, out var identity))
             {
                 identity = Identify(pid, key.Comm, key.Item4);
@@ -144,7 +129,7 @@ public sealed class LinuxMemorySampler : IMemorySampler
                 Pid: pid,
                 ImageName: identity.Image,
                 Kind: identity.Kind,
-                StartTime: bootTime.AddSeconds((double)stat.StartTicks / ProcText.TicksPerSecond).ToLocalTime(),
+                StartTime: ProcClock.StartTime(bootTime, stat.StartTicks),
                 PrivateWorkingSet: anon,
                 WorkingSet: status.GetValueOrDefault("VmRSS"),
                 PrivateCommit: anon + status.GetValueOrDefault("VmSwap")));
@@ -174,8 +159,7 @@ public sealed class LinuxMemorySampler : IMemorySampler
     {
         if (_proc.ReadLink($"{pid}/exe") is { Length: > 0 } exe)
         {
-            const string deleted = " (deleted)"; // the file was replaced since the process started
-            return Path.GetFileName(exe.EndsWith(deleted, StringComparison.Ordinal) ? exe[..^deleted.Length] : exe);
+            return Path.GetFileName(ProcText.ExePath(exe));
         }
         if (comm.Length == 15 && _proc.ReadText($"{pid}/cmdline") is { Length: > 0 } cmdline)
         {
@@ -190,9 +174,6 @@ public sealed class LinuxMemorySampler : IMemorySampler
         }
         return comm;
     }
-
-    private string Required(string path) =>
-        _proc.ReadText(path) ?? throw new InvalidDataException($"/proc/{path} could not be read.");
 
     public void Dispose()
     {

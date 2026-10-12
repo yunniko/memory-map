@@ -1,9 +1,9 @@
 # memory-map — Handover
 Last verified: 2026-10-12 at af255b9
 
-A desktop app (C#, Avalonia) showing RAM as a live treemap; Windows today, Linux in progress.
+A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and (in progress) Linux.
 G-001 is done (`docs/goals-archive.md`); G-002, a Startup view, is built and awaits the Owner's
-checks and sign-off; G-003, the Linux version, is active at M2 (`GOALS.md`).
+checks and sign-off; G-003, the Linux version, is active at M3 (`GOALS.md`).
 Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -20,16 +20,19 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   follows its node across refreshes and falls back to the nearest ancestor (D009).
 - **Process actions work.** Right-click a single process for *End …*: always confirmed,
   guarded by start time (D008), critical processes and the app itself refused. *Open file
-  location* opens Explorer. Failures show in a dismissable notice bar.
+  location* opens Explorer, or the file manager on Linux. Failures show in a dismissable notice
+  bar. On Linux both act on the user's own processes only, through a pidfd (D029).
 - **History works.** It charts In use, Kernel allocations and the window's five biggest apps
   over 5–60 minutes, keeping at most one point a second for an hour (D010). Lines break
   where sampling paused. Line colours stay with their app (D012).
 - **Tray and alert work.** The tray icon is a gauge of RAM in use. Closing the window hides
-  it to the tray by default. The low-memory alert is a corner window that takes no focus
+  it to the tray by default, only while the desktop shows a tray icon; otherwise closing quits
+  and Settings says why (D031). The low-memory alert is a corner window that takes no focus
   (D011).
 - **Settings work.** Refresh (0.5–5 s), a slower refresh while hidden or minimised (same as
   shown, 5, 10 or 30 s; off by default, D016), alerts, threshold and close-to-tray. Each
-  applies at once and is saved to %APPDATA%\MemoryMap\settings.json (D013).
+  applies at once and is saved to %APPDATA%\MemoryMap\settings.json, or
+  `~/.config/MemoryMap/settings.json` on Linux; the footer names the file (D013).
 - **Rendering is software, not GPU (D015).** GPU rendering grew 135 → 231 MB in 10 minutes
   on the History tab. Software rendering holds 48–55 MB at equal CPU.
 - **Footprint (criterion 9).** Measurements are in `docs/reviews/2026-10-12-m5-footprint.md`.
@@ -62,16 +65,21 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     `docs/reviews/2026-10-12-g002-m1-startup-crosscheck.md`.
 - **Linux data engine (G-003 M1).** `src/MemoryMap.Linux/` samples /proc without root: sizes by
   RssAnon (D026), kinds from name, cgroup and account (D027), memory in other PID namespaces
-  shown as "Programs not visible here". `memmap-dump` runs on Linux (table and `--json`); the app
-  does not yet (M2). Record: `docs/reviews/2026-10-12-g003-m1-linux-sampler.md`.
+  shown as "Programs not visible here". `memmap-dump` runs on Linux (table and `--json`).
+  Record: `docs/reviews/2026-10-12-g003-m1-linux-sampler.md`.
   - On WSL Ubuntu 24.04: `scripts/crosscheck-linux.py` against `free`, meminfo and `ps`: PASS,
-    worst 0.06% of RAM; process count 43/43. A sample takes about 4 ms.
-- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 275 tests
-  (274 passed, 1 skipped: the Linux-only live test). On WSL Ubuntu, which has no pwsh, the same steps pass over
-  `MemoryMap.Linux.slnf`: 142/142. GitHub Actions
-  runs the gate on windows-2025 and ubuntu-24.04 on every push to main (D028).
+    worst 0.17% of RAM; process count 43/43. A sample takes about 4 ms.
+- **The app runs on Linux (G-003 M2).** Under WSLg the Map, Table, History and Settings tabs
+  work, a setting saves to `~/.config`, and with no tray host closing quits. The app's private
+  memory there is 43 MB. It needs libICE and libSM (the package will depend on them). The Startup
+  tab says there is no list yet (M3). Record: `docs/reviews/2026-10-12-g003-m2-app-on-linux.md`.
+- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 285 tests
+  (277 passed, 8 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
+  pass over the whole solution: 202/202 (D030). GitHub Actions runs the gate on windows-2025 and
+  ubuntu-24.04 on every push to main (D028).
 - `scripts/crosscheck.ps1` against WMI: PASS, worst difference 1.4% of RAM (limit 2%).
-- Not run: the critical-process refusal, because it needs an elevated session.
+- Not run: the Windows critical-process refusal, because it needs an elevated session (on
+  Linux, init's refusal is tested).
 - "Shared & other" is about 3.5 GB (23% of RAM) on this PC. It is real shared memory (D003).
 
 ## How things fit together
@@ -106,15 +114,18 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 - `MemoryMap.Linux` holds `LinuxMemorySampler`, reading through `IProcFs` so tests feed it text
   (`tests/MemoryMap.Linux.Tests/FakeProcFs.cs`); `ProcText.cs` parses stat, status and meminfo.
   A process's name and kind are cached per (pid, start, comm, uid).
-- `MemoryMap.Cli` picks the sampler by OS. `MemoryMap.Linux.slnf` is the Linux build until the
-  app builds there (M2).
+- `MemoryMap.Linux` also holds `LinuxProcessActions` and `Desktop.cs` (the session bus through
+  `dbus-send`: tray host, file manager). `ProcClock.cs` gives sampler and actions the same start time.
+- `MemoryMap.Cli` picks the sampler by OS; the app picks all its OS services once, in
+  `src/MemoryMap.App/PlatformServices.cs`. The app targets plain `net10.0` for both OSes.
 - `MemoryMap.App`:
   - `Program.cs` selects software rendering.
   - `MainViewModel.cs` applies the latest breakdown on the UI thread. It feeds the history
     and the alert on every sample. Its `IsOnScreen` (set by the window) picks the sampling
     interval and whether the chart is built.
   - `TreemapControl.cs` redraws the whole map each refresh (D017).
-  - `TrayController.cs` owns the tray icon and the `AlertWindow`.
+  - `TrayController.cs` owns the tray icon and the `AlertWindow`; `TrayHost.cs` says whether a
+    tray icon is shown, and `MainWindow.OnClosing` asks it before hiding (D031).
   - Colours come from `App.axaml` resources through `MapPalette.cs`.
 - The groups sum to total RAM plus `MemoryBreakdown.Skew`, normally 0.
 
@@ -132,7 +143,10 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 - Change the chart's series colours only after re-running the dataviz palette validator
   (D012).
 - Ending a process is always confirmed and acts on one process only, on a handle whose start
-  time matches the sample (G-001 criterion 6; D008).
+  time matches the sample (G-001 criterion 6; D008). On Linux, only the user's own processes,
+  never with root (G-003 criteria 1–2; D029).
+- Closing hides the window only while a tray icon is shown, else it quits (G-003 criterion 3;
+  D031).
 - xunit.v3 stays at the version `Avalonia.Headless.XUnit` is built against, 3.2.2 today (D006).
 - Tests never touch real autostart entries: they read and write only the `StartupFixture`
   scratch key and temp folders (G-002 and G-003 constraints). Checks against Windows use
@@ -141,14 +155,14 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 - The app stays unelevated; a machine-wide change goes through the one-shot helper, one admin
   prompt per change (G-002 constraint; D024). The helper refuses user-scope ids: elevated, it
   would see the administrator's HKCU (D024).
-- `scripts/check.ps1` is the merge gate on both OSes, locally and in CI (STANDARDS.md →
-  formatter in CI; G-003 criterion 5; D028).
+- `scripts/check.ps1` is the merge gate on both OSes over the whole solution, locally and in CI
+  (STANDARDS.md → formatter in CI; G-003 criteria 5 and 7; D028, D030).
 
 ## Next steps and open questions
 
-- G-003 M2: the app on Linux (one app project for both OSes, Linux process actions, settings
-  in `~/.config/MemoryMap/`, tray with fallback, headless tests on both OSes, a real WSLg run,
-  and `MemoryMap.Linux.slnf` removed). Then M3 (XDG Startup tab) and M4 (linux-x64 file, `.deb`).
+- G-003 M3: the Startup tab for XDG autostart (per-user `Hidden=true` overrides, system files
+  never edited) and systemd user services read-only. Then M4 (linux-x64 file, `.deb`, lintian,
+  install and remove on WSL, the Owner's Linux checklist).
 - Awaiting the Owner: `docs/second-pc-checklist.md` (the real administrator prompt and Task
   Manager on this PC; a second PC for criterion 6), then G-002 sign-off.
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.

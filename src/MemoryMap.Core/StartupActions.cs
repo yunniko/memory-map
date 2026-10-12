@@ -11,7 +11,7 @@ public interface IStartupActions
     ActionResult SetEnabled(StartupEntry entry, bool enabled);
 
     /// <summary>Opens the file manager at the entry's program file (or its Startup-folder file).</summary>
-    ActionResult ShowInExplorer(StartupEntry entry);
+    ActionResult ShowFileLocation(StartupEntry entry);
 }
 
 /// <summary>The sentences startup actions report, worded the same by every implementation.</summary>

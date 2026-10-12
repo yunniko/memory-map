@@ -118,8 +118,8 @@ public sealed class StartupItem : ObservableObject
 /// The Startup tab: every program that starts at sign-in (read off the UI thread each time the
 /// tab is opened or refreshed), what each costs in memory now (matched on every sample while
 /// the tab is on screen), and the switch for each. Outcomes go to <see cref="Noticed"/>; "Show
-/// on map" goes to <see cref="ShowOnMapRequested"/>. Without a reader (not Windows, or a
-/// headless test that gives none) the tab says so and stays empty.
+/// on map" goes to <see cref="ShowOnMapRequested"/>. Without a reader (a system without
+/// one, or a headless test that gives none) the tab says so and stays empty.
 /// </summary>
 public sealed class StartupViewModel : ObservableObject
 {
@@ -140,7 +140,7 @@ public sealed class StartupViewModel : ObservableObject
         _reader = reader;
         _actions = actions;
         _paths = paths;
-        _message = reader is null ? "The startup list is available on Windows only." : "";
+        _message = reader is null ? "There is no startup list on this system." : "";
     }
 
     /// <summary>A sentence for the notice bar: the outcome of a change or a file-location request.</summary>
@@ -186,7 +186,7 @@ public sealed class StartupViewModel : ObservableObject
     internal void Switch(StartupItem item, bool enabled) => Change = SetEnabledAsync(item, enabled);
 
     /// <summary>"Open file location"; only a failure is reported.</summary>
-    public void Locate(StartupItem item) => Change = ShowInExplorerAsync(item);
+    public void Locate(StartupItem item) => Change = ShowFileLocationAsync(item);
 
     /// <summary>Reads the list again, off the UI thread, and matches it to the newest processes.</summary>
     public async Task LoadAsync()
@@ -287,14 +287,14 @@ public sealed class StartupViewModel : ObservableObject
         await LoadAsync();
     }
 
-    public async Task ShowInExplorerAsync(StartupItem item)
+    public async Task ShowFileLocationAsync(StartupItem item)
     {
         if (_actions is not { } actions)
         {
             return;
         }
         var entry = item.Entry;
-        var result = await Task.Run(() => actions.ShowInExplorer(entry));
+        var result = await Task.Run(() => actions.ShowFileLocation(entry));
         if (!result.Succeeded)
         {
             Noticed?.Invoke(result.Message);

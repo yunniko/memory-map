@@ -178,7 +178,7 @@ public class DrillDownAndActionsTests
         };
         var (_, model) = Open(Breakdown(), actions: actions);
 
-        Wait(model.ShowInExplorerAsync(model.Breakdown!.Root.Find("Apps/chrome.exe")!));
+        Wait(model.ShowFileLocationAsync(model.Breakdown!.Root.Find("Apps/chrome.exe")!));
 
         Assert.Equal([10, 11], actions.Located);
         Assert.Null(model.Notice);
@@ -233,7 +233,7 @@ public class DrillDownAndActionsTests
             return EndResult;
         }
 
-        public ActionResult ShowInExplorer(ProcessSample process)
+        public ActionResult ShowFileLocation(ProcessSample process)
         {
             Located.Add(process.Pid);
             return Locate(process);

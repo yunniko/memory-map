@@ -21,13 +21,16 @@ public sealed class SettingsViewModel : ObservableObject
 
     public event Action<AppSettings>? Changed;
 
-    /// <summary>%APPDATA%\MemoryMap\settings.json.</summary>
+    /// <summary>%APPDATA%\MemoryMap\settings.json on Windows, ~/.config/MemoryMap/settings.json on Linux.</summary>
     public static string DefaultPath =>
         System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MemoryMap", "settings.json");
 
     public AppSettings Current { get; private set; }
 
     public string? Path { get; }
+
+    /// <summary>The line under the settings saying where they are kept.</summary>
+    public string SavedTo => Path is { } path ? $"Changes apply at once and are saved to {path}." : "Changes apply at once.";
 
     /// <summary>Why the settings could not be read or saved; null when all is well.</summary>
     public string? Problem { get => _problem; private set => Set(ref _problem, value); }
@@ -95,6 +98,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool AlertsEnabled { get => Current.AlertsEnabled; set => Update(Current with { AlertsEnabled = value }); }
 
+    /// <summary>The saved choice; the window hides only while a tray icon is also shown (D031).</summary>
     public bool CloseToTray { get => Current.CloseToTray; set => Update(Current with { CloseToTray = value }); }
 
     public static decimal MinAlertPercent => AppSettings.MinAlertPercent;

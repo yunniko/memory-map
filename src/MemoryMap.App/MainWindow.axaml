@@ -89,7 +89,7 @@
       </TabItem>
       <TabItem Header="Table">
         <DockPanel>
-          <Grid DockPanel.Dock="Top" ColumnDefinitions="170,*,100,70,80,280" Margin="8,4">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="170,*,100,70,90,280" ColumnSpacing="16" Margin="8,4">
             <Grid.Styles>
               <Style Selector="TextBlock">
                 <Setter Property="FontWeight" Value="SemiBold" />
@@ -101,14 +101,14 @@
             <TextBlock Grid.Column="2" Text="Size" HorizontalAlignment="Right" />
             <TextBlock Grid.Column="3" Text="RAM" HorizontalAlignment="Right" />
             <TextBlock Grid.Column="4" Text="Processes" HorizontalAlignment="Right" />
-            <TextBlock Grid.Column="5" Text="PIDs" Margin="16,0,0,0" />
+            <TextBlock Grid.Column="5" Text="PIDs" />
           </Grid>
           <ScrollViewer>
             <ItemsControl x:Name="TableList" ItemsSource="{Binding Rows}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="core:TableRow">
                   <Border BorderBrush="{DynamicResource Map.Border}" BorderThickness="0,0,0,1" Padding="8,4">
-                    <Grid ColumnDefinitions="170,*,100,70,80,280">
+                    <Grid ColumnDefinitions="170,*,100,70,90,280" ColumnSpacing="16">
                       <Grid.Styles>
                         <Style Selector="TextBlock">
                           <Setter Property="Foreground" Value="{DynamicResource Map.Ink}" />
@@ -123,7 +123,7 @@
                       <TextBlock Grid.Column="2" Text="{Binding Size}" HorizontalAlignment="Right" />
                       <TextBlock Grid.Column="3" Text="{Binding Share}" HorizontalAlignment="Right" />
                       <TextBlock Grid.Column="4" Text="{Binding Processes}" HorizontalAlignment="Right" />
-                      <TextBlock Grid.Column="5" Text="{Binding Pids}" Margin="16,0,0,0" Foreground="{DynamicResource Map.Ink2}" />
+                      <TextBlock Grid.Column="5" Text="{Binding Pids}" Foreground="{DynamicResource Map.Ink2}" />
                     </Grid>
                   </Border>
                 </DataTemplate>
@@ -182,7 +182,7 @@
             <TextBlock x:Name="StartupMessage" Text="{Binding Startup.Message}" VerticalAlignment="Center"
                        TextWrapping="Wrap" Foreground="{DynamicResource Map.Ink2}" />
           </DockPanel>
-          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,170,90,110,260" Margin="8,4">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,170,90,110,260" ColumnSpacing="16" Margin="8,4">
             <Grid.Styles>
               <Style Selector="TextBlock">
                 <Setter Property="FontWeight" Value="SemiBold" />
@@ -192,14 +192,14 @@
             <TextBlock Grid.Column="0" Text="Name" />
             <TextBlock Grid.Column="1" Text="Now" />
             <TextBlock Grid.Column="2" Text="Memory" HorizontalAlignment="Right" />
-            <TextBlock Grid.Column="3" Text="At sign-in" Margin="16,0,0,0" />
+            <TextBlock Grid.Column="3" Text="At sign-in" />
           </Grid>
           <ScrollViewer>
             <ItemsControl x:Name="StartupList" ItemsSource="{Binding Startup.Items}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="app:StartupItem">
                   <Border BorderBrush="{DynamicResource Map.Border}" BorderThickness="0,0,0,1" Padding="8,4">
-                    <Grid ColumnDefinitions="*,170,90,110,260">
+                    <Grid ColumnDefinitions="*,170,90,110,260" ColumnSpacing="16">
                       <Grid.Styles>
                         <Style Selector="TextBlock">
                           <Setter Property="Foreground" Value="{DynamicResource Map.Ink}" />
@@ -216,7 +216,7 @@
                       </StackPanel>
                       <TextBlock Grid.Column="1" Text="{Binding Status}" ToolTip.Tip="{Binding StatusHint}" />
                       <TextBlock Grid.Column="2" Text="{Binding Memory}" HorizontalAlignment="Right" />
-                      <ToggleSwitch Grid.Column="3" Margin="16,0,0,0" IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                      <ToggleSwitch Grid.Column="3" IsChecked="{Binding IsEnabled, Mode=TwoWay}"
                                     IsEnabled="{Binding CanSwitch}" ToolTip.Tip="{Binding SwitchHint}" ToolTip.ShowOnDisabled="True"
                                     AutomationProperties.Name="{Binding Name}" VerticalAlignment="Center" />
                       <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -261,12 +261,16 @@
               <TextBlock Text="% of RAM available" />
             </StackPanel>
             <CheckBox x:Name="TrayBox" IsChecked="{Binding Settings.CloseToTray, Mode=TwoWay}"
+                      IsEnabled="{Binding Tray.Shown}"
                       Content="Closing the window keeps Memory Map running in the tray" />
+            <TextBlock x:Name="NoTrayNote" FontSize="12" Foreground="{DynamicResource Map.Ink2}" TextWrapping="Wrap"
+                       IsVisible="{Binding !Tray.Shown}"
+                       Text="This desktop shows no tray icons, so closing the window quits Memory Map. (GNOME shows them with the AppIndicator extension.)" />
             <TextBlock x:Name="SettingsProblem" Text="{Binding Settings.Problem, FallbackValue=''}"
                        IsVisible="{Binding Settings.Problem, Converter={x:Static ObjectConverters.IsNotNull}}"
                        Foreground="{DynamicResource Map.Critical}" />
             <TextBlock FontSize="12" Foreground="{DynamicResource Map.Ink2}"
-                       Text="Changes apply at once and are saved to %APPDATA%\MemoryMap\settings.json." />
+                       Text="{Binding Settings.SavedTo}" TextWrapping="Wrap" />
           </StackPanel>
         </ScrollViewer>
       </TabItem>
