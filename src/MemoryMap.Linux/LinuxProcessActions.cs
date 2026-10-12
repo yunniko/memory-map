@@ -11,7 +11,7 @@ namespace MemoryMap.Linux;
 /// with a pidfd, checks the process's start time against the sample, and acts through that
 /// pidfd, so a PID reused since the sample is left alone (D008, D029).
 /// </summary>
-public sealed partial class LinuxProcessActions(IProcFs? proc = null, Func<string, string?>? showFile = null) : IProcessActions
+public sealed class LinuxProcessActions(IProcFs? proc = null, Func<string, string?>? showFile = null) : IProcessActions
 {
     private const int InitPid = 1;
     private const int SigKill = 9;
@@ -93,7 +93,7 @@ public sealed partial class LinuxProcessActions(IProcFs? proc = null, Func<strin
         {
             failure = ActionResult.Exited(process);
         }
-        else if (ProcText.Uid(ProcText.Fields(status)) is var uid && (uid < 0 || (uint)uid != GetUid()))
+        else if (ProcText.Uid(ProcText.Fields(status)) is var uid && (uid < 0 || (uint)uid != Libc.GetUid()))
         {
             failure = ActionResult.NotYours(process, verb); // an unreadable uid is not taken as the user's
         }
@@ -111,7 +111,7 @@ public sealed partial class LinuxProcessActions(IProcFs? proc = null, Func<strin
     {
         public static PidFd Open(int pid)
         {
-            var fd = Syscall(SysPidfdOpen, pid, 0, 0, 0);
+            var fd = Libc.Syscall(SysPidfdOpen, pid, 0, 0, 0);
             return fd >= 0 ? new(pid, new SafeFileHandle((nint)fd, ownsHandle: true), 0) : new(pid, null, Marshal.GetLastPInvokeError());
         }
 
@@ -121,20 +121,11 @@ public sealed partial class LinuxProcessActions(IProcFs? proc = null, Func<strin
             // Without a pidfd (kernels before 5.3, some sandboxes) fall back to kill, which leaves a
             // moment for the PID to be reused between the check and the signal.
             var result = Handle is { } fd
-                ? Syscall(SysPidfdSendSignal, (int)fd.DangerousGetHandle(), signal, 0, 0)
-                : Kill(Pid, signal);
+                ? Libc.Syscall(SysPidfdSendSignal, (int)fd.DangerousGetHandle(), signal, 0, 0)
+                : Libc.Kill(Pid, signal);
             return result == 0 ? 0 : Marshal.GetLastPInvokeError();
         }
 
         public void Dispose() => Handle?.Dispose();
     }
-
-    [LibraryImport("libc", EntryPoint = "syscall", SetLastError = true)]
-    private static partial long Syscall(long number, long a, long b, long c, long d);
-
-    [LibraryImport("libc", EntryPoint = "kill", SetLastError = true)]
-    private static partial int Kill(int pid, int signal);
-
-    [LibraryImport("libc", EntryPoint = "getuid")]
-    private static partial uint GetUid();
 }

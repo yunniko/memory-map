@@ -11,6 +11,12 @@ public enum StartupSource
 
     /// <summary>A Store (packaged) app's declared startup task.</summary>
     StoreTask,
+
+    /// <summary>Linux: a desktop entry in an XDG autostart folder.</summary>
+    XdgAutostart,
+
+    /// <summary>Linux: an enabled systemd user service.</summary>
+    SystemdUserService,
 }
 
 /// <summary>Whose sign-in starts the entry: this user's only, or every user's.</summary>
@@ -31,6 +37,9 @@ public enum StartupSwitch
 
     /// <summary>Only in the OS's own settings: the app owns the switch.</summary>
     OsSettings,
+
+    /// <summary>Not at all: listed so its memory shows, changed with the OS's own tools.</summary>
+    ReadOnly,
 }
 
 /// <summary>
@@ -63,9 +72,17 @@ public sealed record StartupEntry(
     string? Problem = null,
     bool CountsProcesses = true)
 {
-    public StartupSwitch Switch => Source == StartupSource.StoreTask ? StartupSwitch.OsSettings
-        : Scope == StartupScope.Machine ? StartupSwitch.NeedsAdmin
-        : StartupSwitch.Direct;
+    public StartupSwitch Switch => Source switch
+    {
+        StartupSource.StoreTask => StartupSwitch.OsSettings,
+        StartupSource.SystemdUserService => StartupSwitch.ReadOnly,
+        // Every user's entry too: the switch writes this user's own override (D032).
+        StartupSource.XdgAutostart => StartupSwitch.Direct,
+        _ => Scope == StartupScope.Machine ? StartupSwitch.NeedsAdmin : StartupSwitch.Direct,
+    };
+
+    /// <summary>False for an entry Memory Map only lists; every other switch is offered.</summary>
+    public bool CanSwitch => Switch != StartupSwitch.ReadOnly;
 }
 
 /// <summary>What one read found, sorted by name, and the sources it could not read, so nothing

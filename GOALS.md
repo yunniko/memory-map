@@ -112,8 +112,10 @@ Completed goals: `docs/goals-archive.md`.
   4. Startup tab: lists the XDG autostart entries (`~/.config/autostart`,
      `/etc/xdg/autostart`), with running state and memory as on Windows. Switching writes a
      per-user override (`Hidden=true` in `~/.config/autostart`), which the desktop's own
-     settings honour too. System files are never edited, nothing is deleted, no password
-     prompt. systemd user services that start at login are listed read-only.
+     settings honour too. System files are never edited, no password prompt. The app deletes
+     only a file it created itself (Owner, 2026-10-12: "files created by app should be allowed
+     to be deleted by the app"; this replaced "nothing is deleted"). systemd user services
+     that start at login are listed read-only.
   5. Windows behaviour is unchanged: the Windows gate and CI stay green, and the Windows exe
      is still built and installed as before.
   6. A `.deb` (amd64) installs the app with a menu entry and a `memory-map` command, declares
@@ -138,7 +140,7 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M2 — The app on Linux. One app project builds for both OSes and picks the OS services
   at startup. Linux process actions, settings path, tray with fallback. Headless UI tests
   run on both OSes; a real window run under WSLg.
-- [ ] M3 — Startup tab on Linux. An XDG autostart reader and per-user override switch, plus
+- [x] M3 — Startup tab on Linux. An XDG autostart reader and per-user override switch, plus
   systemd user services read-only. Fixture tests and a real round trip on a throwaway
   entry, checked against how GNOME treats the override.
 - [ ] M4 — Finish. A self-contained linux-x64 file and a `.deb` built from it (desktop
@@ -146,6 +148,14 @@ Completed goals: `docs/goals-archive.md`.
   Ubuntu; a checklist for the Owner's Linux PC; README and handover.
 
 **Progress log** (newest first):
+- 2026-10-12 — **M3 done** (XDG autostart reader and switch, systemd user services read-only,
+  Linux process paths; D032–D034). Owner instruction this milestone: "files created by app should
+  be allowed to be deleted by the app" — criterion 4 now allows removing the app's own copy (D032:
+  checksum-marked, removed only while unedited). Verified: Windows `check.ps1` 332 (306 passed,
+  26 skipped); WSL gate 249/249; `crosscheck-linux.py` PASS 0.17%; `startup-roundtrip-linux.py`
+  every check agrees with `systemd-xdg-autostart-generator`, exit 0; WSLg Startup tab shows the 4
+  real entries. /simplify and /code-review applied; record
+  `docs/reviews/2026-10-12-g003-m3-startup-on-linux.md`. Next: M4, the `.deb`.
 - 2026-10-12 — **M2 done** (one app project for both OSes, `PlatformServices`; Linux process
   actions through pidfds, own processes only, init refused; settings in `~/.config/MemoryMap/`;
   close-to-tray asks the desktop at each close; slnf removed, whole solution gated on both OSes;

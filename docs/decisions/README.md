@@ -31,3 +31,6 @@
 - D029 — Linux process actions act on the user's own processes, through a pidfd — active
 - D030 — The gate builds the whole solution on both OSes; Windows tests run only on Windows — active
 - D031 — Close-to-tray asks the desktop for a tray host at each close — active
+- D032 — An XDG autostart entry is switched through a marked per-user copy — active
+- D033 — systemd user services are listed read-only — active
+- D034 — A Linux startup program is matched by its resolved file; hosts and bare scripts are not counted — active

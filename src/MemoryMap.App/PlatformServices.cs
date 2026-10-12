@@ -1,5 +1,6 @@
 using MemoryMap.Core;
 using MemoryMap.Linux;
+using MemoryMap.Linux.Startup;
 using MemoryMap.Windows;
 using MemoryMap.Windows.Startup;
 
@@ -21,7 +22,8 @@ internal sealed record PlatformServices(IMemorySampler Sampler, IProcessActions 
         }
         if (OperatingSystem.IsLinux())
         {
-            return new(new LinuxMemorySampler(), new LinuxProcessActions(), new StartupViewModel(), TrayHost.Probed(Desktop.HasTrayHost));
+            return new(new LinuxMemorySampler(), new LinuxProcessActions(),
+                new StartupViewModel(new LinuxStartupReader(), new LinuxStartupActions(), new LinuxProcessPaths()), TrayHost.Probed(Desktop.HasTrayHost));
         }
         throw new PlatformNotSupportedException("Memory Map runs on Windows and Linux.");
     }

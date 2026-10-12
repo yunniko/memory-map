@@ -3,6 +3,7 @@
 using System.Text.Json;
 using MemoryMap.Core;
 using MemoryMap.Linux;
+using MemoryMap.Linux.Startup;
 using MemoryMap.Windows;
 using MemoryMap.Windows.Startup;
 
@@ -27,12 +28,6 @@ if (topIndex >= 0 && (topIndex + 1 >= args.Length || !int.TryParse(args[topIndex
     return 2;
 }
 
-if (!OperatingSystem.IsWindows() && (args.Contains("--startup") || args.Contains("--startup-set")))
-{
-    Console.Error.WriteLine("The startup list is not available on Linux yet.");
-    return 2;
-}
-
 using IMemorySampler sampler = OperatingSystem.IsWindows() ? new WindowsMemorySampler() : new LinuxMemorySampler();
 
 if (args.Contains("--bench"))
@@ -52,39 +47,37 @@ if (args.Contains("--bench"))
     return 0;
 }
 
-// The startup options returned above on Linux; the IsWindows() checks below are for the
-// platform analyzer, which cannot see that.
 var setIndex = Array.IndexOf(args, "--startup-set");
-if (OperatingSystem.IsWindows() && setIndex >= 0)
+if (setIndex >= 0)
 {
-    // Switches one entry by id, through the app's own code; scripts/startup-roundtrip.ps1 uses it
-    // on throwaway entries to check that Windows Settings agrees with the change.
+    // Switches one entry by id, through the app's own code; scripts/startup-roundtrip.ps1 and
+    // scripts/startup-roundtrip-linux.py use it on throwaway entries to check that the OS agrees.
     if (setIndex + 2 >= args.Length || args[setIndex + 2] is not ("on" or "off"))
     {
         Console.Error.WriteLine("Usage: memmap-dump --startup-set <id> on|off");
         return 2;
     }
-    var entry = new WindowsStartupReader().Read().Entries.FirstOrDefault(e => e.Id == args[setIndex + 1]);
+    var entry = StartupReader().Read().Entries.FirstOrDefault(e => e.Id == args[setIndex + 1]);
     if (entry is null)
     {
         Console.Error.WriteLine($"No startup entry has the id {args[setIndex + 1]}.");
         return 1;
     }
-    var result = new WindowsStartupActions().SetEnabled(entry, args[setIndex + 2] == "on");
+    var result = StartupActions().SetEnabled(entry, args[setIndex + 2] == "on");
     Console.WriteLine(result.Message);
     return result.Succeeded ? 0 : 1;
 }
 
-if (OperatingSystem.IsWindows() && args.Contains("--startup"))
+if (args.Contains("--startup"))
 {
     // Every program that starts at sign-in, with what it costs now; scripts/startup-crosscheck.ps1
     // compares this against Windows Settings' Startup apps page.
     var watch = System.Diagnostics.Stopwatch.StartNew();
-    var list = new WindowsStartupReader().Read();
+    var list = StartupReader().Read();
     var readMs = watch.Elapsed.TotalMilliseconds;
     var processes = sampler.Sample().Processes;
     watch.Restart();
-    var paths = new WindowsProcessPaths();
+    IProcessPaths paths = OperatingSystem.IsWindows() ? new WindowsProcessPaths() : new LinuxProcessPaths();
     var usage = StartupMatching.Match(list.Entries, processes, paths);
     var matchMs = watch.Elapsed.TotalMilliseconds;
     // The app matches every sample while its Startup tab is shown, with the paths already known.
@@ -178,3 +171,8 @@ foreach (var group in breakdown.Groups)
     }
 }
 return 0;
+
+// This OS's startup reader and switch (the app picks them the same way, in PlatformServices).
+static IStartupReader StartupReader() => OperatingSystem.IsWindows() ? new WindowsStartupReader() : new LinuxStartupReader();
+
+static IStartupActions StartupActions() => OperatingSystem.IsWindows() ? new WindowsStartupActions() : new LinuxStartupActions();

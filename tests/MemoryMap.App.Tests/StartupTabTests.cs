@@ -200,6 +200,20 @@ public class StartupTabTests
     }
 
     [AvaloniaFact]
+    public void A_systemd_user_service_is_listed_with_its_switch_shown_but_not_usable()
+    {
+        var reader = new FakeReader([Entry("systemd/pipewire.service", "PipeWire", source: StartupSource.SystemdUserService)]);
+        var (window, model) = OpenTab(reader);
+
+        var toggle = InRow<ToggleSwitch>(window, "PipeWire");
+
+        Assert.True(toggle.IsChecked);
+        Assert.False(toggle.IsEnabled);
+        Assert.False(Item(model, "systemd/pipewire.service").CanSwitch);
+        Assert.Contains("change it with systemctl --user", ToolTip.GetTip(toggle) as string);
+    }
+
+    [AvaloniaFact]
     public void Show_on_map_zooms_to_the_app_its_processes_belong_to()
     {
         var (window, model) = OpenTab(Machine());

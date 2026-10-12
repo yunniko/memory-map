@@ -36,6 +36,7 @@ public static class Desktop
             return null;
         }
         // xdg-open may stay until the program it opened exits: still running at the timeout is success.
+        // Not Command.Run: the file manager would inherit its output pipes and hold the read open.
         var info = new ProcessStartInfo("xdg-open") { ArgumentList = { Path.GetDirectoryName(path) ?? path }, UseShellExecute = false };
         try
         {
@@ -51,41 +52,6 @@ public static class Desktop
     }
 
     /// <summary>A method call on the session bus: the reply, or null if it failed or no one answered.</summary>
-    private static string? Bus(params string[] call)
-    {
-        // stderr is captured only to keep "no such service" out of the app's own output.
-        var info = new ProcessStartInfo("dbus-send", ["--session", "--print-reply", .. call])
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        try
-        {
-            using var process = Process.Start(info);
-            if (process is null)
-            {
-                return null;
-            }
-            var reply = process.StandardOutput.ReadToEndAsync();
-            _ = process.StandardError.ReadToEndAsync();
-            if (!process.WaitForExit(Timeout))
-            {
-                try
-                {
-                    process.Kill();
-                }
-                catch (InvalidOperationException)
-                {
-                    // it exited after all, between the wait and the kill
-                }
-                return null;
-            }
-            return process.ExitCode == 0 ? reply.Result : null;
-        }
-        catch (Win32Exception)
-        {
-            return null; // dbus-send is not installed
-        }
-    }
+    private static string? Bus(params string[] call) =>
+        Command.Run("dbus-send", ["--session", "--print-reply", .. call]) is { ExitCode: 0 } result ? result.Output : null;
 }

@@ -25,6 +25,7 @@ public sealed class WindowsStartupActions(StartupLocations locations, IStartupLa
     {
         StartupSwitch.Direct => Direct(entry, enabled),
         StartupSwitch.NeedsAdmin => Elevated(entry, enabled),
+        StartupSwitch.ReadOnly => StartupResult.ReadOnly(entry),
         _ => launcher.OpenSettings(SettingsPage) is { } error
             ? StartupResult.Failed(entry, "open Windows Settings for", error)
             : StartupResult.InSettings(entry),

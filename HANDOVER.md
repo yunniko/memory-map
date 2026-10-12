@@ -3,7 +3,7 @@ Last verified: 2026-10-12 at a1c4a4b
 
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and (in progress) Linux.
 G-001 is done (`docs/goals-archive.md`); G-002, a Startup view, is built and awaits the Owner's
-checks and sign-off; G-003, the Linux version, is active at M3 (`GOALS.md`).
+checks and sign-off; G-003, the Linux version, is active at M4 (`GOALS.md`).
 Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -71,11 +71,19 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     worst 0.17% of RAM; process count 43/43. A sample takes about 4 ms.
 - **The app runs on Linux (G-003 M2).** Under WSLg the Map, Table, History and Settings tabs
   work, a setting saves to `~/.config`, and with no tray host closing quits. The app's private
-  memory there is 43 MB. It needs libICE and libSM (the package will depend on them). The Startup
-  tab says there is no list yet (M3). Record: `docs/reviews/2026-10-12-g003-m2-app-on-linux.md`.
-- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 285 tests
-  (277 passed, 8 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
-  pass over the whole solution: 202/202 (D030). GitHub Actions runs the gate on windows-2025 and
+  memory there is 43 MB. It needs libICE and libSM (the package will depend on them).
+  Record: `docs/reviews/2026-10-12-g003-m2-app-on-linux.md`.
+- **Startup tab on Linux (G-003 M3).** It lists XDG autostart entries the session would start
+  (user folder and system folders, OnlyShowIn/NotShowIn honoured) and enabled systemd user
+  services, read-only (D033), with running state and memory (matching, D034). The switch writes
+  `Hidden=` in the user's own entry, or a checksum-marked copy of a system entry, removed again
+  only while unedited (D032). `memmap-dump --startup`/`--startup-set` work on Linux too.
+  - `scripts/startup-roundtrip-linux.py` on WSL: every check agrees with
+    `systemd-xdg-autostart-generator`; system file unchanged; exit 0. Real session: 4 entries.
+    Record: `docs/reviews/2026-10-12-g003-m3-startup-on-linux.md`.
+- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 332 tests
+  (306 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
+  pass over the whole solution: 249/249 (D030). GitHub Actions runs the gate on windows-2025 and
   ubuntu-24.04 on every push to main (D028).
 - `scripts/crosscheck.ps1` against WMI: PASS, worst difference 1.4% of RAM (limit 2%).
 - Not run: the Windows critical-process refusal, because it needs an elevated session (on
@@ -116,6 +124,10 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   A process's name and kind are cached per (pid, start, comm, uid).
 - `MemoryMap.Linux` also holds `LinuxProcessActions` and `Desktop.cs` (the session bus through
   `dbus-send`: tray host, file manager). `ProcClock.cs` gives sampler and actions the same start time.
+- Linux startup: `src/MemoryMap.Linux/Startup/` — `LinuxStartupLocations` (XDG folders, PATH; tests
+  point it at temp folders), `DesktopEntry` (parse and one-key edits), `ProgramFile` (Exec to the
+  file its processes report), `LinuxStartupReader` and `LinuxStartupActions`, `SystemdUserServices`
+  (through `Command.cs`). `src/MemoryMap.Core/ProcessPathCache.cs` serves both OSes' `IProcessPaths`.
 - `MemoryMap.Cli` picks the sampler by OS; the app picks all its OS services once, in
   `src/MemoryMap.App/PlatformServices.cs`. The app targets plain `net10.0` for both OSes.
 - `MemoryMap.App`:
@@ -149,9 +161,12 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   D031).
 - xunit.v3 stays at the version `Avalonia.Headless.XUnit` is built against, 3.2.2 today (D006).
 - Tests never touch real autostart entries: they read and write only the `StartupFixture`
-  scratch key and temp folders (G-002 and G-003 constraints). Checks against Windows use
-  throwaway entries the script creates and removes (`scripts/startup-roundtrip.ps1`).
-- A switch only writes the StartupApproved flag; nothing is deleted (G-002 criterion 3).
+  scratch key and temp folders (G-002 and G-003 constraints). Checks against the OS use
+  throwaway entries (`scripts/startup-roundtrip.ps1`) or throwaway XDG folders
+  (`scripts/startup-roundtrip-linux.py`).
+- On Windows a switch only writes the StartupApproved flag; nothing is deleted (G-002 criterion 3).
+- On Linux system autostart files are never written, and the only file removed is the app's own
+  marked copy, unedited since (G-003 criterion 4, Owner 2026-10-12; D032).
 - The app stays unelevated; a machine-wide change goes through the one-shot helper, one admin
   prompt per change (G-002 constraint; D024). The helper refuses user-scope ids: elevated, it
   would see the administrator's HKCU (D024).
@@ -160,9 +175,9 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 
 ## Next steps and open questions
 
-- G-003 M3: the Startup tab for XDG autostart (per-user `Hidden=true` overrides, system files
-  never edited) and systemd user services read-only. Then M4 (linux-x64 file, `.deb`, lintian,
-  install and remove on WSL, the Owner's Linux checklist).
+- G-003 M4: the linux-x64 single file, a `.deb` (menu entry, `memory-map` command, libICE/libSM
+  dependencies), lintian-clean, installed, run and removed on WSL; the Owner's Linux checklist
+  (tray, Open file location, the desktop's own autostart settings). Then G-003 sign-off.
 - Awaiting the Owner: `docs/second-pc-checklist.md` (the real administrator prompt and Task
   Manager on this PC; a second PC for criterion 6), then G-002 sign-off.
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.

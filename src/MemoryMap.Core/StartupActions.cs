@@ -31,6 +31,10 @@ public static class StartupResult
     public static ActionResult InSettings(StartupEntry e) => new(ActionOutcome.Refused,
         $"{e.Name} is a Store app: switch it in the Windows Settings page that just opened (Apps > Startup).");
 
+    /// <summary>A systemd user service: listed only (D033).</summary>
+    public static ActionResult ReadOnly(StartupEntry e) => new(ActionOutcome.Refused,
+        $"{e.Name} is a systemd user service: Memory Map only lists it. Change it with systemctl --user.");
+
     public static ActionResult Failed(StartupEntry e, string verb, string reason) =>
         new(ActionOutcome.Failed, $"Could not {verb} {e.Name}: {reason}");
 }
@@ -54,12 +58,15 @@ public static class StartupText
     /// <summary>What flipping the switch will do, for its tooltip.</summary>
     public static string SwitchHint(StartupEntry entry) => entry.Switch switch
     {
+        StartupSwitch.Direct when entry.Source == StartupSource.XdgAutostart && entry.Scope == StartupScope.Machine =>
+            "It starts for every user of this PC; the switch changes it for you only, with your own copy in your autostart folder",
         StartupSwitch.Direct => entry.Enabled ? "Starts when you sign in; switch off to stop that" : "Switched off; switch on to start it at sign-in",
         StartupSwitch.NeedsAdmin => "It starts for every user of this PC; switching it asks for administrator rights for that one change",
+        StartupSwitch.ReadOnly => "A systemd user service: listed only; change it with systemctl --user",
         _ => "A Store app: the switch opens Windows Settings > Apps > Startup, where it is changed",
     };
 
     /// <summary>Explains <see cref="NotCounted"/>.</summary>
     public const string NotCountedHint =
-        "It starts a Windows program that also runs other things (cmd, rundll32, a script host), so its processes cannot be told apart";
+        "It starts a program that also runs other things (a command shell, a script host, rundll32), so its processes cannot be told apart";
 }

@@ -117,6 +117,9 @@ public class StartupMatchingTests
     [InlineData(StartupSource.RunKey, StartupScope.Machine, StartupSwitch.NeedsAdmin)]
     [InlineData(StartupSource.StartupFolder, StartupScope.Machine, StartupSwitch.NeedsAdmin)]
     [InlineData(StartupSource.StoreTask, StartupScope.User, StartupSwitch.OsSettings)]
+    [InlineData(StartupSource.XdgAutostart, StartupScope.User, StartupSwitch.Direct)]
+    [InlineData(StartupSource.XdgAutostart, StartupScope.Machine, StartupSwitch.Direct)]
+    [InlineData(StartupSource.SystemdUserService, StartupScope.User, StartupSwitch.ReadOnly)]
     public void How_an_entry_is_switched_follows_where_it_is_registered(StartupSource source, StartupScope scope, StartupSwitch expected) =>
         Assert.Equal(expected, Entry("x", null, null, source, scope).Switch);
 
