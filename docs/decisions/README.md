@@ -34,3 +34,5 @@
 - D032 — An XDG autostart entry is switched through a marked per-user copy — active
 - D033 — systemd user services are listed read-only — active
 - D034 — A Linux startup program is matched by its resolved file; hosts and bare scripts are not counted — active
+- D035 — Linux ships as a self-extracting single file and a .deb with its libraries beside the program — active
+- D036 — The .deb declares measured dependencies and keeps Skia's embedded libraries — active

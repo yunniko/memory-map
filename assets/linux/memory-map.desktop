@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Memory Map
+GenericName=Memory Viewer
+Comment=See what is using the computer's memory, as a live treemap
+Exec=memory-map
+Icon=memory-map
+Terminal=false
+Categories=System;Monitor;
+Keywords=memory;RAM;treemap;process;startup;
+StartupWMClass=memory-map

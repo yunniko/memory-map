@@ -1,9 +1,10 @@
 # memory-map — Handover
-Last verified: 2026-10-12 at 8807dca
+Last verified: 2026-10-13 at 05aa986
 
-A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and (in progress) Linux.
+A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
 G-001 is done (`docs/goals-archive.md`); G-002, a Startup view, is built and awaits the Owner's
-checks and sign-off; G-003, the Linux version, is active at M4 (`GOALS.md`).
+checks and sign-off; G-003, the Linux version with a `.deb`, is built (M1–M4) and awaits the
+Owner's Linux checklist and sign-off (`GOALS.md`).
 Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -71,7 +72,7 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     worst 0.17% of RAM; process count 43/43. A sample takes about 4 ms.
 - **The app runs on Linux (G-003 M2).** Under WSLg the Map, Table, History and Settings tabs
   work, a setting saves to `~/.config`, and with no tray host closing quits. The app's private
-  memory there is 43 MB. It needs libICE and libSM (the package will depend on them).
+  memory there is 43 MB.
   Record: `docs/reviews/2026-10-12-g003-m2-app-on-linux.md`.
 - **Startup tab on Linux (G-003 M3).** It lists XDG autostart entries the session would start
   (user folder and system folders, OnlyShowIn/NotShowIn honoured) and enabled systemd user
@@ -81,10 +82,22 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   - `scripts/startup-roundtrip-linux.py` on WSL: every check agrees with
     `systemd-xdg-autostart-generator`; system file unchanged; exit 0. Real session: 4 entries.
     Record: `docs/reviews/2026-10-12-g003-m3-startup-on-linux.md`.
+- **Linux package (G-003 M4).** `scripts/publish-linux.sh` builds publish/linux-x64/MemoryMap
+  (97 MB single file) and publish/memory-map_0.3.0_amd64.deb (30 MB): the program in
+  /usr/lib/memory-map with its two libraries, the `memory-map` command, menu entry, icon and man
+  page (D035). Depends is dpkg-shlibdeps' output plus the libraries opened at run time (D036).
+  Record: `docs/reviews/2026-10-12-g003-m4-deb.md`.
+  - `scripts/deb-check.sh` in clean ubuntu:24.04 containers (also in CI): lintian no error or
+    warning, desktop-file-validate ok, window of class memory-map shown, nothing unpacked into the
+    home folder, all 9 libraries opened at run time in Depends, `apt-get remove` leaves no file.
+  - On this PC's WSL Ubuntu the package installs (apt adds libice6 and libsm6), `memory-map` shows
+    the map as the user (46 MB RssAnon) with a WSLg Start menu shortcut, and `apt-get remove`
+    leaves no file or shortcut. It is not installed there now.
+  - Not run: a real desktop's tray, file manager and autostart settings (`docs/linux-checklist.md`).
 - `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 332 tests
   (306 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
   pass over the whole solution: 249/249 (D030). GitHub Actions runs the gate on windows-2025 and
-  ubuntu-24.04 on every push to main (D028).
+  ubuntu-24.04 on every push to main (D028), and a third job builds the .deb and runs `scripts/deb-check.sh`.
 - `scripts/crosscheck.ps1` against WMI: PASS, worst difference 1.4% of RAM (limit 2%).
 - Not run: the Windows critical-process refusal, because it needs an elevated session (on
   Linux, init's refusal is tested).
@@ -130,6 +143,11 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   (through `Command.cs`). `src/MemoryMap.Core/ProcessPathCache.cs` serves both OSes' `IProcessPaths`.
 - `MemoryMap.Cli` picks the sampler by OS; the app picks all its OS services once, in
   `src/MemoryMap.App/PlatformServices.cs`. The app targets plain `net10.0` for both OSes.
+- Linux packaging: `assets/linux/` holds the menu entry, icon, man page, Debian changelog (its head
+  version must equal `Version` in `Directory.Build.props`; the script refuses otherwise), copyright
+  and lintian overrides; `scripts/publish-linux.sh` stages them. `src/MemoryMap.App/Program.cs` sets
+  the X11 window class `memory-map` to match the entry's StartupWMClass; `scripts/deb-check.sh`
+  checks the window by that class.
 - `MemoryMap.App`:
   - `Program.cs` selects software rendering.
   - `MainViewModel.cs` applies the latest breakdown on the UI thread. It feeds the history
@@ -175,9 +193,12 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 
 ## Next steps and open questions
 
-- G-003 M4: the linux-x64 single file, a `.deb` (menu entry, `memory-map` command, libICE/libSM
-  dependencies), lintian-clean, installed, run and removed on WSL; the Owner's Linux checklist
-  (tray, Open file location, the desktop's own autostart settings). Then G-003 sign-off.
+- Awaiting the Owner: `docs/linux-checklist.md` on their Linux PC (tray, file manager, the desktop's
+  own autostart settings, apt install and remove), then G-003 sign-off.
+- Open, for the Owner: a licence. `assets/linux/copyright` marks the app's own code all rights
+  reserved; the bundled components keep their own (Expat, BSD-3-clause and the runtime's notices).
+- Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
+  package name added in `scripts/publish-linux.sh` (only Ubuntu 24.04 is checked, D036).
 - Awaiting the Owner: `docs/second-pc-checklist.md` (the real administrator prompt and Task
   Manager on this PC; a second PC for criterion 6), then G-002 sign-off.
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.

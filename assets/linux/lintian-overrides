@@ -1,0 +1,9 @@
+# SkiaSharp's native build links its own FreeType, libjpeg and libpng statically; it is upstream's
+# binary (SkiaSharp.NativeAssets.Linux) and cannot use the system copies without rebuilding Skia.
+# Fixes to them arrive with SkiaSharp updates (D036).
+memory-map: embedded-library freetype [usr/lib/memory-map/libSkiaSharp.so]
+memory-map: embedded-library libjpeg [usr/lib/memory-map/libSkiaSharp.so]
+memory-map: embedded-library libpng [usr/lib/memory-map/libSkiaSharp.so]
+# The self-contained .NET runtime bundled into the program carries its own zlib (zlib-ng); fixes
+# arrive with .NET updates (D036).
+memory-map: embedded-library zlib [usr/lib/memory-map/MemoryMap]

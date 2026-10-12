@@ -1,0 +1,28 @@
+.TH MEMORY-MAP 1 2026-10-12 "memory-map @VERSION@" "User Commands"
+.SH NAME
+memory-map \- show the computer's memory use as a live treemap
+.SH SYNOPSIS
+.B memory-map
+.SH DESCRIPTION
+.B memory-map
+opens a window showing RAM as a treemap refreshed every second: apps in the
+user's session, system services, virtual machines and containers, kernel
+memory, shared memory and cache, and available memory.
+Each process is sized by its private memory (RssAnon), which needs no root.
+.PP
+Tabs show the same items as a table, the last hour as a chart, and the
+programs that start at login, each with a switch for this user only.
+A tray icon and a low-memory alert are shown where the desktop has a tray.
+.PP
+Right-click a process to end it (always confirmed) or open its folder;
+both work for the user's own processes only.
+.SH FILES
+.TP
+.I ~/.config/MemoryMap/settings.json
+Settings: refresh interval, alert threshold, close to tray.
+.TP
+.I ~/.config/autostart/
+Where switching a startup entry writes this user's copy.
+.SH SEE ALSO
+.BR free (1),
+.BR ps (1)

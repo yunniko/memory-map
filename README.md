@@ -1,12 +1,13 @@
 # memory-map
 
-A Windows desktop app that shows the PC's RAM as a live treemap — like SequoiaView does
+A desktop app for Windows and Linux that shows the PC's RAM as a live treemap — like SequoiaView does
 for disk space — so you can see at a glance what is using memory, including memory no
 app owns (kernel pools, shared pages).
 
 Built in C# (.NET 10) with Avalonia. **State:** G-001 (the map) is done; G-002 (managing other
 programs' autostart) is built and awaits the Owner's checks on the admin prompt and a second PC
-(`docs/second-pc-checklist.md`, `GOALS.md`). Source: `github.com/yunniko/memory-map` (private).
+(`docs/second-pc-checklist.md`, `GOALS.md`); G-003 (the Linux version, with a `.deb`) is built and
+awaits the Owner's checks on a Linux PC (`docs/linux-checklist.md`). Source: `github.com/yunniko/memory-map` (private).
 
 ## What it does
 
@@ -25,6 +26,11 @@ programs' autostart) is built and awaits the Owner's checks on the admin prompt 
   of the PC ask for administrator rights for that one change; Store apps' switch opens Settings.
 - **Settings:** refresh interval, a slower refresh while hidden (off by default), alert
   threshold, close-to-tray; saved in `%APPDATA%\MemoryMap\settings.json`.
+
+On Linux the same tabs work without root: apps are sized by RssAnon, *End process* and *Open file
+location* act on your own processes only, the tray is used where the desktop shows one (else closing
+quits), and the Startup tab lists XDG autostart entries (switchable) and systemd user services
+(listed only). Settings are in `~/.config/MemoryMap/settings.json`.
 
 ## Use
 
@@ -45,6 +51,19 @@ programs' autostart) is built and awaits the Owner's checks on the admin prompt 
   It closes and reopens the Settings app for each check.
 - `./scripts/startup-helper-check.ps1 [-Exe <path>]` — run the exes' administrator helper mode
   unelevated with ids it must refuse, and check the exit codes (writes nothing).
+
+## Use on Linux
+
+- `sudo apt install ./memory-map_*_amd64.deb` — installs the app (menu entry "Memory Map" and the
+  `memory-map` command); `sudo apt remove memory-map` removes it.
+- `publish/linux-x64/MemoryMap` — the same app as one file to copy anywhere and run.
+- `bash scripts/publish-linux.sh` — build both into `publish/` (on Linux, with the .NET SDK and dpkg-dev).
+- `bash scripts/deb-check.sh publish/memory-map_*_amd64.deb` — lintian, then install, run and remove the
+  package in throwaway Ubuntu containers (needs docker).
+- `python3 scripts/crosscheck-linux.py` — compare the sampler's totals with `free` and `ps`.
+- `python3 scripts/startup-roundtrip-linux.py` — switch throwaway autostart entries in temp folders and
+  check that systemd's own autostart generator agrees.
+- The gate: `pwsh scripts/check.ps1` where PowerShell is installed; CI runs it on Ubuntu too.
 
 Predecessors (one-off snapshots, PowerShell): `C:\bin\memory-report.ps1` (text report)
 and `C:\bin\memory-map.ps1` (HTML treemap).

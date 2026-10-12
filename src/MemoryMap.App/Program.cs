@@ -25,5 +25,6 @@ internal static class Program
     // start and grew ~10 MB a minute drawing the chart's changing lines, against criterion 9 (D015).
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect()
         .With(new Win32PlatformOptions { RenderingMode = [Win32RenderingMode.Software] })
-        .With(new X11PlatformOptions { RenderingMode = [X11RenderingMode.Software] });
+        // The window class names the desktop entry (memory-map.desktop), so docks show its icon.
+        .With(new X11PlatformOptions { RenderingMode = [X11RenderingMode.Software], WmClass = "memory-map" });
 }

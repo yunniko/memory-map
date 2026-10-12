@@ -1,6 +1,6 @@
 # The merge gate (scripts/check.ps1): format check, warnings-as-errors build, every test that runs on
 # the OS. Both build the whole solution; Ubuntu runs all but the Windows tests (D030), with the live /proc
-# and process-action tests.
+# and process-action tests. The package job builds the .deb and checks it in containers (D036).
 name: check
 on:
   push:
@@ -25,3 +25,13 @@ jobs:
       - name: Cross-check against free and ps
         if: runner.os == 'Linux'
         run: python3 scripts/crosscheck-linux.py
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: bash scripts/publish-linux.sh
+      - run: bash scripts/deb-check.sh publish/memory-map_*_amd64.deb

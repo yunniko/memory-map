@@ -143,11 +143,20 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M3 — Startup tab on Linux. An XDG autostart reader and per-user override switch, plus
   systemd user services read-only. Fixture tests and a real round trip on a throwaway
   entry, checked against how GNOME treats the override.
-- [ ] M4 — Finish. A self-contained linux-x64 file and a `.deb` built from it (desktop
+- [x] M4 — Finish. A self-contained linux-x64 file and a `.deb` built from it (desktop
   entry, icon, `memory-map` command), `lintian`-clean; install, run and remove on WSL
   Ubuntu; a checklist for the Owner's Linux PC; README and handover.
 
 **Progress log** (newest first):
+- 2026-10-13 — **M4 done; all milestones built, G-003 awaits the Owner's checklist and sign-off.**
+  `scripts/publish-linux.sh` builds the linux-x64 single file and `memory-map_0.3.0_amd64.deb`
+  (D035, D036); `scripts/deb-check.sh` runs in CI. Verified: deb-check in clean ubuntu:24.04
+  containers — lintian no error/warning, desktop-file-validate ok, window shown, nothing unpacked
+  in home, 9/9 run-time libraries in Depends, removal leaves no file; on this PC's WSL the package
+  installed (adding libice6, libsm6), ran from `memory-map` and showed the map, and `apt-get
+  remove` left nothing. Windows `check.ps1` 332 (306 passed, 26 skipped); WSL gate 249/249;
+  `crosscheck-linux.py` PASS 0.17%. Owner checks: `docs/linux-checklist.md`. Record:
+  `docs/reviews/2026-10-12-g003-m4-deb.md`.
 - 2026-10-12 — **M3 done** (XDG autostart reader and switch, systemd user services read-only,
   Linux process paths; D032–D034). Owner instruction this milestone: "files created by app should
   be allowed to be deleted by the app" — criterion 4 now allows removing the app's own copy (D032:
