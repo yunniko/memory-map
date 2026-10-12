@@ -1,5 +1,5 @@
 # memory-map — Handover
-Last verified: 2026-10-12 at 44933d1
+Last verified: 2026-10-12 at 8dd155d
 
 A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is done
 (`docs/goals-archive.md`); G-002, a Startup view, is built (M1–M4 done) and awaits the Owner's checks and sign-off in `GOALS.md`.
