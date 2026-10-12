@@ -5,8 +5,8 @@ for disk space — so you can see at a glance what is using memory, including me
 app owns (kernel pools, shared pages).
 
 Built in C# (.NET 10) with Avalonia. **State:** G-001 (the map) is done; G-002 (managing other
-programs' autostart) is in progress: the Startup tab works for this user's entries; machine-wide
-entries and Store apps come next (see `GOALS.md`). Source: `github.com/yunniko/memory-map` (private).
+programs' autostart) is built and awaits the Owner's checks on the admin prompt and a second PC
+(`docs/second-pc-checklist.md`, `GOALS.md`). Source: `github.com/yunniko/memory-map` (private).
 
 ## What it does
 
@@ -20,8 +20,9 @@ entries and Store apps come next (see `GOALS.md`). Source: `github.com/yunniko/m
 - **Tray:** a gauge of RAM in use; an alert when available memory runs low; closing the
   window hides it to the tray (*Exit* on the tray menu quits).
 - **Startup:** every program that starts at sign-in, whether it is running now and its memory,
-  *Show on map* and *Open file location*. This user's entries switch off and on with the same
-  flag Windows Settings uses; nothing is deleted, so every switch can be undone.
+  *Show on map* and *Open file location*, and a switch for each. Switches use the same flag
+  Windows Settings uses; nothing is deleted, so every switch can be undone. Entries for every user
+  of the PC ask for administrator rights for that one change; Store apps' switch opens Settings.
 - **Settings:** refresh interval, a slower refresh while hidden (off by default), alert
   threshold, close-to-tray; saved in `%APPDATA%\MemoryMap\settings.json`.
 
@@ -33,7 +34,8 @@ entries and Store apps come next (see `GOALS.md`). Source: `github.com/yunniko/m
 - `dotnet run --project src/MemoryMap.App -c Release` — run from source.
 - `dotnet run --project src/MemoryMap.Cli -- --json` — one snapshot as text or JSON;
   `-- --startup` lists the programs Windows starts at sign-in, with their state and memory;
-  `-- --startup-set <id> on|off` switches one of this user's entries (ids are in `--startup --json`).
+  `-- --startup-set <id> on|off` switches one entry (ids are in `--startup --json`; a machine-wide
+  one asks for administrator rights).
 - `./scripts/check.ps1` — format check, warnings-as-errors build, all tests.
   Set `MEMORYMAP_SCREENSHOTS=<folder>` to have the window tests save PNGs there.
 - `./scripts/crosscheck.ps1` — compare the sampler's totals with Windows' own (WMI).
@@ -41,6 +43,8 @@ entries and Store apps come next (see `GOALS.md`). Source: `github.com/yunniko/m
 - `./scripts/startup-roundtrip.ps1` — switch two throwaway entries it creates (and removes) through
   the app's code and through Settings, and check that each side sees the other's change.
   It closes and reopens the Settings app for each check.
+- `./scripts/startup-helper-check.ps1 [-Exe <path>]` — run the exes' administrator helper mode
+  unelevated with ids it must refuse, and check the exit codes (writes nothing).
 
 Predecessors (one-off snapshots, PowerShell): `C:\bin\memory-report.ps1` (text report)
 and `C:\bin\memory-map.ps1` (HTML treemap).

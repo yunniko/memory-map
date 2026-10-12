@@ -2,14 +2,15 @@
 Last verified: 2026-10-12 at 44933d1
 
 A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is done
-(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md` (M1–M3 done).
+(`docs/goals-archive.md`); G-002, a Startup view, is built (M1–M4 done) and awaits the Owner's checks and sign-off in `GOALS.md`.
 Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
 
 - **Installed and running as one file.** `scripts/publish.ps1` builds a self-contained
   97 MB exe into `publish\` and copies it to C:\bin\MemoryMap.exe (D014). The installed
-  copy is built from 27ddf24, and its Map and Settings tabs were checked by screenshot.
+  copy is built from 44933d1 (same hash as the publish output); its Startup tab, helper mode
+  and Store switch were checked (`docs/reviews/2026-10-12-g002-m4-end-to-end.md`).
 - **The live map works.** It shows the six groups as framed areas with their apps inside,
   refreshed every second, with a summary line, a legend, a hover tooltip and a Table tab.
   Light and dark themes follow Windows.
@@ -51,13 +52,13 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     82 MB private; Calendar's switch opened Settings' Startup page and stayed Off.
   - `scripts/startup-helper-check.ps1`: 8/8 (both exes in helper mode, unelevated, refusals
     and an unregistered id; nothing written). Record: `docs/reviews/2026-10-12-g002-m3-elevated-switch.md`.
-  - Not run: the real administrator prompt (secure desktop; M4 hand checklist).
-  - `scripts/startup-roundtrip.ps1`: 8/8 (app and Settings, both directions, two throwaway
+  - Not run: the real administrator prompt (secure desktop) and a second PC; both are in
+    `docs/second-pc-checklist.md` for the Owner.
+  - `scripts/startup-roundtrip.ps1`: 0 failures (app and Settings, both directions, two throwaway
     entries, removed afterwards). `scripts/startup-crosscheck.ps1`: 41/41 names, one state
     differs (Killer Control Center: registry on, Settings Off; unexplained, D019).
     Records: `docs/reviews/2026-10-12-g002-m2-startup-switch.md`,
     `docs/reviews/2026-10-12-g002-m1-startup-crosscheck.md`.
-  - The installed C:\bin copy has no Startup tab yet; M4 reinstalls it.
 - `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 237/237 tests
   (Core 104, Windows integration 83, App headless 50). GitHub Actions runs the same script
   on every push to main (D023); the run for 90b2b12 passed.
@@ -129,15 +130,12 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 
 ## Next steps and open questions
 
-- G-002 M4: publish and install to C:\bin, README and handover, an end-to-end pass, and a
-  second-PC checklist. G-002 must work on other PCs (Owner, 2026-10-12).
-- For the M4 hand checklist: approve and decline the real administrator prompt for a
-  machine-wide entry, and confirm Settings and Task Manager show the result.
-- For the M4 checklist: Task Manager shows the same state for an entry switched here (its
-  bytes could not be observed, D021); Settings hides a Run entry whose program is missing.
+- Awaiting the Owner: `docs/second-pc-checklist.md` (the real administrator prompt and Task
+  Manager on this PC; a second PC for criterion 6), then G-002 sign-off.
+- Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
-- For the M4 second-PC run: whether switching a machine-wide entry off in Settings writes a
-  user-key flag (none exists here; the reader reads machine flags only, D018).
+- Open, step B.5 of the checklist: whether switching a machine-wide entry off in Settings
+  writes a user-key flag (none exists here; the reader reads machine flags only, D018).
 - Proposed later goal (Owner's call): Linux. It needs a `/proc` sampler behind `IMemorySampler`,
   Linux groups, a Linux rendering choice, and a check of tray support on GNOME.
 - Not measured: software rendering on a 4K or maximised window. Re-measure before relying
@@ -148,6 +146,7 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 | Date | Commit | What changed | How verified |
 |---|---|---|---|
 | 2026-10-12 | 27ddf24 | Installed C:\bin\MemoryMap.exe (local only, D014) | Map and Settings tabs captured; close-to-tray checked |
+| 2026-10-12 | 44933d1 | Reinstalled C:\bin\MemoryMap.exe with the Startup tab (local only) | Hash matches publish; helper check 4/4; UI smoke 41/41 switches |
 
 ## Decisions
 

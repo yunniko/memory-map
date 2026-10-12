@@ -47,10 +47,17 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M3 — Machine-wide entries and Store apps. A per-change administrator prompt through a
   one-shot elevated `MemoryMap.exe` helper; a declined prompt changes nothing. Store tasks
   link to Windows Settings.
-- [ ] M4 — Finish. Publish and install to C:\bin, README and handover, an end-to-end pass,
+- [x] M4 — Finish. Publish and install to C:\bin, README and handover, an end-to-end pass,
   and a short checklist for the Owner's second-PC run.
 
 **Progress log** (newest first):
+- 2026-10-12 — **M4 done; G-002 built, awaiting the Owner's checks and sign-off.** Installed
+  C:\bin\MemoryMap.exe from 44933d1 (hash matches publish). Verified: `check.ps1` 237/237;
+  helper check 4/4 on the installed exe, 8/8 on Release builds; UI smoke of the installed exe
+  41/41 switches enabled, Store switch opened Settings; round trip 0 failures; crosscheck
+  41/41 names, 1 known state difference (D019). Record:
+  `docs/reviews/2026-10-12-g002-m4-end-to-end.md`. Not run (needs the Owner): the real
+  administrator prompt and a second PC (criterion 6), in `docs/second-pc-checklist.md`.
 - 2026-10-12 — **M3 done** (every startup switch works: machine-wide entries through a one-shot
   elevated `--startup-helper` run of the same exe, declined prompt changes nothing; Store apps'
   switch opens Settings > Apps > Startup; D024). Verified: `check.ps1` 237/237 (Core 104, Windows
