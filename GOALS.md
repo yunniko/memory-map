@@ -40,7 +40,7 @@
   for a 1 s refresh). xUnit tests for the pure logic; a `--dump` console mode whose
   numbers are cross-checked against `memory-report.ps1`. Formatter (`dotnet format` +
   shared `.editorconfig` in `COMPANY/configs/`) set up from the first commit.
-- [ ] M2 — Live treemap window. Avalonia app with a custom-drawn treemap that refreshes
+- [x] M2 — Live treemap window. Avalonia app with a custom-drawn treemap that refreshes
   live with stable tiles, hover tooltip, legend, table view, light/dark. Avalonia
   headless UI tests for the window.
 - [ ] M3 — Drill-down and process actions. Click to zoom app → processes, breadcrumb/Back;
@@ -54,6 +54,12 @@
   final, full end-to-end pass.
 
 **Progress log** (newest first):
+- 2026-10-12 — M2 done (af0ae53). Live Avalonia map window: group frames with app tiles,
+  hover tooltip, legend, Table tab, light/dark theme. Verified with `scripts/check.ps1`:
+  format clean, 0 warnings, 73/73 tests (including 10 headless window tests). Run live on
+  this PC: 0.45% CPU over 20 s, 134 MB private. /simplify gave 18 cleanups; /code-review
+  gave 8 fixes, 1 rejected, 1 deferred to M5. Decisions D006 and D007. Next: M3,
+  drill-down and process actions.
 - 2026-10-12 — M1 done (dbbeb13). Core breakdown tree, squarified layout and Windows sampler,
   plus the `memmap-dump` CLI. Verified with `scripts/check.ps1`: format clean, 0 warnings,
   48/48 tests. The cross-check against WMI passes with a worst difference of 0.08% of RAM
