@@ -131,8 +131,8 @@ Completed goals: `docs/goals-archive.md`.
     The private repo stays the only remote.
   - x64 only; arm64 is not asked for.
 
-**Milestones** (proposed):
-- [ ] M1 — Linux data engine. A `MemoryMap.Linux` project with a `/proc` sampler behind
+**Milestones:**
+- [x] M1 — Linux data engine. A `MemoryMap.Linux` project with a `/proc` sampler behind
   `IMemorySampler`, Linux groups in Core, and the CLI (`--json`, table) running on Linux.
   Checked against `/proc/meminfo`, `free` and `ps` on WSL Ubuntu. CI gets an Ubuntu job.
 - [ ] M2 — The app on Linux. One app project builds for both OSes and picks the OS services
@@ -146,6 +146,13 @@ Completed goals: `docs/goals-archive.md`.
   Ubuntu; a checklist for the Owner's Linux PC; README and handover.
 
 **Progress log** (newest first):
+- 2026-10-12 — **M1 done** (af255b9: `/proc` sampler without root, RssAnon sizes, kinds from
+  name/cgroup/account, OS names supplied by the sampler; CLI on Linux; CI on windows-2025 and
+  ubuntu-24.04; D025–D028). Verified: Windows `check.ps1` 275 (274 passed, 1 skipped); WSL
+  Ubuntu gate on the slnf 142/142; `crosscheck-linux.py` PASS 0.06% of RAM, processes 43/43;
+  `crosscheck.ps1` PASS 1.4%. /simplify and /code-review applied (exec/uid re-identification,
+  meminfo guard, container daemons stay services, a startup-test fixture race fixed); record
+  `docs/reviews/2026-10-12-g003-m1-linux-sampler.md`. Next: M2, the app on Linux.
 - 2026-10-12 — Owner accepted the plan ("go ahead"); no milestone marked
   review-before-continuing. Owner then asked for a `.deb` package: added as criterion 6 and
   to M4; the `install.sh` into `~/.local` is dropped (the `.deb` gives the menu entry, the

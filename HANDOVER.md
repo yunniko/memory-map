@@ -1,8 +1,9 @@
 # memory-map — Handover
-Last verified: 2026-10-12 at 8dd155d
+Last verified: 2026-10-12 at af255b9
 
-A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is done
-(`docs/goals-archive.md`); G-002, a Startup view, is built (M1–M4 done) and awaits the Owner's checks and sign-off in `GOALS.md`.
+A desktop app (C#, Avalonia) showing RAM as a live treemap; Windows today, Linux in progress.
+G-001 is done (`docs/goals-archive.md`); G-002, a Startup view, is built and awaits the Owner's
+checks and sign-off; G-003, the Linux version, is active at M2 (`GOALS.md`).
 Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -20,7 +21,7 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 - **Process actions work.** Right-click a single process for *End …*: always confirmed,
   guarded by start time (D008), critical processes and the app itself refused. *Open file
   location* opens Explorer. Failures show in a dismissable notice bar.
-- **History works.** It charts In use, Kernel pools and the window's five biggest apps
+- **History works.** It charts In use, Kernel allocations and the window's five biggest apps
   over 5–60 minutes, keeping at most one point a second for an hour (D010). Lines break
   where sampling paused. Line colours stay with their app (D012).
 - **Tray and alert work.** The tray icon is a gauge of RAM in use. Closing the window hides
@@ -59,17 +60,25 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     differs (Killer Control Center: registry on, Settings Off; unexplained, D019).
     Records: `docs/reviews/2026-10-12-g002-m2-startup-switch.md`,
     `docs/reviews/2026-10-12-g002-m1-startup-crosscheck.md`.
-- `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 237/237 tests
-  (Core 104, Windows integration 83, App headless 50). GitHub Actions runs the same script
-  on every push to main (D023); the run for 90b2b12 passed.
-- `scripts/crosscheck.ps1` against WMI: worst difference 0.15% of RAM (limit 2%).
+- **Linux data engine (G-003 M1).** `src/MemoryMap.Linux/` samples /proc without root: sizes by
+  RssAnon (D026), kinds from name, cgroup and account (D027), memory in other PID namespaces
+  shown as "Programs not visible here". `memmap-dump` runs on Linux (table and `--json`); the app
+  does not yet (M2). Record: `docs/reviews/2026-10-12-g003-m1-linux-sampler.md`.
+  - On WSL Ubuntu 24.04: `scripts/crosscheck-linux.py` against `free`, meminfo and `ps`: PASS,
+    worst 0.06% of RAM; process count 43/43. A sample takes about 4 ms.
+- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 275 tests
+  (274 passed, 1 skipped: the Linux-only live test). On WSL Ubuntu, which has no pwsh, the same steps pass over
+  `MemoryMap.Linux.slnf`: 142/142. GitHub Actions
+  runs the gate on windows-2025 and ubuntu-24.04 on every push to main (D028).
+- `scripts/crosscheck.ps1` against WMI: PASS, worst difference 1.4% of RAM (limit 2%).
 - Not run: the critical-process refusal, because it needs an elevated session.
 - "Shared & other" is about 3.5 GB (23% of RAM) on this PC. It is real shared memory (D003).
 
 ## How things fit together
 
 - `MemoryMap.Core` is pure and OS-neutral; views take layout and wording from it (D007):
-  - `Breakdown.cs` builds one `MapNode` tree with stable keys (D005).
+  - `Breakdown.cs` builds one `MapNode` tree with stable keys (D005). Group labels, the
+    remainder's name and every named figure come from the sampler's `SystemMemory` (D025).
   - `Treemap.cs` holds the squarified layout. `Scene.cs` arranges frames and tiles and
     hit-tests them.
   - `Describe.cs` holds the tooltip and table wording. `Navigation.cs` holds the zoom chain.
@@ -94,6 +103,11 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 - `MemoryMap.Windows` holds `WindowsMemorySampler` (native APIs, D002) and
   `WindowsProcessActions` (D008). The `Native.cs` offsets are 64-bit only. Of a sample's
   7.2 ms, the kernel's process list is 4.8 ms.
+- `MemoryMap.Linux` holds `LinuxMemorySampler`, reading through `IProcFs` so tests feed it text
+  (`tests/MemoryMap.Linux.Tests/FakeProcFs.cs`); `ProcText.cs` parses stat, status and meminfo.
+  A process's name and kind are cached per (pid, start, comm, uid).
+- `MemoryMap.Cli` picks the sampler by OS. `MemoryMap.Linux.slnf` is the Linux build until the
+  app builds there (M2).
 - `MemoryMap.App`:
   - `Program.cs` selects software rendering.
   - `MainViewModel.cs` applies the latest breakdown on the UI thread. It feeds the history
@@ -108,9 +122,10 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 
 - Nothing is published, released or signed without Owner approval; the private repo is the
   only remote (Owner, 2026-10-12; VALUES.md → Restraint).
-- v1 reads memory on Windows only. The sampler stays behind `IMemorySampler`, and Core holds
-  no Windows rules (G-001 constraint).
-- Process tiles are sized by private working set (G-001 criterion 1; D003).
+- Core holds no OS rules: samplers stay behind `IMemorySampler` and supply names and figures
+  (G-001 constraint, G-003 plan; D025).
+- Process tiles are sized by private working set on Windows (G-001 criterion 1; D003) and by
+  RssAnon on Linux, which needs no root (G-003 criterion 1; D026).
 - Keep software rendering unless a GPU build is re-measured for an hour on the History tab
   under 150 MB (criterion 9; D015).
 - The slower hidden refresh stays off by default (Owner, 2026-10-12; D016).
@@ -120,24 +135,26 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   time matches the sample (G-001 criterion 6; D008).
 - xunit.v3 stays at the version `Avalonia.Headless.XUnit` is built against, 3.2.2 today (D006).
 - Tests never touch real autostart entries: they read and write only the `StartupFixture`
-  scratch key and temp folders (G-002 constraint). Checks against Windows use throwaway
-  entries the script creates and removes (`scripts/startup-roundtrip.ps1`).
+  scratch key and temp folders (G-002 and G-003 constraints). Checks against Windows use
+  throwaway entries the script creates and removes (`scripts/startup-roundtrip.ps1`).
 - A switch only writes the StartupApproved flag; nothing is deleted (G-002 criterion 3).
 - The app stays unelevated; a machine-wide change goes through the one-shot helper, one admin
   prompt per change (G-002 constraint; D024). The helper refuses user-scope ids: elevated, it
   would see the administrator's HKCU (D024).
-- `scripts/check.ps1` is the merge gate, locally and in CI (STANDARDS.md → formatter in CI; D023).
+- `scripts/check.ps1` is the merge gate on both OSes, locally and in CI (STANDARDS.md →
+  formatter in CI; G-003 criterion 5; D028).
 
 ## Next steps and open questions
 
+- G-003 M2: the app on Linux (one app project for both OSes, Linux process actions, settings
+  in `~/.config/MemoryMap/`, tray with fallback, headless tests on both OSes, a real WSLg run,
+  and `MemoryMap.Linux.slnf` removed). Then M3 (XDG Startup tab) and M4 (linux-x64 file, `.deb`).
 - Awaiting the Owner: `docs/second-pc-checklist.md` (the real administrator prompt and Task
   Manager on this PC; a second PC for criterion 6), then G-002 sign-off.
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
 - Open, step B.5 of the checklist: whether switching a machine-wide entry off in Settings
   writes a user-key flag (none exists here; the reader reads machine flags only, D018).
-- Proposed later goal (Owner's call): Linux. It needs a `/proc` sampler behind `IMemorySampler`,
-  Linux groups, a Linux rendering choice, and a check of tray support on GNOME.
 - Not measured: software rendering on a 4K or maximised window. Re-measure before relying
   on criterion 9 there (D015).
 
