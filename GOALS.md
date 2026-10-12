@@ -43,7 +43,7 @@
 - [x] M2 — Live treemap window. Avalonia app with a custom-drawn treemap that refreshes
   live with stable tiles, hover tooltip, legend, table view, light/dark. Avalonia
   headless UI tests for the window.
-- [ ] M3 — Drill-down and process actions. Click to zoom app → processes, breadcrumb/Back;
+- [x] M3 — Drill-down and process actions. Click to zoom app → processes, breadcrumb/Back;
   context menu with confirmed *End process* and *Open file location*; clear handling of
   protected/elevated processes.
 - [ ] M4 — History graph and tray. In-memory ring buffer of samples, a timeline view
@@ -54,6 +54,12 @@
   final, full end-to-end pass.
 
 **Progress log** (newest first):
+- 2026-10-12 — M3 done (6a53bec). Drill-down with breadcrumb, Back and back gestures;
+  context menu with confirmed End (one process, start-time guard) and Open file location;
+  denied/exited/failed outcomes in a notice bar. Verified with `scripts/check.ps1`: format
+  clean, 0 warnings, 105/105 tests. Live: 122 MB private. The critical-process refusal was
+  not run (needs elevation). /simplify and /code-review fixes applied in 6a53bec.
+  Decisions D008 and D009. Next: M4, history graph and tray.
 - 2026-10-12 — M2 done (af0ae53). Live Avalonia map window: group frames with app tiles,
   hover tooltip, legend, Table tab, light/dark theme. Verified with `scripts/check.ps1`:
   format clean, 0 warnings, 73/73 tests (including 10 headless window tests). Run live on
