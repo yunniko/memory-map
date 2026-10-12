@@ -1,6 +1,6 @@
 # Goals — memory-map
 
-### G-001 · Realtime memory map desktop app (C# / Avalonia) — DRAFT
+### G-001 · Realtime memory map desktop app (C# / Avalonia) — ACTIVE
 - **What:** A desktop app that shows this PC's RAM as a live treemap (SequoiaView-style,
   for memory instead of disk), refreshing every 1–2 s, with drill-down from app to
   processes, right-click process actions, a history graph, and a tray icon.
@@ -35,7 +35,7 @@
     (VALUES.md → Restraint).
 
 **Milestones:**
-- [ ] M1 — Data engine. Solution with a pure `MemoryMap.Core` library (snapshot model,
+- [x] M1 — Data engine. Solution with a pure `MemoryMap.Core` library (snapshot model,
   grouping/folding, squarified layout) and a Windows sampler (native APIs, cheap enough
   for a 1 s refresh). xUnit tests for the pure logic; a `--dump` console mode whose
   numbers are cross-checked against `memory-report.ps1`. Formatter (`dotnet format` +
@@ -54,6 +54,14 @@
   final, full end-to-end pass.
 
 **Progress log** (newest first):
+- 2026-10-12 — M1 done (dbbeb13). Core breakdown tree, squarified layout and Windows sampler,
+  plus the `memmap-dump` CLI. Verified with `scripts/check.ps1`: format clean, 0 warnings,
+  48/48 tests. The cross-check against WMI passes with a worst difference of 0.08% of RAM
+  (limit 2%); one run straight after a build failed at 2.47% from process churn (see
+  `docs/reviews/`). A refresh costs ~7.9 ms. /simplify led to the restructure in D005;
+  /code-review led to 5 fixes. Next: M2, the live treemap window.
+- 2026-10-12 — Owner accepted the plan ("accept the plan, go ahead"); no milestone marked
+  review-before-continuing. Starting M1.
 - 2026-10-12 — Goal created on Owner request ("realtime memory map written on c#").
   Owner chose Avalonia and all four extras (drill-down, process actions, tray, history).
   Plan presented; awaiting acceptance.
