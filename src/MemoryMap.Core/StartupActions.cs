@@ -23,8 +23,13 @@ public static class StartupResult
     public static ActionResult Gone(StartupEntry e) => new(ActionOutcome.AlreadyExited,
         $"{e.Name} is no longer registered to start at sign-in; the list has been refreshed.");
 
-    public static ActionResult NotSwitchable(StartupEntry e) =>
-        new(ActionOutcome.Refused, $"{e.Name}: {StartupText.WhyNotSwitchable(e.Switch)}.");
+    /// <summary>The administrator prompt for a machine-wide entry was answered No.</summary>
+    public static ActionResult Declined(StartupEntry e) => new(ActionOutcome.Refused,
+        $"{e.Name} was not switched: the administrator prompt was declined, so nothing changed.");
+
+    /// <summary>A Store app's switch opened Windows Settings, where the change is made.</summary>
+    public static ActionResult InSettings(StartupEntry e) => new(ActionOutcome.Refused,
+        $"{e.Name} is a Store app: switch it in the Windows Settings page that just opened (Apps > Startup).");
 
     public static ActionResult Failed(StartupEntry e, string verb, string reason) =>
         new(ActionOutcome.Failed, $"Could not {verb} {e.Name}: {reason}");
@@ -46,17 +51,13 @@ public static class StartupText
     public static string Memory(StartupEntry entry, StartupUsage usage) =>
         entry.CountsProcesses && usage.Running ? Format.Bytes(usage.PrivateWorkingSet) : "";
 
-    /// <summary>Why the switch is or is not available, for its tooltip.</summary>
+    /// <summary>What flipping the switch will do, for its tooltip.</summary>
     public static string SwitchHint(StartupEntry entry) => entry.Switch switch
     {
         StartupSwitch.Direct => entry.Enabled ? "Starts when you sign in; switch off to stop that" : "Switched off; switch on to start it at sign-in",
-        var other => WhyNotSwitchable(other),
+        StartupSwitch.NeedsAdmin => "It starts for every user of this PC; switching it asks for administrator rights for that one change",
+        _ => "A Store app: the switch opens Windows Settings > Apps > Startup, where it is changed",
     };
-
-    /// <summary>Why an entry cannot be switched from this app; the tooltip and the refusal say the same.</summary>
-    public static string WhyNotSwitchable(StartupSwitch kind) => kind == StartupSwitch.NeedsAdmin
-        ? "It starts for every user of this PC; switching it needs administrator rights"
-        : "A Store app: switch it in Windows Settings > Apps > Startup";
 
     /// <summary>Explains <see cref="NotCounted"/>.</summary>
     public const string NotCountedHint =

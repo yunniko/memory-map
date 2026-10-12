@@ -43,7 +43,7 @@ public sealed class StartupItem : ObservableObject
     /// <summary>The map leaves out apps holding no private memory, so those have nothing to show.</summary>
     public bool CanShowOnMap => _entry.CountsProcesses && _usage.PrivateWorkingSet > 0;
 
-    public bool CanSwitch => _entry.Switch == StartupSwitch.Direct && !_isBusy && _owner.CanChange;
+    public bool CanSwitch => !_isBusy && _owner.CanChange;
 
     public string SwitchHint => StartupText.SwitchHint(_entry);
 

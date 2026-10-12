@@ -171,22 +171,32 @@ public class StartupTabTests
     }
 
     [AvaloniaFact]
-    public void Machine_and_store_switches_cannot_be_flipped_here_and_say_why()
+    public void Machine_and_store_switches_say_what_they_do_and_spring_back_when_refused()
     {
         var reader = Machine();
-        var actions = new FakeStartupActions(reader);
+        // The administrator prompt is declined; the Store app is switched in Settings instead.
+        var actions = new FakeStartupActions(reader) { Refuses = ["run/machine/Driver", "task/Fake_1/Task"] };
         var (window, model) = OpenTab(reader, actions);
 
         var driver = InRow<ToggleSwitch>(window, "Driver");
         var store = InRow<ToggleSwitch>(window, "Store app");
-        Assert.False(driver.IsEnabled);
-        Assert.False(store.IsEnabled);
-        Assert.Contains("administrator", ToolTip.GetTip(driver) as string);
-        Assert.Contains("Settings", ToolTip.GetTip(store) as string);
+        Assert.True(driver.IsEnabled);
+        Assert.True(store.IsEnabled);
+        Assert.Contains("asks for administrator rights", ToolTip.GetTip(driver) as string);
+        Assert.Contains("opens Windows Settings", ToolTip.GetTip(store) as string);
 
-        Item(model, "run/machine/Driver").IsEnabled = false;
+        Click(window, driver);
+        Wait(model.Startup.Change);
+        Dispatcher.UIThread.RunJobs();
+        Click(window, store);
+        Wait(model.Startup.Change);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Equal([("run/machine/Driver", false), ("task/Fake_1/Task", false)], actions.Calls);
         Assert.True(Item(model, "run/machine/Driver").IsEnabled);
-        Assert.Empty(actions.Calls);
+        Assert.True(InRow<ToggleSwitch>(window, "Driver").IsChecked);
+        Assert.True(InRow<ToggleSwitch>(window, "Store app").IsChecked);
+        Assert.Equal("Store app refused", model.Notice);
     }
 
     [AvaloniaFact]
@@ -274,6 +284,9 @@ public class StartupTabTests
 
         public bool Fails { get; init; }
 
+        /// <summary>Entries whose change is refused and leaves them as they were (a declined prompt, Settings).</summary>
+        public string[] Refuses { get; init; } = [];
+
         /// <summary>An entry whose change waits for <see cref="Release"/>, as a slow write would.</summary>
         public string? Held { get; init; }
 
@@ -292,6 +305,10 @@ public class StartupTabTests
             if (Fails)
             {
                 return new(ActionOutcome.Failed, "failed");
+            }
+            if (Refuses.Contains(entry.Id))
+            {
+                return new(ActionOutcome.Refused, $"{entry.Name} refused");
             }
             var at = reader.Entries.FindIndex(e => e.Id == entry.Id);
             reader.Entries[at] = entry with { Enabled = enabled };

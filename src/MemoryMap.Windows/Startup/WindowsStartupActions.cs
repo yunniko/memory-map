@@ -1,50 +1,34 @@
+using System.ComponentModel;
 using System.Runtime.Versioning;
-using System.Security;
 using MemoryMap.Core;
-using Microsoft.Win32;
 
 namespace MemoryMap.Windows.Startup;
 
 /// <summary>
-/// Switches this user's Run values and Startup-folder files on and off by writing their
-/// StartupApproved flag, as Windows' own switch does, and nothing else: the registration itself
-/// is never touched, so a switch is always reversible. Machine-wide entries need an
-/// administrator and Store tasks belong to Settings; both are refused here. See D021.
+/// Switches startup entries on and off by writing their StartupApproved flag, as Windows' own
+/// switch does, and nothing else: the registration itself is never touched, so a switch is
+/// always reversible (D021). This user's entries are written here. A machine-wide entry is
+/// written by this program run again as administrator for that one change (<see cref="StartupHelper"/>,
+/// D024); a Store app's switch opens Windows Settings, the only documented way to change it.
 /// </summary>
 [SupportedOSPlatform("windows")]
-public sealed class WindowsStartupActions(StartupLocations locations) : IStartupActions
+public sealed class WindowsStartupActions(StartupLocations locations, IStartupLauncher launcher) : IStartupActions
 {
+    internal const string SettingsPage = "ms-settings:startupapps";
+
     public WindowsStartupActions()
-        : this(StartupLocations.ForCurrentUser())
+        : this(StartupLocations.ForCurrentUser(), new ShellStartupLauncher())
     {
     }
 
-    public ActionResult SetEnabled(StartupEntry entry, bool enabled)
+    public ActionResult SetEnabled(StartupEntry entry, bool enabled) => entry.Switch switch
     {
-        if (entry.Switch != StartupSwitch.Direct)
-        {
-            return StartupResult.NotSwitchable(entry);
-        }
-        try
-        {
-            var target = StartupIds.Parse(entry.Id);
-            // A flag for something no longer registered would only be clutter; say so instead.
-            if (!IsRegistered(target))
-            {
-                return StartupResult.Gone(entry);
-            }
-            using var approval = locations.User.CreateSubKey(target.ApprovalPath, writable: true);
-            approval.SetValue(target.Name, StartupApproval.Flag(enabled, DateTimeOffset.Now), RegistryValueKind.Binary);
-            return StartupApproval.IsEnabled(approval.GetValue(target.Name)) == enabled
-                ? StartupResult.Switched(entry, enabled)
-                : StartupResult.Failed(entry, "switch", "Windows did not keep the change.");
-        }
-        // ArgumentException: an id this switch does not know, or a name the registry refuses.
-        catch (Exception e) when (e is SecurityException or UnauthorizedAccessException or IOException or ArgumentException)
-        {
-            return StartupResult.Failed(entry, "switch", e.Message);
-        }
-    }
+        StartupSwitch.Direct => Direct(entry, enabled),
+        StartupSwitch.NeedsAdmin => Elevated(entry, enabled),
+        _ => launcher.OpenSettings(SettingsPage) is { } error
+            ? StartupResult.Failed(entry, "open Windows Settings for", error)
+            : StartupResult.InSettings(entry),
+    };
 
     public ActionResult ShowInExplorer(StartupEntry entry)
     {
@@ -66,21 +50,50 @@ public sealed class WindowsStartupActions(StartupLocations locations) : IStartup
         {
             return null;
         }
-        var file = FolderFile(StartupIds.Parse(entry.Id));
+        var file = StartupIds.Parse(entry.Id).FolderFile(locations);
         return File.Exists(file) ? file : null;
     }
 
-    private string FolderFile(StartupTarget target) =>
-        Path.Combine(target.Scope == StartupIds.User ? locations.UserFolder : locations.MachineFolder, target.Name);
-
-    // Only Direct entries get here, and those are this user's: the user's Run key and folder.
-    private bool IsRegistered(StartupTarget target)
+    private ActionResult Direct(StartupEntry entry, bool enabled)
     {
-        if (target.Source == StartupSource.StartupFolder)
+        StartupTarget target;
+        try
         {
-            return File.Exists(FolderFile(target));
+            target = StartupIds.Parse(entry.Id);
         }
-        using var run = locations.User.OpenSubKey(WindowsStartupReader.RunKey);
-        return run?.GetValue(target.Name) is string;
+        catch (ArgumentException e)
+        {
+            return StartupResult.Failed(entry, "switch", e.Message);
+        }
+        var (outcome, error) = StartupFlags.Write(locations, target, enabled);
+        return Report(entry, enabled, outcome, error);
     }
+
+    private ActionResult Elevated(StartupEntry entry, bool enabled)
+    {
+        int? exit;
+        try
+        {
+            exit = launcher.RunElevated([StartupHelper.Verb, entry.Id, enabled ? "on" : "off"]);
+        }
+        catch (Exception e) when (e is Win32Exception or InvalidOperationException)
+        {
+            return StartupResult.Failed(entry, "switch", $"the administrator step did not start ({e.Message}).");
+        }
+        if (exit is not { } code)
+        {
+            return StartupResult.Declined(entry);
+        }
+        // The helper reports only its exit code; a code it never returns is a failure too.
+        var outcome = Enum.IsDefined((FlagWrite)code) ? (FlagWrite)code : FlagWrite.Failed;
+        return Report(entry, enabled, outcome, $"the administrator step ended with code {code}.");
+    }
+
+    private static ActionResult Report(StartupEntry entry, bool enabled, FlagWrite outcome, string? error) => outcome switch
+    {
+        FlagWrite.Switched => StartupResult.Switched(entry, enabled),
+        FlagWrite.Gone => StartupResult.Gone(entry),
+        FlagWrite.NotKept => StartupResult.Failed(entry, "switch", "Windows did not keep the change."),
+        _ => StartupResult.Failed(entry, "switch", error ?? "the change was refused."),
+    };
 }

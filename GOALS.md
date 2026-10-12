@@ -44,13 +44,22 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M2 — Startup tab. The list with memory now, running state and *Show on map*. A switch
   for user entries, with exactly the bytes Task Manager writes. *Open file location*.
   Headless UI tests; a real round trip on a test entry the app creates and removes.
-- [ ] M3 — Machine-wide entries and Store apps. A per-change administrator prompt through a
+- [x] M3 — Machine-wide entries and Store apps. A per-change administrator prompt through a
   one-shot elevated `MemoryMap.exe` helper; a declined prompt changes nothing. Store tasks
   link to Windows Settings.
 - [ ] M4 — Finish. Publish and install to C:\bin, README and handover, an end-to-end pass,
   and a short checklist for the Owner's second-PC run.
 
 **Progress log** (newest first):
+- 2026-10-12 — **M3 done** (every startup switch works: machine-wide entries through a one-shot
+  elevated `--startup-helper` run of the same exe, declined prompt changes nothing; Store apps'
+  switch opens Settings > Apps > Startup; D024). Verified: `check.ps1` 237/237 (Core 104, Windows
+  83, App 50), helper code tested in-process against the scratch key; `startup-helper-check.ps1` 8/8
+  (real exes, unelevated, nothing written); real app via UI Automation 41/41 switches enabled,
+  Calendar opened Settings' Startup page and stayed Off, 82 MB. /simplify (flag writer extracted,
+  launcher stub removed, Settings opening shares Explorer's shell start) and /code-review (`.`/`..`
+  folder ids now rejected; six risks declined, see milestone note) applied. Real UAC prompt not
+  run (secure desktop): M4 hand checklist. Next: M4.
 - 2026-10-12 — **M2 done** (Startup tab: list, memory now, *Show on map*, *Open file location*,
   switches for this user's entries; CLI `--startup-set`). Switch writes Settings' own flag bytes
   (D021); list read on tab open, matched off the UI thread while shown (D022). Owner asked for a

@@ -23,3 +23,4 @@
 - D021 — A startup switch writes the same StartupApproved bytes Windows Settings writes — active
 - D022 — The startup list is read when the tab opens; samples are matched only while it is shown — active
 - D023 — The code lives in a private GitHub repo; CI runs the local gate on a Windows runner — active
+- D024 — Machine-wide startup changes run this exe elevated in a one-shot helper mode — active

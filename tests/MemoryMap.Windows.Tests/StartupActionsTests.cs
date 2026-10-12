@@ -77,19 +77,114 @@ public sealed class StartupActionsTests : IDisposable
         Assert.Null(Flag(StartupApproval.Run, "Tool"));
     }
 
-    [Fact]
-    public void Machine_entries_and_store_tasks_are_refused_without_writing()
+    private byte[]? MachineFlag(string approvalPath, string name)
     {
-        var tool = _pc.Program("Vendor", "Tool.exe");
-        Set(_pc.Machine, Run, "Tool", tool);
-        var machine = Only("run/machine/Tool");
-        var store = machine with { Id = "task/Fake_1/Task", Source = StartupSource.StoreTask, Scope = StartupScope.User };
+        using var key = _pc.Machine.OpenSubKey(approvalPath);
+        return key?.GetValue(name) as byte[];
+    }
 
-        Assert.Equal(ActionOutcome.Refused, _pc.Actions().SetEnabled(machine, false).Outcome);
-        Assert.Equal(ActionOutcome.Refused, _pc.Actions().SetEnabled(store, false).Outcome);
+    [Theory]
+    [InlineData(Run, "run/machine/Tool")]
+    [InlineData(Run32, "run/machine32/Tool")]
+    public void A_machine_run_value_is_switched_by_the_elevated_helper_under_the_machine_key(string runKey, string id)
+    {
+        Set(_pc.Machine, runKey, "Tool", _pc.Program("Vendor", "Tool.exe"));
+        var approval = runKey == Run32 ? StartupApproval.Run32 : StartupApproval.Run;
+
+        var off = _pc.Actions().SetEnabled(Only(id), false);
+
+        Assert.True(off.Succeeded, off.Message);
+        Assert.Equal([StartupHelper.Verb, id, "off"], Assert.Single(_pc.Launcher.Elevated));
+        Assert.Equal(1, MachineFlag(approval, "Tool")![0]);
+        Assert.Null(Flag(approval, "Tool"));
+        Assert.False(Only(id).Enabled);
+
+        Assert.True(_pc.Actions().SetEnabled(Only(id), true).Succeeded);
+        Assert.True(Only(id).Enabled);
+        Assert.Equal(new byte[12], MachineFlag(approval, "Tool"));
+    }
+
+    [Fact]
+    public void A_common_startup_file_is_switched_by_the_elevated_helper()
+    {
+        var lnk = Path.Combine(_pc.MachineFolder, "Everyone.lnk");
+        Link(lnk, _pc.Program("Vendor", "Tool.exe"));
+
+        Assert.True(_pc.Actions().SetEnabled(Only("folder/machine/Everyone.lnk"), false).Succeeded);
+
+        Assert.False(Only("folder/machine/Everyone.lnk").Enabled);
+        Assert.Equal(1, MachineFlag(StartupApproval.Folder, "Everyone.lnk")![0]);
+        Assert.True(File.Exists(lnk));
+    }
+
+    [Fact]
+    public void A_declined_administrator_prompt_changes_nothing_and_says_so()
+    {
+        Set(_pc.Machine, Run, "Tool", _pc.Program("Vendor", "Tool.exe"));
+        _pc.Launcher.Declines = true;
+
+        var result = _pc.Actions().SetEnabled(Only("run/machine/Tool"), false);
+
+        Assert.Equal(ActionOutcome.Refused, result.Outcome);
+        Assert.Contains("declined, so nothing changed", result.Message);
         Assert.True(Only("run/machine/Tool").Enabled);
-        using var flags = _pc.Machine.OpenSubKey(StartupApproval.Run);
-        Assert.Null(flags?.GetValue("Tool"));
+        Assert.Null(MachineFlag(StartupApproval.Run, "Tool"));
+    }
+
+    [Theory]
+    [InlineData(0, ActionOutcome.Done)]
+    [InlineData(3, ActionOutcome.AlreadyExited)]
+    [InlineData(4, ActionOutcome.Failed)]
+    [InlineData(-1073741510, ActionOutcome.Failed)]
+    public void The_helpers_exit_code_becomes_the_outcome(int exit, ActionOutcome expected)
+    {
+        Set(_pc.Machine, Run, "Tool", _pc.Program("Vendor", "Tool.exe"));
+        _pc.Launcher.ExitCode = exit;
+
+        var result = _pc.Actions().SetEnabled(Only("run/machine/Tool"), false);
+
+        Assert.Equal(expected, result.Outcome);
+        Assert.Null(MachineFlag(StartupApproval.Run, "Tool"));
+    }
+
+    [Theory]
+    [InlineData("--startup-helper", "run/user/Tool", "off")]
+    [InlineData("--startup-helper", "folder/user/Tool.lnk", "off")]
+    [InlineData("--startup-helper", @"folder/machine/..\..\x.lnk", "off")]
+    [InlineData("--startup-helper", "run/machine/Tool", "maybe")]
+    [InlineData("--startup-helper", "task/Fake_1/Task", "off")]
+    [InlineData("--startup-helper", "run/machine/Tool")]
+    public void The_helper_refuses_anything_but_one_machine_entry_and_writes_nothing(params string[] args)
+    {
+        Set(_pc.User, Run, "Tool", _pc.Program("Vendor", "Tool.exe"));
+        Set(_pc.Machine, Run, "Tool", _pc.Program("Vendor", "Tool.exe"));
+        Link(Path.Combine(_pc.UserFolder, "Tool.lnk"), _pc.Program("Vendor", "Tool.exe"));
+
+        Assert.Equal(2, StartupHelper.Execute(args, _pc.Locations));
+
+        Assert.Null(Flag(StartupApproval.Run, "Tool"));
+        Assert.Null(Flag(StartupApproval.Folder, "Tool.lnk"));
+        Assert.Null(MachineFlag(StartupApproval.Run, "Tool"));
+        Assert.Null(MachineFlag(StartupApproval.Folder, "x.lnk"));
+    }
+
+    [Fact]
+    public void Arguments_without_the_helper_verb_start_the_app_normally() =>
+        Assert.Null(StartupHelper.Run(["--startup", "run/machine/Tool", "off"]));
+
+    [Fact]
+    public void A_store_tasks_switch_opens_settings_and_writes_nothing()
+    {
+        Set(_pc.Machine, Run, "Tool", _pc.Program("Vendor", "Tool.exe"));
+        var store = Only("run/machine/Tool") with { Id = "task/Fake_1/Task", Source = StartupSource.StoreTask, Scope = StartupScope.User };
+
+        var result = _pc.Actions().SetEnabled(store, false);
+
+        Assert.Equal(ActionOutcome.Refused, result.Outcome);
+        Assert.Contains("Windows Settings page that just opened", result.Message);
+        Assert.Equal([WindowsStartupActions.SettingsPage], _pc.Launcher.Opened);
+        Assert.Empty(_pc.Launcher.Elevated);
+        Assert.Null(MachineFlag(StartupApproval.Run, "Tool"));
     }
 
     [Fact]
@@ -125,6 +220,8 @@ public sealed class StartupActionsTests : IDisposable
     [InlineData("run/other/Tool")]
     [InlineData("folder/machine32/Tool.lnk")]
     [InlineData("run/user/")]
+    [InlineData("folder/machine/..")]
+    [InlineData(@"folder/user/sub\Tool.lnk")]
     public void Other_ids_are_named_in_the_error(string id) =>
         Assert.Contains(id, Assert.Throws<ArgumentException>(() => StartupIds.Parse(id)).Message);
 

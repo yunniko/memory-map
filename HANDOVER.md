@@ -1,8 +1,8 @@
 # memory-map — Handover
-Last verified: 2026-10-12 at d066421
+Last verified: 2026-10-12 at 90b2b12
 
 A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is done
-(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md` (M1 and M2 done).
+(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md` (M1–M3 done).
 Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -36,24 +36,31 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     150 MB) is met even on a one-core reading.
   - Minimised for 300 s: 0.98% of one core with the hidden refresh off, 0.37% at 5 s and
     0.24% at 30 s.
-- **Startup tab (G-002 M2).** It lists every program that starts at sign-in (D018, D019),
+- **Startup tab (G-002 M2–M3).** It lists every program that starts at sign-in (D018, D019),
   whether it runs now and its private working set (host programs not counted, D020), with
-  *Show on map* and *Open file location*. This user's Run values and Startup-folder files
-  switch off and on by their StartupApproved flag, written with the bytes Settings writes (D021).
-  Machine-wide entries and Store tasks show a disabled switch saying why (M3 adds them).
+  *Show on map* and *Open file location*. Every entry has a working switch:
+  - This user's Run values and Startup-folder files: their StartupApproved flag is written
+    in-process, with the bytes Settings writes (D021).
+  - Machine-wide entries: the same exe runs elevated as `--startup-helper <id> on|off` for that
+    one change (D024). A declined prompt changes nothing and the notice says so.
+  - Store apps: the switch opens Settings > Apps > Startup; the row springs back and says so.
   The list is read when the tab opens; samples are matched off the UI thread while it is
   shown (D022). `memmap-dump --startup` and `--startup-set <id> on|off` do the same from the CLI.
-  - On this PC: 41 entries, 20 on, 12 switchable; read 316–375 ms, first match 26–33 ms,
-    later samples 7–9 ms. Real app via UI Automation: 41 switches, 81 MB private.
+  - On this PC: 41 entries, 20 on; 12 direct, 11 machine-wide, 18 Store. Read 316–416 ms, first
+    match 26–41 ms, later samples 7–9 ms. Real app via UI Automation: 41 switches, all enabled,
+    82 MB private; Calendar's switch opened Settings' Startup page and stayed Off.
+  - `scripts/startup-helper-check.ps1`: 8/8 (both exes in helper mode, unelevated, refusals
+    and an unregistered id; nothing written). Record: `docs/reviews/2026-10-12-g002-m3-elevated-switch.md`.
+  - Not run: the real administrator prompt (secure desktop; M4 hand checklist).
   - `scripts/startup-roundtrip.ps1`: 8/8 (app and Settings, both directions, two throwaway
     entries, removed afterwards). `scripts/startup-crosscheck.ps1`: 41/41 names, one state
     differs (Killer Control Center: registry on, Settings Off; unexplained, D019).
     Records: `docs/reviews/2026-10-12-g002-m2-startup-switch.md`,
     `docs/reviews/2026-10-12-g002-m1-startup-crosscheck.md`.
   - The installed C:\bin copy has no Startup tab yet; M4 reinstalls it.
-- `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 220/220 tests
-  (Core 104, Windows integration 66, App headless 50). GitHub Actions runs the same script
-  on every push to main (D023); the run for b02dd08 passed.
+- `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 237/237 tests
+  (Core 104, Windows integration 83, App headless 50). GitHub Actions runs the same script
+  on every push to main (D023); the run for 90b2b12 passed.
 - `scripts/crosscheck.ps1` against WMI: worst difference 0.15% of RAM (limit 2%).
 - Not run: the critical-process refusal, because it needs an elevated session.
 - "Shared & other" is about 3.5 GB (23% of RAM) on this PC. It is real shared memory (D003).
@@ -76,6 +83,10 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   holds `IStartupActions` and the wording shared by the app and the CLI. `src/MemoryMap.Windows/Startup/`
   reads the sources and switches them; `StartupIds.cs` is the one place ids are built and parsed;
   `StartupLocations` lets tests point both at a scratch key and temp folders.
+- Switching: `WindowsStartupActions` routes by `StartupEntry.Switch`. `StartupFlags.cs` writes
+  and reads back a flag, both in-process and in `StartupHelper.cs` (the elevated mode, checked
+  first in both `Program.cs` files). `StartupLauncher.cs` is the only code that elevates or opens
+  Settings; tests swap it for `FakeLauncher`, which runs the helper code against the fixture.
 - The Startup tab is `src/MemoryMap.App/StartupViewModel.cs`: rows are kept by id so a reload
   updates them in place, and a row's switch shows what Windows reads back after the change.
   *Show on map* uses `Navigation.Reveal` (the deepest node holding all of its processes).
@@ -111,15 +122,17 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   scratch key and temp folders (G-002 constraint). Checks against Windows use throwaway
   entries the script creates and removes (`scripts/startup-roundtrip.ps1`).
 - A switch only writes the StartupApproved flag; nothing is deleted (G-002 criterion 3).
-- The app stays unelevated; machine-wide startup changes will go through a per-change admin
-  prompt (G-002 constraint).
+- The app stays unelevated; a machine-wide change goes through the one-shot helper, one admin
+  prompt per change (G-002 constraint; D024). The helper refuses user-scope ids: elevated, it
+  would see the administrator's HKCU (D024).
 - `scripts/check.ps1` is the merge gate, locally and in CI (STANDARDS.md → formatter in CI; D023).
 
 ## Next steps and open questions
 
-- G-002 M3: machine-wide entries through a one-shot elevated `MemoryMap.exe` helper per change
-  (a declined prompt changes nothing), and Store tasks' switch opening Settings. Then M4.
-  G-002 must work on other PCs (Owner, 2026-10-12); the second-PC run is in M4.
+- G-002 M4: publish and install to C:\bin, README and handover, an end-to-end pass, and a
+  second-PC checklist. G-002 must work on other PCs (Owner, 2026-10-12).
+- For the M4 hand checklist: approve and decline the real administrator prompt for a
+  machine-wide entry, and confirm Settings and Task Manager show the result.
 - For the M4 checklist: Task Manager shows the same state for an entry switched here (its
   bytes could not be observed, D021); Settings hides a Run entry whose program is missing.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).

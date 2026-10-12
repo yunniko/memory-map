@@ -11,6 +11,12 @@ if (!OperatingSystem.IsWindows())
     return 2;
 }
 
+// --startup-set on a machine-wide entry runs this exe again elevated, as the app does (D024).
+if (StartupHelper.Run(args) is { } helperExit)
+{
+    return helperExit;
+}
+
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 var json = args.Contains("--json");
 var top = 10;

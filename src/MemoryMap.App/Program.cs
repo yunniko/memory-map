@@ -1,4 +1,5 @@
 using Avalonia;
+using MemoryMap.Windows.Startup;
 
 namespace MemoryMap.App;
 
@@ -7,6 +8,11 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Run again elevated for one machine-wide startup change: write it and exit, no window (D024).
+        if (OperatingSystem.IsWindows() && StartupHelper.Run(args) is { } helperExit)
+        {
+            return helperExit;
+        }
         if (!Environment.Is64BitProcess)
         {
             Console.Error.WriteLine("Memory Map needs 64-bit Windows.");

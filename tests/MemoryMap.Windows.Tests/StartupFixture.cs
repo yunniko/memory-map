@@ -22,6 +22,7 @@ internal sealed class StartupFixture : IDisposable
     public static readonly byte[] On = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     public static readonly byte[] Off = [3, 0, 0, 0, 0xf5, 0x6b, 0x2d, 0xd0, 0xbd, 0x7e, 0xda, 0x01];
 
+    private FakeLauncher? _launcher;
     private readonly string _keyPath = $@"Software\MemoryMap.Tests\{Guid.NewGuid():N}";
 
     public StartupFixture()
@@ -49,7 +50,10 @@ internal sealed class StartupFixture : IDisposable
 
     public WindowsStartupReader Reader() => new(Locations);
 
-    public WindowsStartupActions Actions() => new(Locations);
+    /// <summary>Stands in for the administrator prompt and Settings; see <see cref="FakeLauncher"/>.</summary>
+    public FakeLauncher Launcher => _launcher ??= new(Locations);
+
+    public WindowsStartupActions Actions() => new(Locations, Launcher);
 
     public static void Set(RegistryKey root, string key, string name, object value)
     {
@@ -127,5 +131,35 @@ internal sealed class StartupFixture : IDisposable
             }
         }
         Directory.Delete(Root, recursive: true);
+    }
+}
+
+/// <summary>
+/// Runs the elevated helper's own code in this process against the fixture (as if the
+/// administrator prompt were answered Yes, unless <see cref="Declines"/>), and records the
+/// Settings pages opened instead of opening them.
+/// </summary>
+[SupportedOSPlatform("windows")]
+internal sealed class FakeLauncher(StartupLocations locations) : IStartupLauncher
+{
+    public bool Declines { get; set; }
+
+    /// <summary>An exit code to report instead of running the helper, as a helper that crashed would.</summary>
+    public int? ExitCode { get; set; }
+
+    public List<IReadOnlyList<string>> Elevated { get; } = [];
+
+    public List<string> Opened { get; } = [];
+
+    public int? RunElevated(IReadOnlyList<string> arguments)
+    {
+        Elevated.Add(arguments);
+        return Declines ? null : ExitCode ?? StartupHelper.Execute([.. arguments], locations);
+    }
+
+    public string? OpenSettings(string uri)
+    {
+        Opened.Add(uri);
+        return null;
     }
 }
