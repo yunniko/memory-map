@@ -51,8 +51,24 @@ public sealed record MapNode(
     public IEnumerable<ProcessSample> Processes() =>
         Process is { } p ? [p] : Children.SelectMany(c => c.Processes());
 
-    public MapNode? Find(string key) =>
-        Key == key ? this : Children.Select(c => c.Find(key)).FirstOrDefault(n => n is not null);
+    public MapNode? Find(string key) => PathTo(key)?[^1];
+
+    /// <summary>The nodes from this one down to the node with <paramref name="key"/>; null if absent.</summary>
+    public IReadOnlyList<MapNode>? PathTo(string key)
+    {
+        if (Key == key)
+        {
+            return [this];
+        }
+        foreach (var child in Children)
+        {
+            if (child.PathTo(key) is { } below)
+            {
+                return [this, .. below];
+            }
+        }
+        return null;
+    }
 }
 
 /// <param name="Skew">How far process and kernel figures overshoot used memory because they

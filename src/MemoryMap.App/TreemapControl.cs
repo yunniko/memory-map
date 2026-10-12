@@ -10,7 +10,8 @@ namespace MemoryMap.App;
 /// <summary>
 /// Draws a <see cref="MapNode"/> as a squarified treemap: its children as framed groups and
 /// their children as tiles (layout and stable order come from <see cref="SceneArranger"/>).
-/// Reports the node under the pointer through <see cref="HoveredNode"/>.
+/// Reports the node under the pointer through <see cref="HoveredNode"/>, and a left click
+/// (pressed and released over the same node) through <see cref="NodeClicked"/>.
 /// </summary>
 public sealed class TreemapControl : Control
 {
@@ -34,6 +35,7 @@ public sealed class TreemapControl : Control
     private Size _arrangedSize;
     private MapNode? _hovered;
     private Point? _pointer;
+    private string? _pressedKey;
 
     static TreemapControl() => AffectsRender<TreemapControl>(RootProperty, TotalProperty);
 
@@ -61,6 +63,8 @@ public sealed class TreemapControl : Control
         private set => SetAndRaise(HoveredNodeProperty, ref _hovered, value);
     }
 
+    public event EventHandler<MapNode>? NodeClicked;
+
     /// <summary>The scene last drawn; the layout tests and hit-testing read it.</summary>
     public Scene Scene => Arrange();
 
@@ -79,6 +83,24 @@ public sealed class TreemapControl : Control
         base.OnPointerMoved(e);
         _pointer = e.GetPosition(this);
         UpdateHover();
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        var point = e.GetCurrentPoint(this);
+        _pressedKey = point.Properties.IsLeftButtonPressed ? Arrange().HitTest(point.Position.X, point.Position.Y)?.Key : null;
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        var (pressed, at) = (_pressedKey, e.GetPosition(this));
+        _pressedKey = null;
+        if (e.InitialPressMouseButton == MouseButton.Left && Arrange().HitTest(at.X, at.Y) is { } node && node.Key == pressed)
+        {
+            NodeClicked?.Invoke(this, node);
+        }
     }
 
     protected override void OnPointerExited(PointerEventArgs e)

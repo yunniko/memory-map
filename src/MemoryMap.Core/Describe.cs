@@ -30,7 +30,11 @@ public static class Describe
             lines.Add(Breakdown.Label(node.Group));
         }
         var count = node.ProcessCount;
-        if (count > 0)
+        if (node.Process is { } process)
+        {
+            lines.Add($"PID {process.Pid} · started {process.StartTime.ToLocalTime():g}");
+        }
+        else if (count > 0)
         {
             lines.Add(count == 1 ? "1 process" : $"{count} processes");
             lines.Add(Pids(node));

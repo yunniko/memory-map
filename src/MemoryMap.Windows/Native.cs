@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace MemoryMap.Windows;
 
@@ -35,6 +36,36 @@ internal static partial class Native
 
     [LibraryImport("pdh.dll")]
     public static partial uint PdhCloseQuery(nint query);
+
+    public const uint ProcessTerminate = 0x0001;
+    public const uint ProcessQueryLimitedInformation = 0x1000;
+    public const uint Synchronize = 0x00100000;
+    public const int ErrorAccessDenied = 5;
+    public const int ErrorInvalidParameter = 87;
+    public const uint StillActive = 259;
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    public static partial SafeProcessHandle OpenProcess(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, int pid);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetProcessTimes(SafeProcessHandle process, out long creation, out long exit, out long kernel, out long user);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool GetExitCodeProcess(SafeProcessHandle process, out uint exitCode);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool IsProcessCritical(SafeProcessHandle process, [MarshalAs(UnmanagedType.Bool)] out bool critical);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool TerminateProcess(SafeProcessHandle process, uint exitCode);
+
+    [LibraryImport("kernel32.dll", EntryPoint = "QueryFullProcessImageNameW", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static unsafe partial bool QueryFullProcessImageName(SafeProcessHandle process, uint flags, char* buffer, ref uint size);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct PerformanceInformation

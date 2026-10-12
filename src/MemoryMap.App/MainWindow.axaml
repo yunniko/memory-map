@@ -13,6 +13,15 @@
                  Foreground="{DynamicResource Map.Ink}" TextWrapping="Wrap" />
       <TextBlock x:Name="StatusText" Text="{Binding Status}" FontSize="12"
                  Foreground="{DynamicResource Map.Ink2}" TextWrapping="Wrap" />
+      <Border x:Name="NoticeBar" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}"
+              Margin="0,6,0,0" Padding="10,4,4,4" CornerRadius="6"
+              Background="{DynamicResource Map.Surface}" BorderBrush="{DynamicResource Map.Border}" BorderThickness="1">
+        <DockPanel>
+          <Button x:Name="DismissButton" DockPanel.Dock="Right" Content="Dismiss" Padding="8,2" Click="OnDismiss" />
+          <TextBlock x:Name="NoticeText" Text="{Binding Notice, FallbackValue=''}" TextWrapping="Wrap"
+                     VerticalAlignment="Center" Foreground="{DynamicResource Map.Ink}" />
+        </DockPanel>
+      </Border>
     </StackPanel>
 
     <ItemsControl x:Name="LegendList" DockPanel.Dock="Top" Margin="0,10,0,6" ItemsSource="{Binding Legend}">
@@ -37,21 +46,46 @@
 
     <TabControl x:Name="Views" Padding="0,6,0,0" SelectedIndex="{Binding ViewIndex, Mode=TwoWay}">
       <TabItem Header="Map">
-        <Panel>
-          <app:TreemapControl x:Name="Map" Root="{Binding Breakdown.Root}" Total="{Binding Breakdown.Total}" />
-          <Canvas IsHitTestVisible="False">
-            <Border x:Name="Tip" IsVisible="{Binding Hover, Converter={x:Static ObjectConverters.IsNotNull}}" MaxWidth="360"
-                    Background="{DynamicResource Map.Surface}" BorderBrush="{DynamicResource Map.Border}"
-                    BorderThickness="1" CornerRadius="6" Padding="10,8" BoxShadow="0 4 16 0 #2E000000">
-              <StackPanel Spacing="2">
-                <TextBlock x:Name="TipTitle" Text="{Binding Hover.Title, FallbackValue=''}" FontWeight="SemiBold" FontSize="13"
-                           Foreground="{DynamicResource Map.Ink}" TextWrapping="Wrap" />
-                <TextBlock x:Name="TipText" Text="{Binding Hover.Text, FallbackValue=''}" FontSize="12"
-                           Foreground="{DynamicResource Map.Ink2}" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
-          </Canvas>
-        </Panel>
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
+            <Button x:Name="BackButton" Content="&#x2039; Back" Padding="8,2" IsEnabled="{Binding CanGoBack}" Click="OnBack"
+                    ToolTip.Tip="Back (Esc, Backspace or the mouse back button)" />
+            <ItemsControl x:Name="BreadcrumbList" ItemsSource="{Binding Breadcrumb}" VerticalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" Spacing="4" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="app:Crumb">
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <Button Content="{Binding Name}" IsVisible="{Binding !IsLast}" Padding="6,2" Click="OnCrumb"
+                            Background="Transparent" Foreground="{DynamicResource Map.Ink2}" />
+                    <TextBlock Text="&#x203A;" IsVisible="{Binding !IsLast}" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Map.Muted}" />
+                    <TextBlock Text="{Binding Name}" IsVisible="{Binding IsLast}" VerticalAlignment="Center"
+                               FontWeight="SemiBold" Foreground="{DynamicResource Map.Ink}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+          <Panel>
+            <app:TreemapControl x:Name="Map" Root="{Binding ViewRoot}" Total="{Binding Breakdown.Total}" />
+            <Canvas IsHitTestVisible="False">
+              <Border x:Name="Tip" IsVisible="{Binding Hover, Converter={x:Static ObjectConverters.IsNotNull}}" MaxWidth="360"
+                      Background="{DynamicResource Map.Surface}" BorderBrush="{DynamicResource Map.Border}"
+                      BorderThickness="1" CornerRadius="6" Padding="10,8" BoxShadow="0 4 16 0 #2E000000">
+                <StackPanel Spacing="2">
+                  <TextBlock x:Name="TipTitle" Text="{Binding Hover.Title, FallbackValue=''}" FontWeight="SemiBold" FontSize="13"
+                             Foreground="{DynamicResource Map.Ink}" TextWrapping="Wrap" />
+                  <TextBlock x:Name="TipText" Text="{Binding Hover.Text, FallbackValue=''}" FontSize="12"
+                             Foreground="{DynamicResource Map.Ink2}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+            </Canvas>
+          </Panel>
+        </DockPanel>
       </TabItem>
       <TabItem Header="Table">
         <DockPanel>

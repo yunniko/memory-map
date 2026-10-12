@@ -30,7 +30,7 @@ public partial class App : Application
                 return;
             }
             var live = new LiveMemory(sampler, TimeSpan.FromSeconds(1));
-            var model = new MainViewModel(live);
+            var model = new MainViewModel(live, new WindowsProcessActions());
             desktop.MainWindow = new MainWindow { DataContext = model };
             desktop.ShutdownRequested += (_, _) =>
             {
