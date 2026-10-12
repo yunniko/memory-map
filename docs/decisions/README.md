@@ -13,3 +13,5 @@
 - D011 — The low-memory alert warns once, re-arms 2 points higher, and shows its own window — active
 - D012 — Chart lines use the validated categorical palette, and an app keeps its slot — active
 - D013 — Settings live in %APPDATA%\MemoryMap\settings.json and save on every change — active
+- D014 — The installed app is one self-contained, uncompressed, untrimmed exe — active
+- D015 — The app renders in software, not on the GPU — active

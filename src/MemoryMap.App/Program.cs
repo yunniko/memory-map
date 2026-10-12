@@ -15,6 +15,8 @@ internal static class Program
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
-    // Also used by the Avalonia previewer.
-    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect();
+    // Also used by the Avalonia previewer. Software rendering: the GPU path cost ~80 MB more at
+    // start and grew ~10 MB a minute drawing the chart's changing lines, against criterion 9 (D015).
+    public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<App>().UsePlatformDetect()
+        .With(new Win32PlatformOptions { RenderingMode = [Win32RenderingMode.Software] });
 }
