@@ -41,7 +41,7 @@ Completed goals: `docs/goals-archive.md`.
   bytes to state, matching entries to running processes. A Windows reader for the Run
   keys, the Startup folders (shortcut targets) and Store startup tasks. Tests over fixtures,
   including the odd cases in criterion 6. A cross-check against Task Manager on this PC.
-- [ ] M2 — Startup tab. The list with memory now, running state and *Show on map*. A switch
+- [x] M2 — Startup tab. The list with memory now, running state and *Show on map*. A switch
   for user entries, with exactly the bytes Task Manager writes. *Open file location*.
   Headless UI tests; a real round trip on a test entry the app creates and removes.
 - [ ] M3 — Machine-wide entries and Store apps. A per-change administrator prompt through a
@@ -51,6 +51,15 @@ Completed goals: `docs/goals-archive.md`.
   and a short checklist for the Owner's second-PC run.
 
 **Progress log** (newest first):
+- 2026-10-12 — **M2 done** (Startup tab: list, memory now, *Show on map*, *Open file location*,
+  switches for this user's entries; CLI `--startup-set`). Switch writes Settings' own flag bytes
+  (D021); list read on tab open, matched off the UI thread while shown (D022). Owner asked for a
+  repo: private `yunniko/memory-map`, CI runs `check.ps1` on windows-2025 (D023; first run green).
+  Verified: `check.ps1` 220/220 (Core 104, Windows 66, App 50); `startup-roundtrip.ps1` 8/8 with
+  throwaway entries removed; `startup-crosscheck.ps1` 41/41, Killer still differs (D019); real app
+  via UI Automation 41 switches, 81 MB. /simplify and /code-review applied (match moved off the UI
+  thread, busy-row reload fix, singular wording, Show on map needs a tile, crosscheck no longer
+  closes Settings). Next: M3.
 - 2026-10-12 — **M1 done** (startup data engine, CLI `memmap-dump --startup`). Reads HKCU/HKLM
   Run, HKLM Run 32-bit, both Startup folders and Store startup tasks; matches running processes
   (D018–D020). Verified: `check.ps1` 192/192 (Core 100, Windows 53, App 39), tests use a scratch

@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using MemoryMap.Core;
 using MemoryMap.Windows;
+using MemoryMap.Windows.Startup;
 
 namespace MemoryMap.App;
 
@@ -33,7 +34,8 @@ public partial class App : Application
             var (stored, problem) = SettingsStore.Load(SettingsViewModel.DefaultPath);
             var settings = new SettingsViewModel(stored, SettingsViewModel.DefaultPath, problem);
             var live = new LiveMemory(sampler, TimeSpan.FromSeconds(stored.RefreshSeconds));
-            var model = new MainViewModel(live, new WindowsProcessActions(), settings);
+            var startup = new StartupViewModel(new WindowsStartupReader(), new WindowsStartupActions(), new WindowsProcessPaths());
+            var model = new MainViewModel(live, new WindowsProcessActions(), settings, startup);
             var window = new MainWindow { DataContext = model, CanHideToTray = true };
             desktop.MainWindow = window;
             // Closing the window may only hide it; the app ends when it really closes (Exit, or tray off).

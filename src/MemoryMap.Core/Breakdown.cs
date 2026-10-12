@@ -96,6 +96,9 @@ public sealed record BreakdownOptions
 
 public static class Breakdown
 {
+    /// <summary>The key of a process's node: (PID, start time) names one process for good.</summary>
+    public static string ProcessKey(ProcessSample p) => $"pid/{p.Pid}/{p.StartTime.UtcTicks}";
+
     public static string Label(MemoryGroup group) => group switch
     {
         MemoryGroup.Apps => "Apps",
@@ -188,7 +191,7 @@ public static class Breakdown
     {
         var children = processes
             .OrderByDescending(p => p.PrivateWorkingSet)
-            .Select(p => new MapNode($"pid/{p.Pid}/{p.StartTime.UtcTicks}", $"{p.Name} ({p.Pid})",
+            .Select(p => new MapNode(ProcessKey(p), $"{p.Name} ({p.Pid})",
                 NodeKind.Process, group, p.PrivateWorkingSet, [], p))
             .ToList();
         // Processes of one app may differ in image-name casing; pick the label by name, not by

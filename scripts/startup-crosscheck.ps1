@@ -10,39 +10,14 @@
     Exit code 0 when everything agrees, 1 when anything differs (each difference is printed).
 #>
 $ErrorActionPreference = 'Stop'
-$root = Split-Path $PSScriptRoot -Parent
-
-dotnet build (Join-Path $root 'src/MemoryMap.Cli') -c Release --nologo -v quiet | Out-Null
-if ($LASTEXITCODE) { throw 'Build failed.' }
-$dump = Join-Path $root 'src/MemoryMap.Cli/bin/Release/net10.0/memmap-dump.exe'
+. (Join-Path $PSScriptRoot 'settings-startup.ps1')
+$dump = Build-MemmapDump
 $ours = (& $dump --startup --json | ConvertFrom-Json).entries
 
-Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
-$A = [System.Windows.Automation.AutomationElement]
-$any = [System.Windows.Automation.Condition]::TrueCondition
-$children = [System.Windows.Automation.TreeScope]::Children
-Start-Process 'ms-settings:startupapps'
-$settings = $null
-for ($i = 0; $i -lt 20 -and -not $settings; $i++) {
-    Start-Sleep -Milliseconds 500
-    # Found by process, not by title: the title is in the display language.
-    $pids = @(Get-Process SystemSettings -ErrorAction SilentlyContinue | ForEach-Object Id)
-    $settings = $A::RootElement.FindAll($children, $any) |
-        Where-Object { $_.Current.ClassName -eq 'ApplicationFrameWindow' } |
-        Where-Object { $_.FindAll($children, $any) |
-                Where-Object { $_.Current.ProcessId -in $pids } } |
-        Select-Object -First 1
-}
-if (-not $settings) { throw 'The Settings window did not appear.' }
-Start-Sleep -Seconds 2   # the list fills in after the window opens
-
 $theirs = @{}
-foreach ($e in $settings.FindAll([System.Windows.Automation.TreeScope]::Descendants, $any)) {
-    $toggle = $null
-    if ($e.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$toggle) -and $e.Current.Name) {
-        if (-not $theirs.ContainsKey($e.Current.Name)) { $theirs[$e.Current.Name] = [System.Collections.Generic.List[bool]]::new() }
-        $theirs[$e.Current.Name].Add($toggle.Current.ToggleState -eq 'On')
-    }
+foreach ($switch in Get-SettingsSwitches (Open-StartupSettings)) {
+    if (-not $theirs.ContainsKey($switch.Name)) { $theirs[$switch.Name] = [System.Collections.Generic.List[bool]]::new() }
+    $theirs[$switch.Name].Add($switch.Toggle.Current.ToggleState -eq 'On')
 }
 if ($theirs.Count -eq 0) { throw 'Read no switches from Settings; is the Startup page open?' }
 

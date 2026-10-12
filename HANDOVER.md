@@ -2,8 +2,8 @@
 Last verified: 2026-10-12 at 41b9eb1
 
 A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is done
-(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md` (M1 done). Charter:
-`E:\CLAUDE\COMPANY\`.
+(`docs/goals-archive.md`); G-002, a Startup view, is active in `GOALS.md` (M1 and M2 done).
+Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
 
@@ -36,15 +36,24 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is don
     150 MB) is met even on a one-core reading.
   - Minimised for 300 s: 0.98% of one core with the hidden refresh off, 0.37% at 5 s and
     0.24% at 30 s.
-- **Startup data engine (G-002 M1), CLI only so far.** `memmap-dump --startup` lists the
-  programs Windows starts at sign-in, with on/off state, publisher, running processes and
-  their private working set (D018, D019; host programs not counted, D020). On this PC:
-  41 entries, read 336 ms, matched to processes 26 ms.
-  `scripts/startup-crosscheck.ps1` against Settings → Startup apps: 41/41 names, one state
-  differs (Killer Control Center: registry on, Settings Off; unexplained, D019). Record:
-  `docs/reviews/2026-10-12-g002-m1-startup-crosscheck.md`. Nothing switches entries yet.
-- `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 192/192 tests
-  (Core 100, Windows integration 53, App headless 39).
+- **Startup tab (G-002 M2).** It lists every program that starts at sign-in (D018, D019),
+  whether it runs now and its private working set (host programs not counted, D020), with
+  *Show on map* and *Open file location*. This user's Run values and Startup-folder files
+  switch off and on by their StartupApproved flag, written with the bytes Settings writes (D021).
+  Machine-wide entries and Store tasks show a disabled switch saying why (M3 adds them).
+  The list is read when the tab opens; samples are matched off the UI thread while it is
+  shown (D022). `memmap-dump --startup` and `--startup-set <id> on|off` do the same from the CLI.
+  - On this PC: 41 entries, 20 on, 12 switchable; read 316–375 ms, first match 26–33 ms,
+    later samples 7–9 ms. Real app via UI Automation: 41 switches, 81 MB private.
+  - `scripts/startup-roundtrip.ps1`: 8/8 (app and Settings, both directions, two throwaway
+    entries, removed afterwards). `scripts/startup-crosscheck.ps1`: 41/41 names, one state
+    differs (Killer Control Center: registry on, Settings Off; unexplained, D019).
+    Records: `docs/reviews/2026-10-12-g002-m2-startup-switch.md`,
+    `docs/reviews/2026-10-12-g002-m1-startup-crosscheck.md`.
+  - The installed C:\bin copy has no Startup tab yet; M4 reinstalls it.
+- `scripts/check.ps1` passes: format clean, Release build with 0 warnings, 220/220 tests
+  (Core 104, Windows integration 66, App headless 50). GitHub Actions runs the same script
+  on every push to main (D023); the run for b02dd08 passed.
 - `scripts/crosscheck.ps1` against WMI: worst difference 0.15% of RAM (limit 2%).
 - Not run: the critical-process refusal, because it needs an elevated session.
 - "Shared & other" is about 3.5 GB (23% of RAM) on this PC. It is real shared memory (D003).
@@ -63,8 +72,13 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is don
   - `LowMemoryAlert.cs` holds the alert rule; `AppSettings.cs` holds the choices and JSON store.
 - Startup: `src/MemoryMap.Core/Startup.cs` holds the entry model, `IStartupReader`, `IProcessPaths` (which
   also says how the OS compares paths) and `StartupMatching` (a process counts for the
-  entry with its exact file, else the deepest program folder). `src/MemoryMap.Windows/Startup/` reads
-  the sources; `StartupLocations` lets tests point it at a scratch key and temp folders.
+  entry with its exact file, else the deepest program folder). `src/MemoryMap.Core/StartupActions.cs`
+  holds `IStartupActions` and the wording shared by the app and the CLI. `src/MemoryMap.Windows/Startup/`
+  reads the sources and switches them; `StartupIds.cs` is the one place ids are built and parsed;
+  `StartupLocations` lets tests point both at a scratch key and temp folders.
+- The Startup tab is `src/MemoryMap.App/StartupViewModel.cs`: rows are kept by id so a reload
+  updates them in place, and a row's switch shows what Windows reads back after the change.
+  *Show on map* uses `Navigation.Reveal` (the deepest node holding all of its processes).
 - `MemoryMap.Windows` holds `WindowsMemorySampler` (native APIs, D002) and
   `WindowsProcessActions` (D008). The `Native.cs` offsets are 64-bit only. Of a sample's
   7.2 ms, the kernel's process list is 4.8 ms.
@@ -80,8 +94,8 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is don
 
 ## Rules in force
 
-- Nothing leaves this PC without Owner approval: no GitHub repo, upload or store listing
-  (G-001 constraint, VALUES.md → Restraint).
+- Nothing is published, released or signed without Owner approval; the private repo is the
+  only remote (Owner, 2026-10-12; VALUES.md → Restraint).
 - v1 reads memory on Windows only. The sampler stays behind `IMemorySampler`, and Core holds
   no Windows rules (G-001 constraint).
 - Process tiles are sized by private working set (G-001 criterion 1; D003).
@@ -94,17 +108,20 @@ A Windows desktop app (C#, Avalonia) showing RAM as a live treemap. G-001 is don
   time matches the sample (G-001 criterion 6; D008).
 - xunit.v3 stays at the version `Avalonia.Headless.XUnit` is built against, 3.2.2 today (D006).
 - Tests never touch real autostart entries: they read and write only the `StartupFixture`
-  scratch key and temp folders (G-002 constraint).
+  scratch key and temp folders (G-002 constraint). Checks against Windows use throwaway
+  entries the script creates and removes (`scripts/startup-roundtrip.ps1`).
+- A switch only writes the StartupApproved flag; nothing is deleted (G-002 criterion 3).
 - The app stays unelevated; machine-wide startup changes will go through a per-change admin
   prompt (G-002 constraint).
-- `scripts/check.ps1` is the merge gate until there is CI, because no remote exists
-  (STANDARDS.md → formatter in CI).
+- `scripts/check.ps1` is the merge gate, locally and in CI (STANDARDS.md → formatter in CI; D023).
 
 ## Next steps and open questions
 
-- Open: a GitHub remote, needed for CI, has not been requested. Ask the Owner first.
-- G-002 M2: the Startup tab with user toggles (see `GOALS.md`). G-002 must work on other
-  PCs, not just this one (Owner, 2026-10-12); the second-PC run is in M4.
+- G-002 M3: machine-wide entries through a one-shot elevated `MemoryMap.exe` helper per change
+  (a declined prompt changes nothing), and Store tasks' switch opening Settings. Then M4.
+  G-002 must work on other PCs (Owner, 2026-10-12); the second-PC run is in M4.
+- For the M4 checklist: Task Manager shows the same state for an entry switched here (its
+  bytes could not be observed, D021); Settings hides a Run entry whose program is missing.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
 - For the M4 second-PC run: whether switching a machine-wide entry off in Settings writes a
   user-key flag (none exists here; the reader reads machine flags only, D018).

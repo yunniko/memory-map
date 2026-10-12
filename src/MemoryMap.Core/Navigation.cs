@@ -43,6 +43,32 @@ public sealed class Navigation
         return true;
     }
 
+    /// <summary>
+    /// Shows the smallest node holding every one of <paramref name="processes"/> as its own tile
+    /// or tiles: their app when they share one, else the nearest level holding all their apps.
+    /// False, and nothing changes, when none of them is in this tree (they have exited).
+    /// </summary>
+    public bool Reveal(MapNode root, IEnumerable<ProcessSample> processes)
+    {
+        IReadOnlyList<MapNode>? common = null;
+        foreach (var process in processes)
+        {
+            if (root.PathTo(Breakdown.ProcessKey(process)) is not { } path)
+            {
+                continue;
+            }
+            // Down to the node whose tiles include the process: its parent.
+            var above = path.Take(path.Count - 1).ToList();
+            common = common is null ? above : [.. common.Zip(above).TakeWhile(p => p.First.Key == p.Second.Key).Select(p => p.First)];
+        }
+        if (common is null)
+        {
+            return false;
+        }
+        SetPath(common);
+        return true;
+    }
+
     /// <summary>Shows an ancestor named by key (a breadcrumb), or the root for "root".</summary>
     public void ZoomOutTo(string key)
     {

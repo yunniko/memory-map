@@ -7,7 +7,7 @@ using MemoryMap.Core;
 
 namespace MemoryMap.App.Tests.Helpers;
 
-/// <summary>Pointer input on map tiles, dialogs and waiting, shared by the window specs.</summary>
+/// <summary>Pointer input on map tiles and controls, dialogs and waiting, shared by the window specs.</summary>
 internal static class Ui
 {
     /// <summary>The centre of a tile, in window coordinates.</summary>
@@ -20,9 +20,15 @@ internal static class Ui
         Dispatcher.UIThread.RunJobs();
     }
 
-    public static void Click(MainWindow window, LayoutRect rect, MouseButton button = MouseButton.Left)
+    public static void Click(MainWindow window, LayoutRect rect, MouseButton button = MouseButton.Left) =>
+        Click(window, Center(window, rect), button);
+
+    /// <summary>Clicks the middle of a control, as a pointer would.</summary>
+    public static void Click(MainWindow window, Control control, MouseButton button = MouseButton.Left) =>
+        Click(window, control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value, button);
+
+    private static void Click(MainWindow window, Point at, MouseButton button)
     {
-        var at = Center(window, rect);
         window.MouseMove(at);
         window.MouseDown(at, button);
         window.MouseUp(at, button);

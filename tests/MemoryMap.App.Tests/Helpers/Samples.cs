@@ -29,10 +29,10 @@ internal static class Samples
         Core.Breakdown.Build(Snapshot(chromeMb, codeMb));
 
     public static (MainWindow Window, MainViewModel Model) Open(MemoryBreakdown? breakdown = null, ThemeVariant? theme = null,
-        IProcessActions? actions = null)
+        IProcessActions? actions = null, StartupViewModel? startup = null)
     {
         Avalonia.Application.Current!.RequestedThemeVariant = theme ?? ThemeVariant.Light;
-        var model = new MainViewModel(actions: actions);
+        var model = new MainViewModel(actions: actions, startup: startup);
         if (breakdown is not null)
         {
             model.Apply(breakdown);

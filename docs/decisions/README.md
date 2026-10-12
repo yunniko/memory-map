@@ -20,3 +20,6 @@
 - D018 — Startup entries come from the Run keys, Startup folders and Store tasks, with Explorer's StartupApproved flags — active
 - D019 — Store apps' startup tasks are read from the AppModel registry and package manifests — active
 - D020 — An entry that starts a host program (cmd, rundll32, a script host) is credited with no processes — active
+- D021 — A startup switch writes the same StartupApproved bytes Windows Settings writes — active
+- D022 — The startup list is read when the tab opens; samples are matched only while it is shown — active
+- D023 — The code lives in a private GitHub repo; CI runs the local gate on a Windows runner — active

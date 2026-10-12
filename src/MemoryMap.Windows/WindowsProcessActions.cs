@@ -50,16 +50,7 @@ public sealed class WindowsProcessActions : IProcessActions
         {
             return failure;
         }
-        try
-        {
-            // Explorer's own syntax; the path is quoted because it may contain commas or spaces.
-            using var _ = Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = false });
-        }
-        catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException)
-        {
-            return ActionResult.Failed(process, "show", $"Explorer did not start ({e.Message}).");
-        }
-        return ActionResult.Shown(path);
+        return Explorer.Select(path) is { } error ? ActionResult.Failed(process, "show", error) : ActionResult.Shown(path);
     }
 
     /// <summary>The full path of the process's executable, or why it could not be read.</summary>

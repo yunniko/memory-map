@@ -45,8 +45,11 @@ internal sealed class StartupFixture : IDisposable
     public string WindowsFolder { get; }
     public string ProgramFiles { get; }
 
-    public WindowsStartupReader Reader() =>
-        new(new StartupLocations(User, Machine, UserFolder, MachineFolder, WindowsFolder, [ProgramFiles, Root]));
+    public StartupLocations Locations => new(User, Machine, UserFolder, MachineFolder, WindowsFolder, [ProgramFiles, Root]);
+
+    public WindowsStartupReader Reader() => new(Locations);
+
+    public WindowsStartupActions Actions() => new(Locations);
 
     public static void Set(RegistryKey root, string key, string name, object value)
     {

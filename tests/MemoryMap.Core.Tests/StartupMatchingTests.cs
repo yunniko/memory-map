@@ -119,4 +119,20 @@ public class StartupMatchingTests
     [InlineData(StartupSource.StoreTask, StartupScope.User, StartupSwitch.OsSettings)]
     public void How_an_entry_is_switched_follows_where_it_is_registered(StartupSource source, StartupScope scope, StartupSwitch expected) =>
         Assert.Equal(expected, Entry("x", null, null, source, scope).Switch);
+
+    [Fact]
+    public void The_status_says_whether_it_runs_and_how_much_it_holds()
+    {
+        var entry = Entry("tool", @"C:\Tool\Tool.exe", @"C:\Tool");
+        var two = new StartupUsage([Proc(1, "Tool", 300), Proc(2, "Tool", 100)]);
+
+        Assert.Equal("Not running", StartupText.Status(entry, StartupUsage.None));
+        Assert.Equal("", StartupText.Memory(entry, StartupUsage.None));
+        Assert.Equal("Running", StartupText.Status(entry, new StartupUsage([Proc(1, "Tool", 300)])));
+        Assert.Equal("Running, 2 processes", StartupText.Status(entry, two));
+        Assert.Equal(Format.Bytes(400 * Mb), StartupText.Memory(entry, two));
+        var host = Entry("cmd", @"C:\Windows\System32\cmd.exe", null, counts: false);
+        Assert.Equal(StartupText.NotCounted, StartupText.Status(host, two));
+        Assert.Equal("", StartupText.Memory(host, two));
+    }
 }

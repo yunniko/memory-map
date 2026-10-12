@@ -120,4 +120,41 @@ public class NavigationTests
         Assert.Contains(lines, l => l.StartsWith("PID 3 · started ", StringComparison.Ordinal));
         Assert.DoesNotContain("1 process", lines);
     }
+
+    [Fact]
+    public void Reveal_shows_the_app_its_processes_share()
+    {
+        var nav = new Navigation();
+        var root = Tree(Usual);
+
+        Assert.True(nav.Reveal(root, [Usual[1]]));
+
+        Assert.Equal(["root", "Apps", "Apps/chrome.exe"], nav.Resolve(root).Select(n => n.Key));
+    }
+
+    [Fact]
+    public void Reveal_of_processes_in_two_apps_shows_the_level_holding_both()
+    {
+        var nav = new Navigation();
+        var root = Tree(Usual);
+
+        Assert.True(nav.Reveal(root, [Usual[0], Usual[2]]));
+
+        Assert.Equal(["root", "Apps"], nav.Resolve(root).Select(n => n.Key));
+    }
+
+    [Fact]
+    public void Reveal_reaches_into_an_other_fold_and_ignores_exited_processes()
+    {
+        var nav = new Navigation();
+        ProcessSample[] processes = [Proc(1, "big", 8000), Proc(2, "tiny", 1), Proc(3, "small", 1)];
+        var root = Breakdown.Build(Snapshot(Sys(), processes)).Root;
+        var exited = Proc(99, "gone", 10);
+
+        Assert.True(nav.Reveal(root, [exited, processes[1]]));
+
+        Assert.Equal(["root", "Apps", "Apps/<other>", "Apps/tiny.exe"], nav.Resolve(root).Select(n => n.Key));
+        Assert.False(nav.Reveal(root, [exited]));
+        Assert.Equal("Apps/tiny.exe", nav.Resolve(root)[^1].Key);
+    }
 }

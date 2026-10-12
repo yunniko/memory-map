@@ -163,6 +163,30 @@ public partial class MainWindow : Window
 
     private void OnDismiss(object? sender, RoutedEventArgs e) => Model?.DismissNotice();
 
+    private void OnStartupRefresh(object? sender, RoutedEventArgs e)
+    {
+        if (Model is { } model)
+        {
+            model.Startup.Refresh();
+        }
+    }
+
+    private void OnStartupShowOnMap(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { DataContext: StartupItem item })
+        {
+            Model?.Startup.ShowOnMap(item);
+        }
+    }
+
+    private void OnStartupLocate(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { DataContext: StartupItem item } && Model is { } model)
+        {
+            model.Startup.Locate(item);
+        }
+    }
+
     // Beside the pointer, flipped to the other side near the right or bottom edge of its host.
     private static void PlaceTip(Control tip, Control host, Point at)
     {

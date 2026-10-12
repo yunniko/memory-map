@@ -101,11 +101,11 @@ public sealed class WindowsStartupReader(StartupLocations locations) : IStartupR
             }
         }
 
-        Source("HKCU Run", () => RunValues(locations.User, RunKey, StartupApproval.Run, "user", StartupScope.User));
-        Source("HKLM Run", () => RunValues(locations.Machine, RunKey, StartupApproval.Run, "machine", StartupScope.Machine));
-        Source("HKLM Run (32-bit)", () => RunValues(locations.Machine, Run32Key, StartupApproval.Run32, "machine32", StartupScope.Machine));
-        Source("Startup folder", () => FolderFiles(locations.UserFolder, locations.User, "user", StartupScope.User));
-        Source("All users' Startup folder", () => FolderFiles(locations.MachineFolder, locations.Machine, "machine", StartupScope.Machine));
+        Source("HKCU Run", () => RunValues(locations.User, RunKey, StartupApproval.Run, StartupIds.User, StartupScope.User));
+        Source("HKLM Run", () => RunValues(locations.Machine, RunKey, StartupApproval.Run, StartupIds.Machine, StartupScope.Machine));
+        Source("HKLM Run (32-bit)", () => RunValues(locations.Machine, Run32Key, StartupApproval.Run32, StartupIds.Machine32, StartupScope.Machine));
+        Source("Startup folder", () => FolderFiles(locations.UserFolder, locations.User, StartupIds.User, StartupScope.User));
+        Source("All users' Startup folder", () => FolderFiles(locations.MachineFolder, locations.Machine, StartupIds.Machine, StartupScope.Machine));
         Source("Store apps", () => StoreStartupTasks.Read(locations.User, unreadable));
 
         // A source can name the same entry twice (a manifest repeating a task id); Windows runs it once.
@@ -137,7 +137,7 @@ public sealed class WindowsStartupReader(StartupLocations locations) : IStartupR
                 continue;
             }
             var exe = CommandLine.Executable(command);
-            entries.Add(Entry($"run/{idScope}/{valueName}", valueName, command, location, StartupSource.RunKey, scope,
+            entries.Add(Entry(StartupIds.Run(idScope, valueName), valueName, command, location, StartupSource.RunKey, scope,
                 StartupApproval.IsEnabled(approval?.GetValue(valueName)), exe, exe is null ? "The command names no program." : null));
         }
         return entries;
@@ -159,7 +159,7 @@ public sealed class WindowsStartupReader(StartupLocations locations) : IStartupR
                 continue;
             }
             var (command, exe, problem) = Launches(file);
-            entries.Add(Entry($"folder/{idScope}/{file.Name}", Path.GetFileNameWithoutExtension(file.Name), command, folder,
+            entries.Add(Entry(StartupIds.Folder(idScope, file.Name), Path.GetFileNameWithoutExtension(file.Name), command, folder,
                 StartupSource.StartupFolder, scope, StartupApproval.IsEnabled(approval?.GetValue(file.Name)), exe, problem));
         }
         return entries;

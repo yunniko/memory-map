@@ -18,4 +18,21 @@ internal static class StartupApproval
     /// Windows Security's icon, shown Off in Settings).
     /// </summary>
     public static bool IsEnabled(object? flag) => flag is not byte[] { Length: > 0 } bytes || (bytes[0] & 1) == 0;
+
+    /// <summary>
+    /// The flag Windows' own Settings switch writes (seen on build 26200 for a Run value and a
+    /// Startup-folder file alike): on is twelve zero bytes; off is 01, three zero bytes and the
+    /// time it was switched off as a FILETIME. Older flags here read 02/03; both follow the odd
+    /// rule above. See D021.
+    /// </summary>
+    public static byte[] Flag(bool enabled, DateTimeOffset now)
+    {
+        var flag = new byte[12];
+        if (!enabled)
+        {
+            flag[0] = 1;
+            BitConverter.TryWriteBytes(flag.AsSpan(4), now.ToFileTime());
+        }
+        return flag;
+    }
 }

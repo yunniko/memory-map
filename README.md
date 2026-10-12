@@ -5,7 +5,8 @@ for disk space — so you can see at a glance what is using memory, including me
 app owns (kernel pools, shared pages).
 
 Built in C# (.NET 10) with Avalonia. **State:** G-001 (the map) is done; G-002 (managing other
-programs' autostart) is in progress — so far its data engine, in the CLI only (see `GOALS.md`).
+programs' autostart) is in progress: the Startup tab works for this user's entries; machine-wide
+entries and Store apps come next (see `GOALS.md`). Source: `github.com/yunniko/memory-map` (private).
 
 ## What it does
 
@@ -18,6 +19,9 @@ programs' autostart) is in progress — so far its data engine, in the CLI only 
 - **History:** the last 5–60 minutes of memory in use, kernel pools and the five biggest apps.
 - **Tray:** a gauge of RAM in use; an alert when available memory runs low; closing the
   window hides it to the tray (*Exit* on the tray menu quits).
+- **Startup:** every program that starts at sign-in, whether it is running now and its memory,
+  *Show on map* and *Open file location*. This user's entries switch off and on with the same
+  flag Windows Settings uses; nothing is deleted, so every switch can be undone.
 - **Settings:** refresh interval, a slower refresh while hidden (off by default), alert
   threshold, close-to-tray; saved in `%APPDATA%\MemoryMap\settings.json`.
 
@@ -28,11 +32,15 @@ programs' autostart) is in progress — so far its data engine, in the CLI only 
   (`-NoInstall` to skip the copy; exit the running app first).
 - `dotnet run --project src/MemoryMap.App -c Release` — run from source.
 - `dotnet run --project src/MemoryMap.Cli -- --json` — one snapshot as text or JSON;
-  `-- --startup` lists the programs Windows starts at sign-in, with their state and memory.
+  `-- --startup` lists the programs Windows starts at sign-in, with their state and memory;
+  `-- --startup-set <id> on|off` switches one of this user's entries (ids are in `--startup --json`).
 - `./scripts/check.ps1` — format check, warnings-as-errors build, all tests.
   Set `MEMORYMAP_SCREENSHOTS=<folder>` to have the window tests save PNGs there.
 - `./scripts/crosscheck.ps1` — compare the sampler's totals with Windows' own (WMI).
 - `./scripts/startup-crosscheck.ps1` — compare the startup list with Settings → Apps → Startup (read-only).
+- `./scripts/startup-roundtrip.ps1` — switch two throwaway entries it creates (and removes) through
+  the app's code and through Settings, and check that each side sees the other's change.
+  It closes and reopens the Settings app for each check.
 
 Predecessors (one-off snapshots, PowerShell): `C:\bin\memory-report.ps1` (text report)
 and `C:\bin\memory-map.ps1` (HTML treemap).

@@ -17,7 +17,7 @@ var top = 10;
 var topIndex = Array.IndexOf(args, "--top");
 if (topIndex >= 0 && (topIndex + 1 >= args.Length || !int.TryParse(args[topIndex + 1], out top)))
 {
-    Console.Error.WriteLine("Usage: memmap-dump [--json] [--top N] [--bench | --startup]");
+    Console.Error.WriteLine("Usage: memmap-dump [--json] [--top N] [--bench | --startup | --startup-set <id> on|off]");
     return 2;
 }
 
@@ -40,6 +40,27 @@ if (args.Contains("--bench"))
     return 0;
 }
 
+var setIndex = Array.IndexOf(args, "--startup-set");
+if (setIndex >= 0)
+{
+    // Switches one entry by id, through the app's own code; scripts/startup-roundtrip.ps1 uses it
+    // on throwaway entries to check that Windows Settings agrees with the change.
+    if (setIndex + 2 >= args.Length || args[setIndex + 2] is not ("on" or "off"))
+    {
+        Console.Error.WriteLine("Usage: memmap-dump --startup-set <id> on|off");
+        return 2;
+    }
+    var entry = new WindowsStartupReader().Read().Entries.FirstOrDefault(e => e.Id == args[setIndex + 1]);
+    if (entry is null)
+    {
+        Console.Error.WriteLine($"No startup entry has the id {args[setIndex + 1]}.");
+        return 1;
+    }
+    var result = new WindowsStartupActions().SetEnabled(entry, args[setIndex + 2] == "on");
+    Console.WriteLine(result.Message);
+    return result.Succeeded ? 0 : 1;
+}
+
 if (args.Contains("--startup"))
 {
     // Every program that starts at sign-in, with what it costs now; scripts/startup-crosscheck.ps1
@@ -49,8 +70,13 @@ if (args.Contains("--startup"))
     var readMs = watch.Elapsed.TotalMilliseconds;
     var processes = sampler.Sample().Processes;
     watch.Restart();
-    var usage = StartupMatching.Match(list.Entries, processes, new WindowsProcessPaths());
+    var paths = new WindowsProcessPaths();
+    var usage = StartupMatching.Match(list.Entries, processes, paths);
     var matchMs = watch.Elapsed.TotalMilliseconds;
+    // The app matches every sample while its Startup tab is shown, with the paths already known.
+    watch.Restart();
+    StartupMatching.Match(list.Entries, sampler.Sample().Processes, paths);
+    var warmMs = watch.Elapsed.TotalMilliseconds;
     if (json)
     {
         var output = list.Entries.Select(e => new
@@ -77,8 +103,7 @@ if (args.Contains("--startup"))
     foreach (var e in list.Entries)
     {
         var use = usage[e.Id];
-        var running = !e.CountsProcesses ? "not counted" : use.Running ? $"{Format.Bytes(use.PrivateWorkingSet)} x{use.Processes.Count}" : "not running";
-        Console.WriteLine($"{(e.Enabled ? "on " : "off")} {e.Name,-40} {e.Switch,-10} {running,-16} {e.Location}");
+        Console.WriteLine($"{(e.Enabled ? "on " : "off")} {e.Name,-40} {e.Switch,-10} {StartupText.Status(e, use),-24} {StartupText.Memory(e, use),9}  {e.Location}");
         if (e.Problem is not null)
         {
             Console.WriteLine($"    ! {e.Problem}");
@@ -88,7 +113,7 @@ if (args.Contains("--startup"))
     {
         Console.WriteLine($"Could not read {source}");
     }
-    Console.WriteLine($"{list.Entries.Count} entries; read {readMs:N0} ms, matched to processes {matchMs:N0} ms");
+    Console.WriteLine($"{list.Entries.Count} entries; read {readMs:N0} ms, matched to processes {matchMs:N0} ms (next sample {warmMs:N1} ms)");
     return 0;
 }
 

@@ -29,7 +29,8 @@ public sealed class MainViewModel : ObservableObject
     public const int MapView = 0;
     public const int TableView = 1;
     public const int HistoryView = 2;
-    public const int SettingsView = 3;
+    public const int StartupView = 3;
+    public const int SettingsView = 4;
 
     private MemoryBreakdown? _breakdown;
     private MemoryBreakdown? _pending;
@@ -53,11 +54,15 @@ public sealed class MainViewModel : ObservableObject
     private int _usedPercent;
     private bool _isOnScreen = true;
 
-    public MainViewModel(LiveMemory? live = null, IProcessActions? actions = null, SettingsViewModel? settings = null)
+    public MainViewModel(LiveMemory? live = null, IProcessActions? actions = null, SettingsViewModel? settings = null,
+        StartupViewModel? startup = null)
     {
         _live = live;
         _actions = actions;
         Settings = settings ?? new SettingsViewModel();
+        Startup = startup ?? new StartupViewModel();
+        Startup.Noticed += message => Notice = message;
+        Startup.ShowOnMapRequested += ShowOnMap;
         _notice = Settings.Problem;
         ApplySettings(Settings.Current);
         Settings.Changed += ApplySettings;
@@ -78,6 +83,8 @@ public sealed class MainViewModel : ObservableObject
     public SettingsViewModel Settings { get; }
 
     public HistoryViewModel History { get; } = new();
+
+    public StartupViewModel Startup { get; }
 
     /// <summary>True from the sample that crossed the alert line until memory recovers (D011).</summary>
     public bool IsLowMemory { get => _isLowMemory; private set => Set(ref _isLowMemory, value); }
@@ -100,6 +107,7 @@ public sealed class MainViewModel : ObservableObject
             }
             UpdateInterval();
             UpdateChart();
+            UpdateStartup();
         }
     }
 
@@ -140,7 +148,8 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>Null when nothing is under the pointer.</summary>
     public HoverTip? Hover { get => _hover; private set => Set(ref _hover, value); }
 
-    /// <summary>The selected tab: <see cref="MapView"/>, <see cref="TableView"/>, <see cref="HistoryView"/> or <see cref="SettingsView"/>.</summary>
+    /// <summary>The selected tab: <see cref="MapView"/>, <see cref="TableView"/>, <see cref="HistoryView"/>,
+    /// <see cref="StartupView"/> or <see cref="SettingsView"/>.</summary>
     public int ViewIndex
     {
         get => _viewIndex;
@@ -150,6 +159,7 @@ public sealed class MainViewModel : ObservableObject
             Raise(nameof(ShowsGroupLegend));
             UpdateRows();
             UpdateChart();
+            UpdateStartup();
         }
     }
 
@@ -169,6 +179,7 @@ public sealed class MainViewModel : ObservableObject
         UpdateRows();
         History.History.Add(breakdown, _live?.Interval);
         UpdateChart();
+        Startup.Update(breakdown.Snapshot.Processes);
         TrayTip = LowMemoryAlert.TrayTip(sys);
         UsedPercent = (int)Math.Round(sys.UsedPercent);
         UpdateAlert();
@@ -294,6 +305,18 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>Switches to the map, zoomed to where the startup entry's processes are.</summary>
+    public void ShowOnMap(StartupItem item)
+    {
+        if (Breakdown is null || !_navigation.Reveal(Breakdown.Root, item.Processes))
+        {
+            Notice = $"{item.Name} is not on the map now.";
+            return;
+        }
+        UpdateView();
+        ViewIndex = MapView;
+    }
+
     public void DismissNotice() => Notice = null;
 
     private void UpdateView()
@@ -377,6 +400,9 @@ public sealed class MainViewModel : ObservableObject
             History.Release();
         }
     }
+
+    // Matched to processes, and read afresh when opened, only while the tab is on screen.
+    private void UpdateStartup() => Startup.IsShown = ViewIndex == StartupView && IsOnScreen;
 
     private void UpdateRows() =>
         Rows = ViewIndex == TableView && Breakdown is not null ? Describe.Table(Breakdown) : [];
