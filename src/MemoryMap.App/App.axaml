@@ -1,0 +1,48 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MemoryMap.App.App"
+             RequestedThemeVariant="Default">
+  <!-- Default follows the Windows light/dark setting (G-001 criterion 10). -->
+  <Application.Styles>
+    <FluentTheme />
+  </Application.Styles>
+
+  <!-- Colours come from the validated dataviz palette used by C:\bin\memory-map.ps1.
+       Light and dark are separate steps, not one palette flipped. -->
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <Color x:Key="Map.Page">#f9f9f7</Color>
+          <Color x:Key="Map.Surface">#fcfcfb</Color>
+          <Color x:Key="Map.Ink">#0b0b0b</Color>
+          <Color x:Key="Map.Ink2">#52514e</Color>
+          <Color x:Key="Map.Muted">#898781</Color>
+          <Color x:Key="Map.Border">#1a0b0b0b</Color>
+          <Color x:Key="Map.Apps">#2a78d6</Color>
+          <Color x:Key="Map.Windows">#eb6834</Color>
+          <Color x:Key="Map.VirtualMachines">#1baf7a</Color>
+          <Color x:Key="Map.Kernel">#52514e</Color>
+          <Color x:Key="Map.SharedOther">#a3a29b</Color>
+          <Color x:Key="Map.Available">#c3c2b7</Color>
+          <x:Double x:Key="Map.Tint">0.20</x:Double>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <Color x:Key="Map.Page">#0d0d0d</Color>
+          <Color x:Key="Map.Surface">#1a1a19</Color>
+          <Color x:Key="Map.Ink">#f0efec</Color>
+          <Color x:Key="Map.Ink2">#c3c2b7</Color>
+          <Color x:Key="Map.Muted">#898781</Color>
+          <Color x:Key="Map.Border">#1affffff</Color>
+          <Color x:Key="Map.Apps">#3987e5</Color>
+          <Color x:Key="Map.Windows">#d95926</Color>
+          <Color x:Key="Map.VirtualMachines">#199e70</Color>
+          <Color x:Key="Map.Kernel">#c3c2b7</Color>
+          <Color x:Key="Map.SharedOther">#6e6d68</Color>
+          <Color x:Key="Map.Available">#4a4a46</Color>
+          <x:Double x:Key="Map.Tint">0.30</x:Double>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

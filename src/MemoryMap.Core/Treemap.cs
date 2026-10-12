@@ -10,6 +10,8 @@ public readonly record struct LayoutRect(double X, double Y, double Width, doubl
 
     public LayoutRect Inset(double left, double top, double right, double bottom) =>
         new(X + left, Y + top, Math.Max(0, Width - left - right), Math.Max(0, Height - top - bottom));
+
+    public LayoutRect Inset(double all) => Inset(all, all, all, all);
 }
 
 /// <summary>A node placed on the map.</summary>

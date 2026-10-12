@@ -1,0 +1,103 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="using:MemoryMap.App"
+        xmlns:core="using:MemoryMap.Core"
+        x:Class="MemoryMap.App.MainWindow"
+        x:DataType="app:MainViewModel"
+        Title="Memory Map"
+        Width="1180" Height="800" MinWidth="560" MinHeight="420"
+        Background="{DynamicResource Map.Page}">
+  <DockPanel Margin="16,12,16,16">
+    <StackPanel DockPanel.Dock="Top" Spacing="2">
+      <TextBlock x:Name="SummaryText" Text="{Binding Summary}" FontSize="15" FontWeight="SemiBold"
+                 Foreground="{DynamicResource Map.Ink}" TextWrapping="Wrap" />
+      <TextBlock x:Name="StatusText" Text="{Binding Status}" FontSize="12"
+                 Foreground="{DynamicResource Map.Ink2}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <ItemsControl x:Name="LegendList" DockPanel.Dock="Top" Margin="0,10,0,6" ItemsSource="{Binding Legend}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <WrapPanel ItemSpacing="18" LineSpacing="4" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="app:LegendItem">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <app:GroupSwatch Group="{Binding Group}" VerticalAlignment="Center" />
+            <TextBlock Foreground="{DynamicResource Map.Ink2}" FontSize="13">
+              <Run Text="{Binding Label}" FontWeight="SemiBold" Foreground="{DynamicResource Map.Ink}" />
+              <Run Text="{Binding Size}" />
+              <Run Text="{Binding Share}" />
+            </TextBlock>
+          </StackPanel>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <TabControl x:Name="Views" Padding="0,6,0,0" SelectedIndex="{Binding ViewIndex, Mode=TwoWay}">
+      <TabItem Header="Map">
+        <Panel>
+          <app:TreemapControl x:Name="Map" Root="{Binding Breakdown.Root}" Total="{Binding Breakdown.Total}" />
+          <Canvas IsHitTestVisible="False">
+            <Border x:Name="Tip" IsVisible="{Binding Hover, Converter={x:Static ObjectConverters.IsNotNull}}" MaxWidth="360"
+                    Background="{DynamicResource Map.Surface}" BorderBrush="{DynamicResource Map.Border}"
+                    BorderThickness="1" CornerRadius="6" Padding="10,8" BoxShadow="0 4 16 0 #2E000000">
+              <StackPanel Spacing="2">
+                <TextBlock x:Name="TipTitle" Text="{Binding Hover.Title, FallbackValue=''}" FontWeight="SemiBold" FontSize="13"
+                           Foreground="{DynamicResource Map.Ink}" TextWrapping="Wrap" />
+                <TextBlock x:Name="TipText" Text="{Binding Hover.Text, FallbackValue=''}" FontSize="12"
+                           Foreground="{DynamicResource Map.Ink2}" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </Canvas>
+        </Panel>
+      </TabItem>
+      <TabItem Header="Table">
+        <DockPanel>
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="170,*,100,70,80,280" Margin="8,4">
+            <Grid.Styles>
+              <Style Selector="TextBlock">
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource Map.Ink2}" />
+              </Style>
+            </Grid.Styles>
+            <TextBlock Grid.Column="0" Text="Group" />
+            <TextBlock Grid.Column="1" Text="Name" />
+            <TextBlock Grid.Column="2" Text="Size" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="3" Text="RAM" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="4" Text="Processes" HorizontalAlignment="Right" />
+            <TextBlock Grid.Column="5" Text="PIDs" Margin="16,0,0,0" />
+          </Grid>
+          <ScrollViewer>
+            <ItemsControl x:Name="TableList" ItemsSource="{Binding Rows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="core:TableRow">
+                  <Border BorderBrush="{DynamicResource Map.Border}" BorderThickness="0,0,0,1" Padding="8,4">
+                    <Grid ColumnDefinitions="170,*,100,70,80,280">
+                      <Grid.Styles>
+                        <Style Selector="TextBlock">
+                          <Setter Property="Foreground" Value="{DynamicResource Map.Ink}" />
+                          <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                        </Style>
+                      </Grid.Styles>
+                      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                        <app:GroupSwatch Group="{Binding Group}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding GroupLabel}" Foreground="{DynamicResource Map.Ink2}" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="1" Text="{Binding Name}" />
+                      <TextBlock Grid.Column="2" Text="{Binding Size}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="3" Text="{Binding Share}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="4" Text="{Binding Processes}" HorizontalAlignment="Right" />
+                      <TextBlock Grid.Column="5" Text="{Binding Pids}" Margin="16,0,0,0" Foreground="{DynamicResource Map.Ink2}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

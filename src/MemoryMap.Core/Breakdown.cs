@@ -47,6 +47,10 @@ public sealed record MapNode(
 {
     public int ProcessCount => Process is not null ? 1 : Children.Sum(c => c.ProcessCount);
 
+    /// <summary>Every process sample at or below this node.</summary>
+    public IEnumerable<ProcessSample> Processes() =>
+        Process is { } p ? [p] : Children.SelectMany(c => c.Processes());
+
     public MapNode? Find(string key) =>
         Key == key ? this : Children.Select(c => c.Find(key)).FirstOrDefault(n => n is not null);
 }
