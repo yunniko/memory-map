@@ -1,0 +1,19 @@
+# The merge gate (scripts/check.ps1): format check, warnings-as-errors build, every test.
+# Windows only: the sampler, startup reader and their integration tests use Windows APIs.
+name: check
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: pwsh scripts/check.ps1

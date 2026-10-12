@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    The project's merge gate, run locally (no CI until the project has a remote):
+    The project's merge gate, run locally and in CI (.github/workflows/check.yml):
     formatting, a warnings-as-errors build, and every test.
 #>
 $ErrorActionPreference = 'Stop'
