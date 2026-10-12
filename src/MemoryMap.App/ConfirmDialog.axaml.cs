@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using MemoryMap.Core;
 
 namespace MemoryMap.App;
 
@@ -6,17 +7,17 @@ namespace MemoryMap.App;
 public partial class ConfirmDialog : Window
 {
     public ConfirmDialog()
-        : this("", "", "OK")
+        : this(new ConfirmRequest("", "", "OK"))
     {
     }
 
-    public ConfirmDialog(string question, string detail, string confirm)
+    public ConfirmDialog(ConfirmRequest request)
     {
         InitializeComponent();
-        Title = question;
-        Question.Text = question;
-        Detail.Text = detail;
-        ConfirmButton.Content = confirm;
+        Title = request.Question;
+        Question.Text = request.Question;
+        Detail.Text = request.Detail;
+        ConfirmButton.Content = request.ConfirmLabel;
         ConfirmButton.Click += (_, _) => Close(true);
         CancelButton.Click += (_, _) => Close(false);
     }

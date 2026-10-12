@@ -8,6 +8,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using MemoryMap.Core;
 using static MemoryMap.App.Tests.Helpers.Samples;
+using static MemoryMap.App.Tests.Helpers.Ui;
 
 namespace MemoryMap.App.Tests;
 
@@ -153,13 +154,6 @@ public class MainWindowTests
         var expected = variant == "Dark" ? Mix(0x1a1a19, 0x3987e5, 0.30) : Mix(0xfcfcfb, 0x2a78d6, 0.20);
 
         Assert.True(Close(pixel, expected), $"tile pixel {pixel} is not the {variant} apps fill {expected}");
-    }
-
-    private static void Hover(MainWindow window, LayoutRect rect)
-    {
-        var inMap = new Point(rect.X + (rect.Width / 2), rect.Y + (rect.Height / 2));
-        window.MouseMove(window.Map.TranslatePoint(inMap, window)!.Value);
-        Dispatcher.UIThread.RunJobs();
     }
 
     // Deliberately independent of MapPalette's mix: it is the oracle the pixel is checked against.

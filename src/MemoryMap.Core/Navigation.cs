@@ -10,12 +10,12 @@ public sealed class Navigation
 {
     private List<string> _keys = [];
 
-    /// <summary>How many levels below the root the view is.</summary>
-    public int Depth => _keys.Count;
-
     public static bool CanZoomInto(MapNode node) => node.Kind != NodeKind.Root && node.Children.Count > 0;
 
-    /// <summary>The nodes from the root to the one shown, in this tree.</summary>
+    /// <summary>
+    /// The nodes from the root to the one shown, in this tree. Also re-anchors the chain on what
+    /// it found, so after a fallback the view stays on the ancestor (D009).
+    /// </summary>
     public IReadOnlyList<MapNode> Resolve(MapNode root)
     {
         // Search by key from the deepest level up: an app can move in and out of a group's
@@ -24,7 +24,7 @@ public sealed class Navigation
         {
             if (root.PathTo(_keys[i]) is { } path)
             {
-                _keys = [.. path.Skip(1).Select(n => n.Key)];
+                SetPath(path);
                 return path;
             }
         }
@@ -39,7 +39,7 @@ public sealed class Navigation
         {
             return false;
         }
-        _keys = [.. path.Skip(1).Select(n => n.Key)];
+        SetPath(path);
         return true;
     }
 
@@ -60,4 +60,6 @@ public sealed class Navigation
         _keys.RemoveAt(_keys.Count - 1);
         return true;
     }
+
+    private void SetPath(IReadOnlyList<MapNode> path) => _keys = [.. path.Skip(1).Select(n => n.Key)];
 }

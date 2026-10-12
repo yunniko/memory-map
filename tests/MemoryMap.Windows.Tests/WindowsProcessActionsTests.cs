@@ -62,13 +62,20 @@ public class WindowsProcessActionsTests
     [Fact]
     public void Does_not_end_a_system_process()
     {
-        // PID 4 is the System process. Unelevated, Windows denies access; elevated, the start-time
-        // check or the critical-process check stops it. Either way it is not ended, and says why.
+        // PID 4 is the System process. Unelevated, Windows denies access to it. Elevated, the
+        // start-time check or the critical-process check stops it; that path is not run here.
         var sample = new ProcessSample(4, "System", ProcessKind.Service, 0, DateTimeOffset.MinValue, 1, 1, 1);
 
         var result = _actions.End(sample);
 
-        Assert.Contains(result.Outcome, new[] { ActionOutcome.AccessDenied, ActionOutcome.Refused, ActionOutcome.AlreadyExited });
+        if (Environment.IsPrivilegedProcess)
+        {
+            Assert.NotEqual(ActionOutcome.Done, result.Outcome);
+        }
+        else
+        {
+            Assert.Equal(ActionOutcome.AccessDenied, result.Outcome);
+        }
         Assert.Contains("System (PID 4)", result.Message, StringComparison.Ordinal);
     }
 
@@ -85,9 +92,9 @@ public class WindowsProcessActionsTests
     {
         using var self = Process.GetCurrentProcess();
 
-        var (path, result) = WindowsProcessActions.ImagePath(Sample(self));
+        var found = WindowsProcessActions.TryImagePath(Sample(self), out var path, out var failure);
 
-        Assert.True(result.Succeeded, result.Message);
+        Assert.True(found, failure?.Message);
         Assert.Equal(self.MainModule!.FileName, path, StringComparer.OrdinalIgnoreCase);
     }
 }

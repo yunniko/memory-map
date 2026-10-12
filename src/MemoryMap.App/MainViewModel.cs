@@ -11,10 +11,11 @@ public sealed record LegendItem(MemoryGroup Group, string Label, string Size, st
 /// <summary>What the tooltip says about the node under the pointer.</summary>
 public sealed record HoverTip(string Title, string Text);
 
-/// <summary>One level of the breadcrumb; the last one is the node shown.</summary>
-public sealed record Crumb(string Key, string Name, bool IsLast);
+/// <summary>A breadcrumb level above the node shown, which zooms back out to it.</summary>
+public sealed record Crumb(string Key, string Name);
 
-/// <summary>A context-menu command; disabled when <see cref="Run"/> is null.</summary>
+/// <summary>A context-menu command; disabled when <see cref="Run"/> is null. Run it through
+/// <see cref="MainViewModel.RunAsync"/>, which reports a failure instead of throwing.</summary>
 /// <param name="StartsGroup">Drawn with a separator above it.</param>
 public sealed record MenuEntry(string Header, Func<Task>? Run, bool StartsGroup = false);
 
@@ -42,8 +43,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly IProcessActions? _actions;
     private readonly Navigation _navigation = new();
     private MapNode? _viewRoot;
-    private IReadOnlyList<Crumb> _breadcrumb = [];
-    private bool _canGoBack;
+    private IReadOnlyList<Crumb> _ancestors = [];
     private string? _notice;
 
     public MainViewModel(LiveMemory? live = null, IProcessActions? actions = null)
@@ -71,16 +71,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>The node the map shows: the root, or the group, app or "Other" zoomed into.</summary>
     public MapNode? ViewRoot { get => _viewRoot; private set => Set(ref _viewRoot, value); }
 
-    public IReadOnlyList<Crumb> Breadcrumb { get => _breadcrumb; private set => SetList(ref _breadcrumb, value); }
+    /// <summary>The breadcrumb levels above <see cref="ViewRoot"/>, outermost first.</summary>
+    public IReadOnlyList<Crumb> Ancestors { get => _ancestors; private set => SetList(ref _ancestors, value); }
 
-    public bool CanGoBack { get => _canGoBack; private set => Set(ref _canGoBack, value); }
+    public bool CanGoBack => Ancestors.Count > 0;
 
     /// <summary>The outcome of the last process action, until dismissed; null when there is none.</summary>
     public string? Notice { get => _notice; private set => Set(ref _notice, value); }
 
-    /// <summary>Asks the user (title, message) before a process is ended; the window supplies it.
-    /// Without it nothing is ended.</summary>
-    public Func<string, string, Task<bool>>? Confirm { get; set; }
+    /// <summary>Asks the user before a process is ended; the window supplies it. Without it nothing is ended.</summary>
+    public Func<ConfirmRequest, Task<bool>>? Confirm { get; set; }
 
     public string Summary { get => _summary; private set => Set(ref _summary, value); }
 
@@ -139,18 +139,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
         var (title, lines) = Describe.Tooltip(node, Breakdown.Total);
-        var hints = new List<string>(2);
-        if (Navigation.CanZoomInto(node))
+        if (NodeCommands.Hint(node, _actions is not null) is { } hint)
         {
-            hints.Add("Click to zoom in");
-        }
-        if (_actions is not null && ProcessTarget.ToLocate(node) is not null)
-        {
-            hints.Add(hints.Count == 0 ? "Right-click for actions" : "right-click for actions");
-        }
-        if (hints.Count > 0)
-        {
-            lines = [.. lines, string.Join(" · ", hints)];
+            lines = [.. lines, hint];
         }
         Hover = new HoverTip(title, string.Join(Environment.NewLine, lines));
     }
@@ -185,37 +176,32 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>The context menu for a node: navigation, then the process actions that apply.</summary>
-    public IReadOnlyList<MenuEntry> MenuFor(MapNode node)
-    {
-        var entries = new List<MenuEntry>();
-        if (Navigation.CanZoomInto(node))
-        {
-            entries.Add(new("Zoom in", () => Task.FromResult(ZoomInto(node))));
-        }
-        if (CanGoBack)
-        {
-            entries.Add(new("Back", () => Task.FromResult(Back())));
-        }
-        if (_actions is not null && ProcessTarget.ToLocate(node) is not null)
-        {
-            entries.Add(ProcessTarget.ToEnd(node) is { } process
-                ? new($"End {Label(process)}…", () => EndAsync(node), StartsGroup: entries.Count > 0)
-                : new($"End process: zoom in to pick one of its {node.ProcessCount}", null, StartsGroup: entries.Count > 0));
-            entries.Add(new("Open file location", () => ShowInExplorerAsync(node)));
-        }
-        return entries;
-    }
+    public IReadOnlyList<MenuEntry> MenuFor(MapNode node) =>
+        [.. NodeCommands.For(node, CanGoBack, _actions is not null).Select(option => new MenuEntry(option.Header,
+            option.Enabled ? Command(option, node) : null, option.StartsGroup))];
 
-    /// <summary>Ends the one process <paramref name="node"/> stands for, once the user confirms.</summary>
-    public async Task EndAsync(MapNode node)
+    /// <summary>Runs a menu command. A failure becomes the <see cref="Notice"/>: a menu click has
+    /// no caller to catch it, so an exception here would otherwise end the app.</summary>
+    public async Task RunAsync(MenuEntry entry)
     {
-        if (_actions is not { } actions || ProcessTarget.ToEnd(node) is not { } process || Confirm is not { } confirm)
+        if (entry.Run is not { } run)
         {
             return;
         }
-        var agreed = await confirm($"End {Label(process)}?",
-            $"{process.Name} closes at once, without saving: anything unsaved in it is lost.");
-        if (!agreed)
+        try
+        {
+            await run();
+        }
+        catch (Exception e)
+        {
+            Notice = $"{entry.Header.TrimEnd('…')} failed: {e.Message}";
+        }
+    }
+
+    /// <summary>Ends <paramref name="process"/>, once the user confirms.</summary>
+    public async Task EndAsync(ProcessSample process)
+    {
+        if (_actions is not { } actions || Confirm is not { } confirm || !await confirm(ConfirmRequest.ToEnd(process)))
         {
             return;
         }
@@ -223,20 +209,36 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Notice = result.Message;
         if (result.Outcome is ActionOutcome.Done or ActionOutcome.AlreadyExited && _live is { } live)
         {
-            // Show the freed memory now rather than at the next tick.
-            await Task.Run(live.RefreshNow);
+            try
+            {
+                // Show the freed memory now rather than at the next tick.
+                await Task.Run(live.RefreshNow);
+            }
+            catch (ObjectDisposedException)
+            {
+                // The app is closing; there is nothing left to refresh.
+            }
         }
     }
 
-    /// <summary>Opens Explorer at the node's executable; says why when it cannot.</summary>
+    /// <summary>Opens Explorer at the node's executable; says why when it cannot. Every process
+    /// of an app shares the file, so one that has exited since the sample hands over to the next.</summary>
     public async Task ShowInExplorerAsync(MapNode node)
     {
-        if (_actions is not { } actions || ProcessTarget.ToLocate(node) is not { } process)
+        if (_actions is not { } actions)
         {
             return;
         }
-        var result = await Task.Run(() => actions.ShowInExplorer(process));
-        if (!result.Succeeded)
+        ActionResult? result = null;
+        foreach (var process in ProcessTarget.ToLocate(node))
+        {
+            result = await Task.Run(() => actions.ShowInExplorer(process));
+            if (result.Outcome != ActionOutcome.AlreadyExited)
+            {
+                break;
+            }
+        }
+        if (result is { Succeeded: false })
         {
             Notice = result.Message;
         }
@@ -252,11 +254,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         var path = _navigation.Resolve(Breakdown.Root);
         ViewRoot = path[^1];
-        Breadcrumb = [.. path.Select((n, i) => new Crumb(n.Key, n.Name, i == path.Count - 1))];
-        CanGoBack = path.Count > 1;
+        var couldGoBack = CanGoBack;
+        Ancestors = [.. path.SkipLast(1).Select(n => new Crumb(n.Key, n.Name))];
+        if (couldGoBack != CanGoBack)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanGoBack)));
+        }
     }
 
-    private static string Label(ProcessSample process) => $"{process.Name} (PID {process.Pid})";
+    private Func<Task> Command(CommandOption option, MapNode node) => option.Command switch
+    {
+        NodeCommand.ZoomIn => () => Task.FromResult(ZoomInto(node)),
+        NodeCommand.Back => () => Task.FromResult(Back()),
+        NodeCommand.End => () => EndAsync(option.Target!),
+        NodeCommand.Locate => () => ShowInExplorerAsync(node),
+        _ => throw new ArgumentOutOfRangeException(nameof(option), option.Command, "no handler for this command"),
+    };
 
     private void UpdateRows() =>
         Rows = ViewIndex == TableView && Breakdown is not null ? Describe.Table(Breakdown) : [];

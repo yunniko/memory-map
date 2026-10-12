@@ -32,6 +32,9 @@ public sealed record ProcessSample(
     /// <summary>The image name without a trailing ".exe".</summary>
     public string Name =>
         ImageName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? ImageName[..^4] : ImageName;
+
+    /// <summary>"chrome (PID 42)": how messages and menus name one process.</summary>
+    public string Label => $"{Name} (PID {Pid})";
 }
 
 /// <summary>System-wide memory figures. All sizes are bytes.</summary>

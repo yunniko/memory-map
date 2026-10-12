@@ -32,15 +32,19 @@ public partial class MainWindow : Window
         {
             if (Model is { } model)
             {
-                model.Confirm = (question, detail) => new ConfirmDialog(question, detail, "End process").ShowDialog<bool>(this);
+                model.Confirm = request => new ConfirmDialog(request).ShowDialog<bool>(this);
             }
         };
     }
 
     /// <summary>The menu a right-click on <paramref name="node"/> opens; null when it has no commands.</summary>
-    public ContextMenu? BuildMenu(MapNode node)
+    internal ContextMenu? BuildMenu(MapNode node)
     {
-        var entries = Model?.MenuFor(node) ?? [];
+        if (Model is not { } model)
+        {
+            return null;
+        }
+        var entries = model.MenuFor(node);
         if (entries.Count == 0)
         {
             return null;
@@ -53,9 +57,9 @@ public partial class MainWindow : Window
                 items.Add(new Separator());
             }
             var item = new MenuItem { Header = entry.Header, IsEnabled = entry.Run is not null };
-            if (entry.Run is { } run)
+            if (entry.Run is not null)
             {
-                item.Click += async (_, _) => await run();
+                item.Click += async (_, _) => await model.RunAsync(entry);
             }
             items.Add(item);
         }
@@ -66,33 +70,37 @@ public partial class MainWindow : Window
     {
         base.OnKeyDown(e);
         var back = e.Key is Key.Escape or Key.Back || (e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt);
-        if (!e.Handled && back && Model?.Back() == true)
+        if (!e.Handled && back && GoBack())
         {
             e.Handled = true;
         }
     }
 
     /// <summary>The context menu opened last, if any.</summary>
-    public ContextMenu? Menu { get; private set; }
+    internal ContextMenu? Menu { get; private set; }
 
     private MainViewModel? Model => DataContext as MainViewModel;
 
     private void OnMapContextRequested(object? sender, ContextRequestedEventArgs e)
     {
         e.Handled = true;
-        // Built for the node under the pointer at the moment of the click.
+        // For the node at the click itself; the hovered node stands in for a keyboard request.
         Menu?.Close();
-        Menu = Map.HoveredNode is { } node ? BuildMenu(node) : null;
+        var node = e.TryGetPosition(Map, out var at) ? Map.Scene.HitTest(at.X, at.Y) : Map.HoveredNode;
+        Menu = node is null ? null : BuildMenu(node);
         Menu?.Open(Map);
     }
 
     private void OnAnyPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.GetCurrentPoint(this).Properties.IsXButton1Pressed && Model?.Back() == true)
+        if (e.GetCurrentPoint(this).Properties.IsXButton1Pressed && GoBack())
         {
             e.Handled = true;
         }
     }
+
+    // The back gestures (keys, mouse back button) belong to the map; on the table they do nothing.
+    private bool GoBack() => Model is { ViewIndex: MainViewModel.MapView } model && model.Back();
 
     private void OnBack(object? sender, RoutedEventArgs e) => Model?.Back();
 

@@ -50,7 +50,7 @@
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,6">
             <Button x:Name="BackButton" Content="&#x2039; Back" Padding="8,2" IsEnabled="{Binding CanGoBack}" Click="OnBack"
                     ToolTip.Tip="Back (Esc, Backspace or the mouse back button)" />
-            <ItemsControl x:Name="BreadcrumbList" ItemsSource="{Binding Breadcrumb}" VerticalAlignment="Center">
+            <ItemsControl x:Name="BreadcrumbList" ItemsSource="{Binding Ancestors}" VerticalAlignment="Center">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <StackPanel Orientation="Horizontal" Spacing="4" />
@@ -59,16 +59,15 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="app:Crumb">
                   <StackPanel Orientation="Horizontal" Spacing="4">
-                    <Button Content="{Binding Name}" IsVisible="{Binding !IsLast}" Padding="6,2" Click="OnCrumb"
+                    <Button Content="{Binding Name}" Padding="6,2" Click="OnCrumb"
                             Background="Transparent" Foreground="{DynamicResource Map.Ink2}" />
-                    <TextBlock Text="&#x203A;" IsVisible="{Binding !IsLast}" VerticalAlignment="Center"
-                               Foreground="{DynamicResource Map.Muted}" />
-                    <TextBlock Text="{Binding Name}" IsVisible="{Binding IsLast}" VerticalAlignment="Center"
-                               FontWeight="SemiBold" Foreground="{DynamicResource Map.Ink}" />
+                    <TextBlock Text="&#x203A;" VerticalAlignment="Center" Foreground="{DynamicResource Map.Muted}" />
                   </StackPanel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <TextBlock x:Name="CurrentCrumb" Text="{Binding ViewRoot.Name}" VerticalAlignment="Center"
+                       FontWeight="SemiBold" Foreground="{DynamicResource Map.Ink}" />
           </StackPanel>
           <Panel>
             <app:TreemapControl x:Name="Map" Root="{Binding ViewRoot}" Total="{Binding Breakdown.Total}" />

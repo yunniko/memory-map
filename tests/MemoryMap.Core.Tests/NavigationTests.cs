@@ -31,7 +31,6 @@ public class NavigationTests
         var path = nav.Resolve(next);
         Assert.Equal(["root", "Apps", "Apps/chrome.exe"], path.Select(n => n.Key));
         Assert.Same(next.Find("Apps/chrome.exe"), path[^1]);
-        Assert.Equal(2, nav.Depth);
     }
 
     [Fact]
@@ -78,7 +77,7 @@ public class NavigationTests
         nav.ZoomOutTo("Apps");
         Assert.Equal("Apps", nav.Resolve(root)[^1].Key);
         nav.ZoomOutTo("root");
-        Assert.Equal(0, nav.Depth);
+        Assert.Equal([root], nav.Resolve(root));
     }
 
     [Fact]
@@ -91,7 +90,7 @@ public class NavigationTests
         Assert.False(nav.ZoomInto(root, process));
         Assert.False(nav.ZoomInto(root, root.Find("Kernel/nonpaged-pool")!));
         Assert.False(nav.ZoomInto(root, root));
-        Assert.Equal(0, nav.Depth);
+        Assert.Equal([root], nav.Resolve(root));
     }
 
     [Fact]
@@ -104,10 +103,10 @@ public class NavigationTests
         Assert.Null(ProcessTarget.ToEnd(chrome)); // two processes: zoom in to pick one
         Assert.Equal(1, ProcessTarget.ToEnd(chrome.Children[0])?.Pid);
         Assert.Equal(3, ProcessTarget.ToEnd(code)?.Pid);
-        Assert.Equal(1, ProcessTarget.ToLocate(chrome)?.Pid);
+        Assert.Equal([1, 2], ProcessTarget.ToLocate(chrome).Select(p => p.Pid)); // largest first
         Assert.Null(ProcessTarget.ToEnd(root.Find("Apps")!));
-        Assert.Null(ProcessTarget.ToLocate(root.Find("Apps")!));
-        Assert.Null(ProcessTarget.ToLocate(root.Find("Kernel/paged-pool")!));
+        Assert.Empty(ProcessTarget.ToLocate(root.Find("Apps")!));
+        Assert.Empty(ProcessTarget.ToLocate(root.Find("Kernel/paged-pool")!));
     }
 
     [Fact]

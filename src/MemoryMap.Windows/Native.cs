@@ -39,9 +39,9 @@ internal static partial class Native
 
     public const uint ProcessTerminate = 0x0001;
     public const uint ProcessQueryLimitedInformation = 0x1000;
-    public const uint Synchronize = 0x00100000;
     public const int ErrorAccessDenied = 5;
     public const int ErrorInvalidParameter = 87;
+    public const int ErrorInsufficientBuffer = 122;
     public const uint StillActive = 259;
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
