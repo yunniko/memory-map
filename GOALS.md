@@ -21,10 +21,13 @@ Completed goals: `docs/goals-archive.md`.
 **Milestones:**
 - [x] M1 — Scripts and CI: architecture-aware `publish-linux.sh`, ARM jobs in `check.yml`, both
   architectures in `release.yml` and `release-files.sh`, version 0.4.1; CI green on ARM.
-- [ ] M2 — A draft release with both architectures for the Owner to try on the Chromebook; published
+- [x] M2 — A draft release with both architectures for the Owner to try on the Chromebook; published
   after the Owner's check and OK.
 
 **Progress log** (newest first):
+- 2026-10-13 — M2 done: v0.5.1 published (Owner: "publish v0.5.1"), marked Latest; tag at 85a7d4e;
+  all six assets downloaded anonymously match SHA256SUMS. All criteria met; the goal waits for the
+  Owner's sign-off.
 - 2026-10-13 — Owner: draft v0.5.1's arm64 `.deb` installs and runs on the Chromebook ("it is ok now
   and runs on chromebook"), so criterion 4 holds and the BLOCKED entry below is resolved. M2's last
   step is publishing v0.5.1, which waits for the Owner's explicit go-ahead.

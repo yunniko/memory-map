@@ -1,5 +1,5 @@
 # memory-map — Handover
-Last verified: 2026-10-13 at 6487359
+Last verified: 2026-10-13 at 85a7d4e
 
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
 G-001 to G-004 are done (`docs/goals-archive.md`): the map, the Startup tab, the Linux version
@@ -11,11 +11,11 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - **Native AOT builds (G-007 M2, D043, D044).** `scripts/publish.ps1` builds `publish\win-x64\`:
   MemoryMap.exe with `libSkiaSharp.dll` and `libHarfBuzzSharp.dll` beside it, 35 MB (0.4.1: one
-  97 MB exe), and copies the three into C:\bin. The installed copy is draft v0.5.1, the release's own
+  97 MB exe), and copies the three into C:\bin. The installed copy is v0.5.1, the release's own
   files. `scripts/smoke-published.ps1` drives the published exe through UI Automation: every tab,
   the settings file saved and read back in both directions. It refuses to run beside another
   MemoryMap. Startup tab end-to-end record: `docs/reviews/2026-10-12-g002-m4-end-to-end.md`.
-- **Releases (G-005, D040).** v0.5.0 is the latest GitHub release, unsigned (Native AOT; amd64 and
+- **Releases (G-005, D040).** v0.5.1 is the latest GitHub release, unsigned (Native AOT; amd64 and
   arm64 Linux). `.github/workflows/release.yml` builds
   a draft release from a `v*` tag: the Windows zip, a tarball and a `.deb` per Linux architecture
   (deb-check), notices zip, SHA256SUMS, notes from the newest `assets/linux/changelog` entry. The AOT
@@ -226,8 +226,8 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 ## Next steps and open questions
 
-- G-006 M2: draft v0.5.1's arm64 `.deb` (built on Ubuntu 22.04, D045) installs and runs on the
-  Owner's Chromebook (Owner, 2026-10-13; criterion 4). Publishing v0.5.1 waits for the Owner's OK.
+- G-006: all milestones done and v0.5.1 published; its arm64 `.deb` runs on the Owner's Chromebook
+  (Owner, 2026-10-13). Waits for the Owner's sign-off.
 - G-007: all milestones done and v0.5.0 published; waits for the Owner's sign-off.
   Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
@@ -238,7 +238,8 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 - Not run, signed off without: `docs/linux-checklist.md` on a real Linux PC (G-003) and part A of
   `docs/second-pc-checklist.md`, the real administrator prompt (G-002).
 - Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
-  package name added in `scripts/publish-linux.sh` (only Ubuntu 24.04 is checked, D036).
+  package name added in `scripts/publish-linux.sh` (deb-check covers Ubuntu 24.04 and 22.04 and
+  Debian 12; D036, D045).
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
 - Open, step B.5 of the checklist: whether switching a machine-wide entry off in Settings
@@ -253,6 +254,7 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 | 2026-10-12 | 27ddf24 | Installed C:\bin\MemoryMap.exe (local only, D014) | Map and Settings tabs captured; close-to-tray checked |
 | 2026-10-12 | 44933d1 | Reinstalled C:\bin\MemoryMap.exe with the Startup tab (local only) | Hash matches publish; helper check 4/4; UI smoke 41/41 switches |
 | 2026-10-13 | 2255e21 | Reinstalled C:\bin\MemoryMap.exe with optional group titles (local only) | Started from C:\bin; window "Memory Map" responding, 118 MB |
+| 2026-10-13 | 85a7d4e | GitHub release v0.5.1 (Owner's OK after the Chromebook check): Linux built on Ubuntu 22.04 (D045), new app icon (D046) | Release run 38461725450 green; arm64 `.deb` runs on the Owner's Chromebook; assets match SHA256SUMS, downloaded anonymously |
 | 2026-10-13 | 85a7d4e | C:\bin replaced with draft v0.5.1's three files (Owner, local only) | Zip matches the draft's SHA256SUMS, copies match; started from C:\bin: version 0.5.1, responding, 33 MB private |
 | 2026-10-13 | 6487359 | C:\bin replaced with v0.5.0's three files from the release zip (Owner, local only) | Hashes match the release; started from C:\bin: version 0.5.0, window responding, 36 MB private |
 | 2026-10-13 | 6487359 | GitHub release v0.5.0, Native AOT: Windows zip, amd64 and arm64 `.deb` and tarballs, notices zip (Owner's OK); draft v0.4.1 deleted | Release run 38453889975 green, smoke 0 failures; assets match SHA256SUMS, also downloaded anonymously |
