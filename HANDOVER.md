@@ -11,11 +11,12 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - **Native AOT builds (G-007 M2, D043, D044).** `scripts/publish.ps1` builds `publish\win-x64\`:
   MemoryMap.exe with `libSkiaSharp.dll` and `libHarfBuzzSharp.dll` beside it, 35 MB (0.4.1: one
-  97 MB exe), and copies the three into C:\bin. The installed copy is still 0.4.0's single exe
-  (3e700a5). `scripts/smoke-published.ps1` drives the published exe through UI Automation: every tab,
+  97 MB exe), and copies the three into C:\bin. The installed copy is v0.5.0, the release's own
+  files. `scripts/smoke-published.ps1` drives the published exe through UI Automation: every tab,
   the settings file saved and read back in both directions. It refuses to run beside another
   MemoryMap. Startup tab end-to-end record: `docs/reviews/2026-10-12-g002-m4-end-to-end.md`.
-- **Releases (G-005, D040).** v0.4.0 is on GitHub, unsigned. `.github/workflows/release.yml` builds
+- **Releases (G-005, D040).** v0.5.0 is the latest GitHub release, unsigned (Native AOT; amd64 and
+  arm64 Linux). `.github/workflows/release.yml` builds
   a draft release from a `v*` tag: the Windows zip, a tarball and a `.deb` per Linux architecture
   (deb-check), notices zip, SHA256SUMS, notes from the newest `assets/linux/changelog` entry. The AOT
   layout's build-only run 38449811250 is green with signing and release skipped; `scripts/release-files.sh`
@@ -218,15 +219,10 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 ## Next steps and open questions
 
-- G-006 M2 (Owner): the draft release v0.4.1 (run 38437251400; amd64 and arm64 packages, deb-check
-  passed on both) waits for the Owner to install the arm64 `.deb` on the Chromebook and say to publish.
-- BLOCKED (G-007 M3, Owner): the draft release v0.5.0 (6487359, run 38453889975, all jobs green,
-  signing skipped) waits for the Owner's OK to publish. Its six files match SHA256SUMS; the zip's exe
-  reports 0.5.0. Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
-- Open (Owner): the older draft v0.4.1 is superseded by v0.5.0, which has the same arm64 `.deb`
-  layout; testing 0.5.0's arm64 package on the Chromebook could settle G-006 M2 too.
-- Not done: C:\bin still holds 0.4.0's exe (the Owner's copy was running); `scripts/publish.ps1`
-  reinstalls it once that copy is exited.
+- G-006 M2 (Owner): install `memory-map_0.5.0_arm64.deb` from the v0.5.0 release on the Chromebook
+  (criterion 4). The v0.4.1 draft was deleted unpublished (Owner, 2026-10-13).
+- G-007: all milestones done and v0.5.0 published; waits for the Owner's sign-off.
+  Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
   the repo variable `SIGNPATH_ORGANIZATION_ID` and secret `SIGNPATH_API_TOKEN`. In SignPath: project
   `memory-map`, policy `release-signing`, artifact configuration from
@@ -250,6 +246,8 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 | 2026-10-12 | 27ddf24 | Installed C:\bin\MemoryMap.exe (local only, D014) | Map and Settings tabs captured; close-to-tray checked |
 | 2026-10-12 | 44933d1 | Reinstalled C:\bin\MemoryMap.exe with the Startup tab (local only) | Hash matches publish; helper check 4/4; UI smoke 41/41 switches |
 | 2026-10-13 | 2255e21 | Reinstalled C:\bin\MemoryMap.exe with optional group titles (local only) | Started from C:\bin; window "Memory Map" responding, 118 MB |
+| 2026-10-13 | 6487359 | C:\bin replaced with v0.5.0's three files from the release zip (Owner, local only) | Hashes match the release; started from C:\bin: version 0.5.0, window responding, 36 MB private |
+| 2026-10-13 | 6487359 | GitHub release v0.5.0, Native AOT: Windows zip, amd64 and arm64 `.deb` and tarballs, notices zip (Owner's OK); draft v0.4.1 deleted | Release run 38453889975 green, smoke 0 failures; assets match SHA256SUMS, also downloaded anonymously |
 | 2026-10-13 | 3e700a5 | GitHub release v0.4.0 (repo public since D039): Windows exe, .deb, Linux single file, notices zip; C:\bin reinstalled | CI green; deb-check passed; asset SHA-256 match the local builds |
 
 ## Decisions

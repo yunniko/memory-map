@@ -25,6 +25,9 @@ Completed goals: `docs/goals-archive.md`.
   after the Owner's check and OK.
 
 **Progress log** (newest first):
+- 2026-10-13 — Draft v0.4.1 deleted unpublished (Owner); v0.5.0 (G-007) is
+  published with both architectures, so criterion 3 holds there. **BLOCKED:** M2 waits for the Owner to
+  install `memory-map_0.5.0_arm64.deb` from the v0.5.0 release on the Chromebook (criterion 4).
 - 2026-10-13 — M1 done (659d259, D041). CI check run 38437233862 green on windows-2025 (334: 308 passed,
   26 skipped), ubuntu-24.04 and ubuntu-24.04-arm (251/251; crosscheck PASS 0.10%); deb-check passed on
   both runners, arm64 included (window shown, 9 run-time libraries in Depends, clean remove). Local:
@@ -60,10 +63,13 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M2 — Make it the real build: source-generated JSON for the settings file, the chosen settings in
   `publish.ps1`, `publish-linux.sh` and CI, and a CI step that starts the published Windows exe and
   checks its window and a settings round trip (deb-check already runs the published Linux app).
-- [ ] M3 — Draft release 0.5.0 with both Linux architectures; published after the Owner's OK.
+- [x] M3 — Draft release 0.5.0 with both Linux architectures; published after the Owner's OK.
 
 **Progress log** (newest first):
-- 2026-10-13 — **BLOCKED:** M3 waits for the Owner's OK to publish the draft release v0.5.0
+- 2026-10-13 — M3 done. Owner: "publish v0.5.0 and delete the 0.4.1 draft". v0.5.0 published as Latest
+  (7 files); the zip and arm64 `.deb` downloaded anonymously match SHA256SUMS. Draft v0.4.1 deleted (it
+  had no tag). All milestones done; the goal waits for the Owner's sign-off.
+- 2026-10-13 — (resolved above) **BLOCKED:** M3 waits for the Owner's OK to publish the draft release v0.5.0
   (6487359, tag v0.5.0, release run 38453889975: windows, linux amd64 and arm64, release green; sign
   skipped). Verified: Windows gate 334 (308 passed, 26 skipped); check run 38453883261 green;
   `smoke-published.ps1` 0 failures in the release job; the six downloaded files match SHA256SUMS;
