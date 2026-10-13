@@ -7,6 +7,17 @@ app owns (kernel pools, shared pages).
 Built in C# (.NET 10) with Avalonia. **State:** version 0.4.0 runs on Windows and Linux; signed
 Windows releases are in progress (`GOALS.md`). Source: `github.com/yunniko/memory-map`.
 
+## Download
+
+[Releases](https://github.com/yunniko/memory-map/releases) carry, for each version:
+- `MemoryMap-<version>-win-x64.exe` — Windows 10/11, 64-bit: one file, nothing to install.
+- `memory-map_<version>_amd64.deb` — Debian, Ubuntu and similar: `sudo apt install ./memory-map_<version>_amd64.deb`.
+- `MemoryMap-<version>-linux-x64` — any 64-bit Linux: `chmod +x` it and run it.
+- `MemoryMap-<version>-notices.zip` and `SHA256SUMS` — the licences and the checksums.
+
+Releases are built by GitHub Actions from a version tag (`.github/workflows/release.yml`). See the
+code signing policy below for how the Windows exe is signed.
+
 ## What it does
 
 - **Map:** RAM in six groups (Apps, Windows & services, WSL/Docker VMs, Kernel & drivers,
@@ -32,8 +43,7 @@ quits), and the Startup tab lists XDG autostart entries (switchable) and systemd
 
 ## Use
 
-- `C:\bin\MemoryMap.exe` — the installed app (one self-contained file; no .NET needed).
-- `./scripts/publish.ps1` — rebuild that exe into `publish\` and copy it to `C:\bin`
+- `./scripts/publish.ps1` — build the one-file exe into `publish\` and copy it to `C:\bin`
   (`-NoInstall` to skip the copy; exit the running app first).
 - `dotnet run --project src/MemoryMap.App -c Release` — run from source.
 - `dotnet run --project src/MemoryMap.Cli -- --json` — one snapshot as text or JSON;
@@ -68,6 +78,26 @@ and `C:\bin\memory-map.ps1` (HTML treemap).
 
 See `HANDOVER.md` for the current state and `docs/decisions/` for why things are the way
 they are.
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
+[SignPath Foundation](https://signpath.org). *Status: the application to SignPath Foundation is
+pending; releases up to 0.4.0 are unsigned.*
+
+- Only the Windows exe built by the release workflow from this repository's tagged source is
+  signed; nothing built elsewhere is submitted. The libraries bundled inside it come unmodified
+  from their upstream packages (see `THIRD-PARTY-NOTICES.md`).
+- Every signing request is approved by hand in SignPath before it is signed.
+- Committers and reviewers: [yunniko](https://github.com/yunniko). Approvers:
+  [yunniko](https://github.com/yunniko). The code is written with Claude (Anthropic's AI model)
+  in sessions the committer directs and reviews; changes from anyone else come as pull requests
+  and are reviewed before merging.
+
+**Privacy policy:** This program will not transfer any information to other networked systems
+unless specifically requested by the user or the person installing or operating it. Memory Map
+reads memory and process information on the PC it runs on and keeps its settings in a local file;
+it makes no network connections.
 
 ## Licence
 

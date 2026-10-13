@@ -5,6 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <Version>0.4.0</Version>
+    <!-- The exe's product name and version are what SignPath's signing policy checks (D040). -->
+    <Product>Memory Map</Product>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Authors>yunniko and Claude (Anthropic)</Authors>
+    <Copyright>Copyright (c) 2026 yunniko and Claude (Anthropic)</Copyright>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Deterministic>true</Deterministic>

@@ -1,0 +1,120 @@
+# Builds a release from a version tag (D040): the Windows exe, the Linux single file and the .deb, each
+# built and checked here from the tagged source. The exe goes to SignPath for signing once the
+# SIGNPATH_ORGANIZATION_ID variable is set (each request is approved by hand there); until then it is
+# released unsigned. The release is created as a draft, published by hand after a look.
+# A manual run builds and checks everything; with draft-tag it also makes a throwaway draft release.
+name: release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      draft-tag:
+        description: 'Tag name for a test draft release (leave empty to only build)'
+        required: false
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - id: version
+        name: Read the version; a tag must match it
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$v") {
+            throw "Tag $env:GITHUB_REF_NAME does not match version $v in Directory.Build.props."
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+      - run: pwsh scripts/publish.ps1 -NoInstall
+      - run: pwsh scripts/collect-notices.ps1
+      - id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-unsigned
+          path: publish/MemoryMap.exe
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notices
+          path: publish/notices/
+          if-no-files-found: error
+
+  sign:
+    needs: windows
+    if: vars.SIGNPATH_ORGANIZATION_ID != ''
+    runs-on: ubuntu-24.04
+    # Waits for the hand approval in SignPath; a request not approved in time fails this run.
+    timeout-minutes: 330
+    steps:
+      - uses: signpath/github-action-submit-signing-request@c92b958760219087e01f8d67a1669ed57afe2627 # v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: memory-map
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ needs.windows.outputs.artifact-id }}
+          parameters: |
+            version: "${{ needs.windows.outputs.version }}"
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 19200
+          output-artifact-directory: signed
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-signed
+          path: signed/MemoryMap.exe
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: bash scripts/publish-linux.sh
+      - run: bash scripts/deb-check.sh publish/memory-map_*_amd64.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            publish/linux-x64/MemoryMap
+            publish/memory-map_*_amd64.deb
+          if-no-files-found: error
+
+  release:
+    needs: [windows, sign, linux]
+    if: >-
+      always() && needs.windows.result == 'success' && needs.linux.result == 'success' &&
+      (needs.sign.result == 'success' || needs.sign.result == 'skipped') &&
+      (github.ref_type == 'tag' || inputs.draft-tag != '')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.windows.outputs.version }}
+      TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.draft-tag }}
+      SIGNED: ${{ needs.sign.result == 'success' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Name the files and write the notes
+        run: bash scripts/release-files.sh artifacts out
+      - name: Create the draft release
+        run: >-
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "Memory Map $VERSION"
+          --notes-file out/notes.md out/files/*

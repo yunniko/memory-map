@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What SignPath signs in the release workflow's windows-unsigned artifact (a zip holding MemoryMap.exe).
+     SignPath reads this from its project settings; this copy is the reviewed source to paste there.
+     The metadata restrictions are SignPath Foundation's terms: product name and version must match. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <parameters>
+    <parameter name="version" required="true" />
+  </parameters>
+  <zip-file>
+    <pe-file path="MemoryMap.exe" product-name="Memory Map" product-version="${version}">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>
