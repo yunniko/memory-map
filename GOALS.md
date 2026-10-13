@@ -204,6 +204,11 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M1 — Setting, untitled layout and outline, hit-testing over the whole frame (D037), tests.
 
 **Progress log** (newest first):
+- 2026-10-13 — Owner: "Add open source licensing which would just need mentioning me and you as
+  author" → MIT, © yunniko and Claude (D038); and "push it please to git along with precompiled
+  packages" → version 0.4.0 (3e700a5), GitHub release v0.4.0 on the private repo with the Windows
+  exe, the .deb, the Linux single file and the notices. Verified: CI green on 3e700a5; deb-check
+  passed (lintian clean, 9/9 libraries); C:\bin reinstalled and running; release checksums match.
 - 2026-10-13 — Owner's request taken as the go-ahead for this one-milestone goal. **M1 done;
   awaits sign-off.** Verified: Windows `check.ps1` 334 (308 passed, 26 skipped); WSL gate
   251/251; `crosscheck-linux.py` PASS 0.16%; headless captures of the map with and without
