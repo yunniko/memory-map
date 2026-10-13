@@ -30,6 +30,9 @@ public sealed record AppSettings
     /// <summary>Closing the window hides it to the tray; Exit is on the tray menu.</summary>
     public bool CloseToTray { get; init; } = true;
 
+    /// <summary>Each group on the map has a title strip; off, a group is only an outline.</summary>
+    public bool ShowGroupTitles { get; init; } = true;
+
     /// <summary>The history chart's window, one of <see cref="WindowChoices"/>.</summary>
     public int HistoryMinutes { get; init; } = 30;
 

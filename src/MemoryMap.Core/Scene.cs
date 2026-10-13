@@ -1,6 +1,7 @@
 namespace MemoryMap.Core;
 
-/// <summary>A node drawn as a frame: a header strip and its children's tiles inside.</summary>
+/// <summary>A node drawn as a frame: a header strip (empty when titles are off or there is no
+/// room) and its children's tiles inside.</summary>
 public sealed record Frame(MapNode Node, LayoutRect Rect, LayoutRect Header);
 
 /// <summary>Everything one view of the map draws, in drawing order.</summary>
@@ -8,7 +9,8 @@ public sealed record Scene(MapNode Root, IReadOnlyList<Frame> Frames, IReadOnlyL
 {
     public static readonly Scene Empty = new(new MapNode("root", "Memory", NodeKind.Root, MemoryGroup.Apps, 0, []), [], []);
 
-    /// <summary>The innermost tile under a point, or the frame whose header is there; null over a gap.</summary>
+    /// <summary>The innermost tile under a point, else the frame around it (its header, outline or a
+    /// gap between its tiles); null outside every frame and tile.</summary>
     public MapNode? HitTest(double x, double y)
     {
         foreach (var tile in Tiles)
@@ -18,7 +20,7 @@ public sealed record Scene(MapNode Root, IReadOnlyList<Frame> Frames, IReadOnlyL
                 return tile.Node;
             }
         }
-        return Frames.FirstOrDefault(f => f.Header.Contains(x, y))?.Node;
+        return Frames.FirstOrDefault(f => f.Rect.Contains(x, y))?.Node;
     }
 }
 
@@ -26,7 +28,8 @@ public sealed record Scene(MapNode Root, IReadOnlyList<Frame> Frames, IReadOnlyL
 /// Turns a node into a two-level scene: each child becomes a frame holding its own children
 /// as tiles, or a tile itself when it has none. Works on any node, so drilling into an app
 /// arranges its processes the same way the root arranges groups. Keeps one
-/// <see cref="StableOrder"/> per parent so tiles stay put across refreshes.
+/// <see cref="StableOrder"/> per parent so tiles stay put across refreshes. Without titles a
+/// frame is only an outline, its tiles <see cref="Outline"/> inside its edge.
 /// </summary>
 public sealed class SceneArranger
 {
@@ -37,7 +40,10 @@ public sealed class SceneArranger
     /// <summary>Space between neighbouring tiles; the surface shows through it.</summary>
     public double Gap { get; init; } = 2;
 
-    public Scene Arrange(MapNode root, LayoutRect bounds)
+    /// <summary>Space between an untitled frame's edge and its tiles: room for the drawn outline.</summary>
+    public double Outline { get; init; } = 3;
+
+    public Scene Arrange(MapNode root, LayoutRect bounds, bool titles = true)
     {
         var used = new Dictionary<string, StableOrder>(StringComparer.Ordinal);
         var frames = new List<Frame>();
@@ -51,9 +57,9 @@ public sealed class SceneArranger
                 continue;
             }
             var rect = outer.Rect.Inset(Gap / 2);
-            var header = rect.Height >= HeaderHeight * 2 ? HeaderHeight : 0;
+            var header = titles && rect.Height >= HeaderHeight * 2 ? HeaderHeight : 0;
             frames.Add(new Frame(outer.Node, rect, rect with { Height = header }));
-            var inner = rect.Inset(0, header, 0, 0);
+            var inner = titles ? rect.Inset(0, header, 0, 0) : rect.Inset(Outline);
             tiles.AddRange(Place(outer.Node, inner, used).Select(Shrink));
         }
 

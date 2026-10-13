@@ -10,6 +10,7 @@ namespace MemoryMap.App;
 /// <summary>
 /// Draws a <see cref="MapNode"/> as a squarified treemap: its children as framed groups and
 /// their children as tiles (layout and stable order come from <see cref="SceneArranger"/>).
+/// With <see cref="Titles"/> off a group has no title strip, only a thin outline.
 /// Reports the node under the pointer through <see cref="HoveredNode"/>, and a left click
 /// (pressed and released over the same node) through <see cref="NodeClicked"/>.
 /// </summary>
@@ -22,6 +23,10 @@ public sealed class TreemapControl : Control
     public static readonly StyledProperty<long> TotalProperty =
         AvaloniaProperty.Register<TreemapControl, long>(nameof(Total));
 
+    /// <summary>Whether each group shows a title strip.</summary>
+    public static readonly StyledProperty<bool> TitlesProperty =
+        AvaloniaProperty.Register<TreemapControl, bool>(nameof(Titles), defaultValue: true);
+
     public static readonly DirectProperty<TreemapControl, MapNode?> HoveredNodeProperty =
         AvaloniaProperty.RegisterDirect<TreemapControl, MapNode?>(nameof(HoveredNode), c => c.HoveredNode);
 
@@ -33,11 +38,12 @@ public sealed class TreemapControl : Control
     private readonly SceneArranger _arranger = new();
     private Scene _scene = Scene.Empty;
     private Size _arrangedSize;
+    private bool _arrangedTitles = true;
     private MapNode? _hovered;
     private Point? _pointer;
     private string? _pressedKey;
 
-    static TreemapControl() => AffectsRender<TreemapControl>(RootProperty, TotalProperty);
+    static TreemapControl() => AffectsRender<TreemapControl>(RootProperty, TotalProperty, TitlesProperty);
 
     public TreemapControl()
     {
@@ -57,6 +63,12 @@ public sealed class TreemapControl : Control
         set => SetValue(TotalProperty, value);
     }
 
+    public bool Titles
+    {
+        get => GetValue(TitlesProperty);
+        set => SetValue(TitlesProperty, value);
+    }
+
     public MapNode? HoveredNode
     {
         get => _hovered;
@@ -71,9 +83,9 @@ public sealed class TreemapControl : Control
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == RootProperty)
+        if (change.Property == RootProperty || change.Property == TitlesProperty)
         {
-            // A refresh moves tiles under a still pointer: hover whatever is there now.
+            // A refresh or a new layout moves tiles under a still pointer: hover whatever is there now.
             UpdateHover();
         }
     }
@@ -128,8 +140,13 @@ public sealed class TreemapControl : Control
         var (ink, ink2) = (palette.Ink, palette.Ink2);
         context.DrawRectangle(palette.Surface, new Pen(palette.Border), new Rect(Bounds.Size).Deflate(0.5), 8, 8);
 
+        var outline = new Pen(palette.Border);
         foreach (var frame in scene.Frames)
         {
+            if (!Titles)
+            {
+                context.DrawRectangle(null, outline, ToRect(frame.Rect).Deflate(0.5), Radius, Radius);
+            }
             if (frame.Node.Key == _hovered?.Key)
             {
                 context.DrawRectangle(null, new Pen(ink, 2), ToRect(frame.Rect).Deflate(1), Radius, Radius);
@@ -189,10 +206,10 @@ public sealed class TreemapControl : Control
         {
             return Scene.Empty;
         }
-        if (!ReferenceEquals(root, _scene.Root) || Bounds.Size != _arrangedSize)
+        if (!ReferenceEquals(root, _scene.Root) || Bounds.Size != _arrangedSize || Titles != _arrangedTitles)
         {
-            _scene = _arranger.Arrange(root, new LayoutRect(0, 0, Bounds.Width, Bounds.Height).Inset(4));
-            _arrangedSize = Bounds.Size;
+            _scene = _arranger.Arrange(root, new LayoutRect(0, 0, Bounds.Width, Bounds.Height).Inset(4), Titles);
+            (_arrangedSize, _arrangedTitles) = (Bounds.Size, Titles);
         }
         return _scene;
     }

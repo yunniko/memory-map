@@ -189,3 +189,22 @@ Completed goals: `docs/goals-archive.md`.
 - 2026-10-12 — Goal created on Owner request ("Add version for linux please"). The Owner
   chose desktop autostart for the Startup tab and any desktop Linux as the target, since
   the machine is not decided. Plan presented; awaiting acceptance.
+
+### G-004 · Optional group titles on the map — ACTIVE
+- **What:** A Settings switch for the title strip above each group on the map; with it off, a
+  group is drawn as just a border around its tiles.
+- **Why:** The Owner, 2026-10-13: "Can we make titles be optional (in settings) if there is no
+  title, there is just a border". "Titles" is read as the group headers on the map (the tiles'
+  own names stay).
+- **Acceptance criteria:** the switch is in Settings, applies at once and is saved; off, no group
+  has a title strip and each shows a border; groups can still be hovered and opened.
+- **Constraints:** none beyond the charter.
+
+**Milestones:**
+- [x] M1 — Setting, untitled layout and outline, hit-testing over the whole frame (D037), tests.
+
+**Progress log** (newest first):
+- 2026-10-13 — Owner's request taken as the go-ahead for this one-milestone goal. **M1 done;
+  awaits sign-off.** Verified: Windows `check.ps1` 334 (308 passed, 26 skipped); WSL gate
+  251/251; `crosscheck-linux.py` PASS 0.16%; headless captures of the map with and without
+  titles looked at.

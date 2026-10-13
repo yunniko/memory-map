@@ -28,6 +28,23 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public void Turning_titles_off_leaves_each_group_an_outline()
+    {
+        var b = Breakdown();
+        var (window, model) = Open(b);
+        Assert.Contains(window.Map.Scene.Frames, f => f.Header.Height > 0);
+
+        model.Settings.ShowGroupTitles = false;
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(window.Map.Titles);
+        Assert.NotEmpty(window.Map.Scene.Frames);
+        Assert.All(window.Map.Scene.Frames, f => Assert.Equal(0, f.Header.Height));
+        Assert.Equal(b.Groups.SelectMany(g => g.Children).Select(c => c.Key).Order(), window.Map.Scene.Tiles.Select(t => t.Node.Key).Order());
+        Capture(window, "map-untitled");
+    }
+
+    [AvaloniaFact]
     public void Hovering_a_tile_shows_its_name_size_share_and_pids()
     {
         var (window, model) = Open(Breakdown());

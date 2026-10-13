@@ -101,6 +101,8 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>The saved choice; the window hides only while a tray icon is also shown (D031).</summary>
     public bool CloseToTray { get => Current.CloseToTray; set => Update(Current with { CloseToTray = value }); }
 
+    public bool ShowGroupTitles { get => Current.ShowGroupTitles; set => Update(Current with { ShowGroupTitles = value }); }
+
     public static decimal MinAlertPercent => AppSettings.MinAlertPercent;
 
     public static decimal MaxAlertPercent => AppSettings.MaxAlertPercent;

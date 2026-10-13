@@ -71,7 +71,8 @@
                        FontWeight="SemiBold" Foreground="{DynamicResource Map.Ink}" />
           </StackPanel>
           <Panel>
-            <app:TreemapControl x:Name="Map" Root="{Binding ViewRoot}" Total="{Binding Breakdown.Total}" />
+            <app:TreemapControl x:Name="Map" Root="{Binding ViewRoot}" Total="{Binding Breakdown.Total}"
+                              Titles="{Binding Settings.ShowGroupTitles}" />
             <Canvas IsHitTestVisible="False">
               <Border x:Name="Tip" IsVisible="{Binding Hover, Converter={x:Static ObjectConverters.IsNotNull}}" MaxWidth="360"
                       Background="{DynamicResource Map.Surface}" BorderBrush="{DynamicResource Map.Border}"
@@ -260,6 +261,8 @@
                              Increment="1" FormatString="0" Width="130" />
               <TextBlock Text="% of RAM available" />
             </StackPanel>
+            <CheckBox x:Name="TitlesBox" IsChecked="{Binding Settings.ShowGroupTitles, Mode=TwoWay}"
+                      Content="Show a title above each group on the map" />
             <CheckBox x:Name="TrayBox" IsChecked="{Binding Settings.CloseToTray, Mode=TwoWay}"
                       IsEnabled="{Binding Tray.Shown}"
                       Content="Closing the window keeps Memory Map running in the tray" />

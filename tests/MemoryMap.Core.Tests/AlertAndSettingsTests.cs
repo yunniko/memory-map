@@ -74,7 +74,7 @@ public class AlertAndSettingsTests
         {
             Assert.Equal((new AppSettings(), (string?)null), SettingsStore.Load(path));
 
-            var changed = new AppSettings { RefreshSeconds = 2, HiddenRefreshSeconds = 30, AlertBelowPercent = 15, AlertsEnabled = false, CloseToTray = false, HistoryMinutes = 60 };
+            var changed = new AppSettings { RefreshSeconds = 2, HiddenRefreshSeconds = 30, AlertBelowPercent = 15, AlertsEnabled = false, CloseToTray = false, ShowGroupTitles = false, HistoryMinutes = 60 };
             SettingsStore.Save(path, changed);
 
             Assert.Equal((changed, (string?)null), SettingsStore.Load(path));

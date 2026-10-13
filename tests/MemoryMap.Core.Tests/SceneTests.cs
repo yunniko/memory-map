@@ -77,6 +77,19 @@ public class SceneTests
         Assert.Null(Scene.Empty.HitTest(1, 1));
     }
 
+    [Fact]
+    public void Without_titles_a_frame_is_an_outline_around_its_tiles()
+    {
+        var arranger = new SceneArranger();
+        var scene = arranger.Arrange(Sample().Root, Bounds, titles: false);
+
+        Assert.NotEmpty(scene.Frames);
+        Assert.All(scene.Frames, f => Assert.Equal(0, f.Header.Height));
+        Assert.All(scene.Tiles, t => Assert.Contains(scene.Frames, f => Inside(t.Rect, f.Rect.Inset(arranger.Outline))));
+        var frame = scene.Frames[0];
+        Assert.Same(frame.Node, scene.HitTest(frame.Rect.X + 1, frame.Rect.Y + frame.Rect.Height / 2));
+    }
+
     private static IEnumerable<string> AppOrder(Scene scene) =>
         scene.Tiles.Where(t => t.Node.Group == MemoryGroup.Apps).Select(t => t.Node.Key);
 

@@ -4,7 +4,8 @@ Last verified: 2026-10-13 at be8a68c
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
 G-001 is done (`docs/goals-archive.md`); G-002, a Startup view, is built and awaits the Owner's
 checks and sign-off; G-003, the Linux version with a `.deb`, is built (M1–M4) and awaits the
-Owner's Linux checklist and sign-off (`GOALS.md`).
+Owner's Linux checklist and sign-off (`GOALS.md`); G-004, optional group titles, is built and
+awaits sign-off.
 Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -31,7 +32,8 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   and Settings says why (D031). The low-memory alert is a corner window that takes no focus
   (D011).
 - **Settings work.** Refresh (0.5–5 s), a slower refresh while hidden or minimised (same as
-  shown, 5, 10 or 30 s; off by default, D016), alerts, threshold and close-to-tray. Each
+  shown, 5, 10 or 30 s; off by default, D016), alerts, threshold, close-to-tray and group
+  titles on the map (off: each group is a thin outline, D037). Each
   applies at once and is saved to %APPDATA%\MemoryMap\settings.json, or
   `~/.config/MemoryMap/settings.json` on Linux; the footer names the file (D013).
 - **Rendering is software, not GPU (D015).** GPU rendering grew 135 → 231 MB in 10 minutes
@@ -193,6 +195,8 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 
 ## Next steps and open questions
 
+- Awaiting the Owner: G-004 sign-off (group titles optional in Settings).
+
 - Awaiting the Owner: `docs/linux-checklist.md` on their Linux PC (tray, file manager, the desktop's
   own autostart settings, apt install and remove), then G-003 sign-off.
 - Open, for the Owner: a licence. `assets/linux/copyright` marks the app's own code all rights
@@ -200,7 +204,7 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 - Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
   package name added in `scripts/publish-linux.sh` (only Ubuntu 24.04 is checked, D036).
 - Awaiting the Owner: part A of `docs/second-pc-checklist.md` (the real administrator prompt and
-  Task Manager on this PC), then G-002 sign-off. Part B (second PC) passed on Windows 10.
+  Task Manager on this PC), then G-002 sign-off. Part B (second PC) is done: the app works on Windows 10.
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
 - Open, step B.5 of the checklist: whether switching a machine-wide entry off in Settings

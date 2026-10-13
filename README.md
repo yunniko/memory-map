@@ -25,7 +25,7 @@ awaits the Owner's checks on a Linux PC (`docs/linux-checklist.md`). Source: `gi
   Windows Settings uses; nothing is deleted, so every switch can be undone. Entries for every user
   of the PC ask for administrator rights for that one change; Store apps' switch opens Settings.
 - **Settings:** refresh interval, a slower refresh while hidden (off by default), alert
-  threshold, close-to-tray; saved in `%APPDATA%\MemoryMap\settings.json`.
+  threshold, close-to-tray, titles above the map's groups (off: each group is just an outline); saved in `%APPDATA%\MemoryMap\settings.json`.
 
 On Linux the same tabs work without root: apps are sized by RssAnon, *End process* and *Open file
 location* act on your own processes only, the tray is used where the desktop shows one (else closing
