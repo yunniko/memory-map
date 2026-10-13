@@ -54,7 +54,7 @@ Completed goals: `docs/goals-archive.md`.
   (STANDARDS.md → "Verified means the path production runs"). Publishing waits for the Owner.
 
 **Milestones:**
-- [ ] M1 — Measure: 0.4.1's size, startup and memory; then build and measure the options: compressed
+- [x] M1 — Measure: 0.4.1's size, startup and memory; then build and measure the options: compressed
   single file; trimmed; trimmed and compressed; a Native AOT trial. Results in `docs/reviews/`, the
   choice as a decision: the smallest option that passes criteria 2–4.
 - [ ] M2 — Make it the real build: source-generated JSON for the settings file, the chosen settings in
@@ -63,7 +63,9 @@ Completed goals: `docs/goals-archive.md`.
 - [ ] M3 — Draft release 0.5.0 with both Linux architectures; published after the Owner's OK.
 
 **Progress log** (newest first):
-- 2026-10-13 — **BLOCKED:** M2 waits for the Owner's choice of build. Only Native AOT passes criteria
+- 2026-10-13 — Owner chose Native AOT ("Native AOT, zip"): D043, superseding D014. M1 done (5e77b69 and
+  the check-in commit). Next: M2, the AOT build in `publish.ps1`, `publish-linux.sh`, CI and releases.
+- 2026-10-13 — (resolved above) **BLOCKED:** M2 waits for the Owner's choice of build. Only Native AOT passes criteria
   1, 3 and 4 (35 MB against 97 MB, start 0.7 s against 2.7 s, 16–46% less private memory), but it is
   three files, so the Windows download becomes a 14.5 MB zip instead of one exe. One-file options:
   trimmed and compressed (21 MB, 0.8 s slower start) or trimmed with ReadyToRun (63 MB, faster start).

@@ -90,4 +90,4 @@ for every option (5.6–6.1 s per 5 minutes on Windows); the differences are sta
 Only Native AOT passes criteria 1, 3 and 4. It is not a single file: the exe needs `libSkiaSharp` and
 `libHarfBuzzSharp` beside it, because native libraries cannot be linked into an AOT exe from their
 NuGet packages, so the Windows download becomes a zip (14.5 MB) instead of one exe. Whether that is
-acceptable is the Owner's choice (G-007 progress log).
+acceptable was the Owner's choice: AOT, as a zip (D043).

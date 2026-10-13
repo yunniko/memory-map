@@ -208,10 +208,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - G-006 M2 (Owner): the draft release v0.4.1 (run 38437251400; amd64 and arm64 packages, deb-check
   passed on both) waits for the Owner to install the arm64 `.deb` on the Chromebook and say to publish.
-- BLOCKED (G-007 M2, Owner): which build to ship. Native AOT is the only option that halves the size
-  without slower start or more memory, but the Windows download becomes a zip of three files
-  (`docs/reviews/2026-10-13-g007-m1-size-options.md`). Then M2 (the build, CI running the published
-  app) and M3 (draft 0.5.0).
+- G-007 M2: make the Native AOT build (D043) the real one in `scripts/publish.ps1`,
+  `scripts/publish-linux.sh`, CI and the release workflow, with CI running the published Windows app.
+  Then M3, draft 0.5.0. Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
   the repo variable `SIGNPATH_ORGANIZATION_ID` and secret `SIGNPATH_API_TOKEN`. In SignPath: project
   `memory-map`, policy `release-signing`, artifact configuration from

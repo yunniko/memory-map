@@ -13,7 +13,7 @@
 - D011 — The low-memory alert warns once, re-arms 2 points higher, and shows its own window — active
 - D012 — Chart lines use the validated categorical palette, and an app keeps its slot — active
 - D013 — Settings live in %APPDATA%\MemoryMap\settings.json and save on every change — active
-- D014 — The installed app is one self-contained, uncompressed, untrimmed exe — active
+- D014 — The installed app is one self-contained, uncompressed, untrimmed exe — superseded by D043
 - D015 — The app renders in software, not on the GPU — active
 - D016 — A Settings option slows sampling while the window is hidden; off by default — active
 - D017 — The map redraws on every refresh; skipping unchanged frames was measured and dropped — active
@@ -42,3 +42,4 @@
 - D040 — Releases are built by a tag-triggered workflow; SignPath signs the Windows exe — active
 - D041 — Linux packages are built for amd64 and arm64, each on its own architecture's runner — active
 - D042 — Windows shell COM calls use generated interop, and settings JSON a generated context — active
+- D043 — The published app is a Native AOT build, with its two native libraries beside it — active
