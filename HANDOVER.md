@@ -228,6 +228,8 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - G-006: all milestones done and v0.5.1 published; its arm64 `.deb` runs on the Owner's Chromebook
   (Owner, 2026-10-13). Waits for the Owner's sign-off.
+- G-008 (DRAFT, potential next step, not now): per-app breakdown of what inside an app holds its
+  memory, without elevation. Not planned until the Owner asks.
 - G-007: all milestones done and v0.5.0 published; waits for the Owner's sign-off.
   Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then

@@ -154,3 +154,28 @@ Completed goals: `docs/goals-archive.md`.
 - 2026-10-13 — Goal created from the Owner's choice of SignPath (path 1); the choice is the
   go-ahead. Facts: the app makes no network calls (no HTTP or socket code in `src`), so SignPath's
   short no-transfer privacy statement applies; GitHub could not report the Owner's 2FA state.
+
+### G-008 · What is inside each app's memory — DRAFT (potential next step, not now)
+- **Status note:** Recorded at the Owner's request as a possible next step; the Owner does not need it
+  now (2026-10-13). Not planned or started until the Owner asks.
+- **What:** For a chosen app, a breakdown of the memory the map sizes it by: private heap and other
+  private memory, its exe and DLLs or shared libraries, and memory-mapped files by name, each with how
+  much is in RAM. Shown when drilling into an app (and possibly in the tooltip).
+- **Why:** The map shows which app takes the RAM; this shows what inside it does (for example a
+  browser's heap against its libraries and mapped files), which the Owner asked about on 2026-10-13.
+- **Acceptance criteria** (to be confirmed with the Owner when the goal is taken up):
+  1. Works without administrator or root rights, for the user's own processes (the app stays
+     unelevated: G-002 constraint, D024).
+  2. Windows reads the app's memory regions and their files; Linux reads `/proc/<pid>/smaps`.
+  3. The breakdown's private part agrees with the tile's size (private working set on Windows,
+     RssAnon on Linux; D003, D026) within a stated tolerance, checked by a crosscheck script.
+  4. Reading it does not slow the live map: it runs only for the app being looked at.
+- **Constraints:** No administrator or root rights, so no physical-page view and no file-cache
+  (standby) map: both need elevation, and Windows' interface for them is undocumented (Owner's
+  question, 2026-10-13).
+
+**Milestones:** not planned yet.
+
+**Progress log** (newest first):
+- 2026-10-13 — Goal created as a DRAFT at the Owner's request ("mark it as potential next step, we
+  do not need it now").
