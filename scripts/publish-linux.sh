@@ -5,7 +5,8 @@
 #   memory-map_<version>_<arch>.deb      the same three files as a package.
 # Each architecture is built on its own kind of machine, so dpkg-shlibdeps reads that architecture's
 # libraries (D041). Runs on Linux with the .NET SDK, clang (the AOT compiler's linker), python3,
-# dpkg-deb and dpkg-shlibdeps (dpkg-dev).
+# dpkg-deb and dpkg-shlibdeps (dpkg-dev). It refuses a build needing a glibc newer than Ubuntu 22.04's;
+# scripts/publish-linux-container.sh runs it on Ubuntu 22.04, as releases do (D045).
 # Check the package with scripts/deb-check.sh.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -40,7 +41,15 @@ fi
 strip --strip-unneeded --remove-section=.comment "${libs[@]}"
 strip --remove-section=.comment "$build/MemoryMap"
 chmod 755 "$build/MemoryMap" && chmod 644 "${libs[@]}"
-echo "Built $build ($(du -sh "$build" | cut -f1)): $files"
+# The newest glibc symbol version a shipped file needs. Above the floor, the package will not install
+# on Ubuntu 22.04, Debian 12 or ChromeOS's Linux (D045).
+glibc_floor=2.35
+glibc=$(objdump -T "$build/MemoryMap" "${libs[@]}" | grep -o 'GLIBC_[0-9][0-9.]*' | cut -d_ -f2 | sort -uV | tail -1)
+if [[ $(printf '%s\n' "$glibc" "$glibc_floor" | sort -V | tail -1) != "$glibc_floor" ]]; then
+    echo "The build needs glibc $glibc, newer than $glibc_floor: build with scripts/publish-linux-container.sh (D045)." >&2
+    exit 1
+fi
+echo "Built $build ($(du -sh "$build" | cut -f1), glibc $glibc): $files"
 
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Checks a built package (G-003 criterion 6) in throwaway ubuntu:24.04 containers, so nothing on this
-# machine is installed or changed:
+# Checks a built package (G-003 criterion 6) in throwaway containers, so nothing on this machine is
+# installed or changed. Lintian runs once, on ubuntu:24.04; steps 2-4 run on each image named, by
+# default ubuntu:24.04 (CI adds the oldest systems the package supports, D045):
 #   1. lintian finds no error or warning, and desktop-file-validate passes the menu entry;
 #   2. in a container holding only the package and what apt pulls in for it, `memory-map` is on the
 #      PATH, opens its window (class memory-map, as the menu entry's StartupWMClass) on a virtual
@@ -10,11 +11,13 @@
 #   3. every library the app opens at run time (dlopen, seen with LD_DEBUG) belongs to a package
 #      named in Depends, so the hand-measured list in publish-linux.sh cannot drift (D036);
 #   4. `apt-get remove` leaves none of its files behind.
-# Usage: scripts/deb-check.sh publish/memory-map_<version>_<arch>.deb   (needs docker, on a machine of
-# the package's architecture: the containers are of the machine's own)
+# Usage: scripts/deb-check.sh publish/memory-map_<version>_<arch>.deb [image ...]   (needs docker, on a
+# machine of the package's architecture: the containers are of the machine's own)
 set -euo pipefail
 deb=$(realpath "$1")
-image=ubuntu:24.04
+shift
+images=("${@:-ubuntu:24.04}")
+tools=ubuntu:24.04
 name=memory-map-check-$$
 cleanup() {
     docker rm -f "$name-x" "$name-app" > /dev/null 2>&1 || true
@@ -25,11 +28,11 @@ apt_install='apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get instal
 
 # The X server installs itself while lintian runs.
 docker volume create "$name-x11" > /dev/null
-docker run -d --name "$name-x" -v "$name-x11:/tmp/.X11-unix" "$image" bash -c "
+docker run -d --name "$name-x" -v "$name-x11:/tmp/.X11-unix" "$tools" bash -c "
     $apt_install xvfb x11-utils > /dev/null && exec Xvfb :99 -screen 0 1280x800x24 -nolisten tcp" > /dev/null
 
 echo "== lintian and the menu entry"
-docker run --rm -v "$deb:/pkg/memory-map.deb:ro" "$image" bash -c "
+docker run --rm -v "$deb:/pkg/memory-map.deb:ro" "$tools" bash -c "
     set -e
     $apt_install lintian desktop-file-utils > /dev/null
     useradd -m checker
@@ -39,7 +42,10 @@ docker run --rm -v "$deb:/pkg/memory-map.deb:ro" "$image" bash -c "
     desktop-file-validate /tmp/x/usr/share/applications/memory-map.desktop
     echo 'ok: desktop-file-validate'"
 
-echo "== install"
+# Steps 2-4, once per image (the loop body is not indented, to keep the quoted scripts as they were).
+for image in "${images[@]}"; do
+docker rm -f "$name-app" > /dev/null 2>&1 || true
+echo "== install on $image"
 docker run -d --name "$name-app" -e DISPLAY=:99 -v "$name-x11:/tmp/.X11-unix" -v "$deb:/pkg/memory-map.deb:ro" \
     "$image" sleep infinity > /dev/null
 docker exec "$name-app" bash -c "$apt_install /pkg/memory-map.deb > /dev/null && useradd -m tester"
@@ -116,3 +122,4 @@ docker exec "$name-app" bash -c '
         exit 1
     fi
     echo "ok: removed, status $status, none of its files left"'
+done # each image

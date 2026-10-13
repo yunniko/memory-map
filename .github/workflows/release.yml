@@ -87,13 +87,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-      - name: Install the AOT compiler's linker
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq clang
-      - run: bash scripts/publish-linux.sh
-      - run: bash scripts/deb-check.sh publish/memory-map_*.deb
+      # On Ubuntu 22.04, so the package also runs on Debian 12 and ChromeOS's Linux (D045).
+      - run: bash scripts/publish-linux-container.sh
+      - run: bash scripts/deb-check.sh publish/memory-map_*.deb ubuntu:24.04 ubuntu:22.04 debian:12
       - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.arch }}

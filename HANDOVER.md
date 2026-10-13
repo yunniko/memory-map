@@ -96,13 +96,16 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 - **Linux package (G-003 M4; arm64 by G-006, D041; AOT by G-007, D043).** `scripts/publish-linux.sh`
   builds, for the machine's own architecture, publish/linux-<x64|arm64>/ (MemoryMap and its two
   libraries, 32 MB) and publish/memory-map_<version>_<amd64|arm64>.deb (10.8 / 9.4 MB; 0.4.1: 30 / 27 MB).
-  It needs clang, not zlib1g-dev (WSL and CI build without it). The package holds the program in
+  It needs clang, not zlib1g-dev (WSL and CI build without it), and refuses a build needing glibc
+  above 2.35. `scripts/publish-linux-container.sh` runs it in ubuntu:22.04 (CI, releases; D045): its
+  0.5.1 build needs glibc 2.34 (0.5.0: 2.38, which Debian 12 lacks). The package holds the program in
   /usr/lib/memory-map with its two libraries, the `memory-map` command, menu entry, icon and man
   page (D035). Depends is dpkg-shlibdeps' output plus the libraries opened at run time (D036).
   Record: `docs/reviews/2026-10-12-g003-m4-deb.md`.
-  - `scripts/deb-check.sh` in clean ubuntu:24.04 containers (also in CI): lintian no error or
-    warning, desktop-file-validate ok, window of class memory-map shown, nothing unpacked into the
-    home folder, all 9 libraries opened at run time in Depends, `apt-get remove` leaves no file.
+  - `scripts/deb-check.sh` in clean ubuntu:24.04, ubuntu:22.04 and debian:12 containers (also in
+    CI): lintian no error or warning, desktop-file-validate ok, window of class memory-map shown,
+    nothing unpacked into the home folder, all 9 libraries opened at run time in Depends,
+    `apt-get remove` leaves no file. 0.5.1's amd64 package passed on all three in WSL.
   - On this PC's WSL Ubuntu the package installs (apt adds libice6 and libsm6), `memory-map` shows
     the map as the user (46 MB RssAnon) with a WSLg Start menu shortcut, and `apt-get remove`
     leaves no file or shortcut. It is not installed there now.
@@ -214,13 +217,16 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 - CI runs the shipped builds: the published Windows exe through `scripts/smoke-published.ps1` and
   each `.deb` through `scripts/deb-check.sh` (STANDARDS.md → "Verified means the path production runs";
   G-007 constraint; D044).
+- Linux builds need glibc 2.35 at most, so they run on Debian 12, the Owner's Chromebook Linux
+  (G-006 criterion 4; D045). `publish-linux.sh` refuses a build that needs more.
 - `scripts/check.ps1` is the merge gate on both OSes over the whole solution, locally and in CI
   (STANDARDS.md → formatter in CI; G-003 criteria 5 and 7; D028, D030).
 
 ## Next steps and open questions
 
-- G-006 M2 (Owner): install `memory-map_0.5.0_arm64.deb` from the v0.5.0 release on the Chromebook
-  (criterion 4). The v0.4.1 draft was deleted unpublished (Owner, 2026-10-13).
+- G-006 M2 (Owner): 0.5.0's arm64 `.deb` failed on the Chromebook (Debian 12: libc6 >= 2.38 needed).
+  0.5.1 is built on Ubuntu 22.04 (D045); the Owner installs `memory-map_0.5.1_arm64.deb` from the
+  draft v0.5.1 and says whether to publish (criterion 4).
 - G-007: all milestones done and v0.5.0 published; waits for the Owner's sign-off.
   Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then

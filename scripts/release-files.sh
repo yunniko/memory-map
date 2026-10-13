@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Turns the release workflow's downloaded artifacts into the files a release carries, with versioned
 # names, SHA256SUMS and notes.md (the newest assets/linux/changelog entry, downloads, checksums).
-# Usage: VERSION=0.5.0 SIGNED=true|false scripts/release-files.sh <artifacts-dir> <out-dir>
+# Usage: VERSION=0.5.1 SIGNED=true|false scripts/release-files.sh <artifacts-dir> <out-dir>
 set -euo pipefail
 in=$1 out=$2
 : "${VERSION:?VERSION is not set}" "${SIGNED:?SIGNED is not set}"

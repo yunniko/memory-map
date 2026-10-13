@@ -25,8 +25,15 @@ Completed goals: `docs/goals-archive.md`.
   after the Owner's check and OK.
 
 **Progress log** (newest first):
+- 2026-10-13 — The Owner's install of 0.5.0's arm64 `.deb` failed on the Chromebook: it needs libc6
+  >= 2.38 and Debian 12 has 2.36 (`fmod@GLIBC_2.38`, from building on Ubuntu 24.04). Fix (D045):
+  Linux builds run in ubuntu:22.04 (`scripts/publish-linux-container.sh`), `publish-linux.sh` refuses
+  a build needing glibc above 2.35, deb-check installs on ubuntu:24.04, ubuntu:22.04 and debian:12;
+  version 0.5.1. WSL: the amd64 build needs glibc 2.34 (Depends libc6 >= 2.34) and passes deb-check on
+  all three images; the floor check refuses 0.5.0's binary and accepts 0.5.1's. **BLOCKED:** M2 waits
+  for the Owner to install `memory-map_0.5.1_arm64.deb` from draft v0.5.1 and say whether to publish.
 - 2026-10-13 — Draft v0.4.1 deleted unpublished (Owner); v0.5.0 (G-007) is
-  published with both architectures, so criterion 3 holds there. **BLOCKED:** M2 waits for the Owner to
+  published with both architectures, so criterion 3 holds there. (resolved above) **BLOCKED:** M2 waits for the Owner to
   install `memory-map_0.5.0_arm64.deb` from the v0.5.0 release on the Chromebook (criterion 4).
 - 2026-10-13 — M1 done (659d259, D041). CI check run 38437233862 green on windows-2025 (334: 308 passed,
   26 skipped), ubuntu-24.04 and ubuntu-24.04-arm (251/251; crosscheck PASS 0.10%); deb-check passed on

@@ -6,7 +6,7 @@ app owns (kernel pools, shared pages).
 
 ![Memory Map's map tab on Ubuntu under WSL: a few apps, kernel memory, shared memory, cache and free memory as framed areas](assets/screenshots/map-on-linux.png)
 
-Built in C# (.NET 10) with Avalonia. **State:** version 0.5.0 runs on Windows and Linux (amd64 and
+Built in C# (.NET 10) with Avalonia. **State:** version 0.5.1 runs on Windows and Linux (amd64 and
 arm64), compiled ahead of time; signed Windows releases are in progress (`GOALS.md`). Source: `github.com/yunniko/memory-map`.
 
 ## Download
@@ -76,10 +76,13 @@ quits), and the Startup tab lists XDG autostart entries (switchable) and systemd
 - `sudo apt install ./memory-map_*.deb` — installs the app (menu entry "Memory Map" and the
   `memory-map` command); `sudo apt remove memory-map` removes it.
 - `publish/linux-x64/` (`linux-arm64` on ARM) — the same app as a folder to copy anywhere and run.
-- `bash scripts/publish-linux.sh` — build both into `publish/` for the machine's own architecture, amd64
-  or arm64 (on Linux, with the .NET SDK, clang and dpkg-dev).
-- `bash scripts/deb-check.sh publish/memory-map_*.deb` — lintian, then install, run and remove the
-  package in throwaway Ubuntu containers (needs docker).
+- `bash scripts/publish-linux-container.sh` — build both into `publish/` for the machine's own
+  architecture, amd64 or arm64, inside an Ubuntu 22.04 container, so they also run on Debian 12 and
+  ChromeOS's Linux (needs docker). `scripts/publish-linux.sh` is the build itself; run directly on a
+  newer system it refuses, as the result would need a newer glibc.
+- `bash scripts/deb-check.sh publish/memory-map_*.deb [image ...]` — lintian, then install, run and
+  remove the package in throwaway containers (default `ubuntu:24.04`; CI adds `ubuntu:22.04` and
+  `debian:12`; needs docker).
 - `python3 scripts/crosscheck-linux.py` — compare the sampler's totals with `free` and `ps`.
 - `python3 scripts/startup-roundtrip-linux.py` — switch throwaway autostart entries in temp folders and
   check that systemd's own autostart generator agrees.
