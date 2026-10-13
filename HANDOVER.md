@@ -226,9 +226,8 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 ## Next steps and open questions
 
-- G-006 M2 (Owner): 0.5.0's arm64 `.deb` failed on the Chromebook (Debian 12: libc6 >= 2.38 needed).
-  0.5.1 is built on Ubuntu 22.04 (D045); the Owner installs `memory-map_0.5.1_arm64.deb` from the
-  draft v0.5.1 and says whether to publish (criterion 4).
+- G-006 M2: draft v0.5.1's arm64 `.deb` (built on Ubuntu 22.04, D045) installs and runs on the
+  Owner's Chromebook (Owner, 2026-10-13; criterion 4). Publishing v0.5.1 waits for the Owner's OK.
 - G-007: all milestones done and v0.5.0 published; waits for the Owner's sign-off.
   Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
