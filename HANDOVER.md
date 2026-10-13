@@ -218,6 +218,7 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 |---|---|---|---|
 | 2026-10-12 | 27ddf24 | Installed C:\bin\MemoryMap.exe (local only, D014) | Map and Settings tabs captured; close-to-tray checked |
 | 2026-10-12 | 44933d1 | Reinstalled C:\bin\MemoryMap.exe with the Startup tab (local only) | Hash matches publish; helper check 4/4; UI smoke 41/41 switches |
+| 2026-10-13 | 2255e21 | Reinstalled C:\bin\MemoryMap.exe with optional group titles (local only) | Started from C:\bin; window "Memory Map" responding, 118 MB |
 
 ## Decisions
 
