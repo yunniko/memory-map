@@ -85,7 +85,7 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     `systemd-xdg-autostart-generator`; system file unchanged; exit 0. Real session: 4 entries.
     Record: `docs/reviews/2026-10-12-g003-m3-startup-on-linux.md`.
 - **Linux package (G-003 M4).** `scripts/publish-linux.sh` builds publish/linux-x64/MemoryMap
-  (97 MB single file) and publish/memory-map_0.3.0_amd64.deb (30 MB): the program in
+  (97 MB single file) and publish/memory-map_0.4.0_amd64.deb (30 MB): the program in
   /usr/lib/memory-map with its two libraries, the `memory-map` command, menu entry, icon and man
   page (D035). Depends is dpkg-shlibdeps' output plus the libraries opened at run time (D036).
   Record: `docs/reviews/2026-10-12-g003-m4-deb.md`.
@@ -199,8 +199,6 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
 
 - Awaiting the Owner: `docs/linux-checklist.md` on their Linux PC (tray, file manager, the desktop's
   own autostart settings, apt install and remove), then G-003 sign-off.
-- Open, for the Owner: a licence. `assets/linux/copyright` marks the app's own code all rights
-  reserved; the bundled components keep their own (Expat, BSD-3-clause and the runtime's notices).
 - Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
   package name added in `scripts/publish-linux.sh` (only Ubuntu 24.04 is checked, D036).
 - Awaiting the Owner: part A of `docs/second-pc-checklist.md` (the real administrator prompt and

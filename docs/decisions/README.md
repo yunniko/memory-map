@@ -37,3 +37,4 @@
 - D035 — Linux ships as a self-extracting single file and a .deb with its libraries beside the program — active
 - D036 — The .deb declares measured dependencies and keeps Skia's embedded libraries — active
 - D037 — Without titles a group is an outline, and the whole frame answers the pointer — active
+- D038 — The app's own code is MIT-licensed, credited to yunniko and Claude — active

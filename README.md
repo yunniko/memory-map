@@ -70,3 +70,8 @@ and `C:\bin\memory-map.ps1` (HTML treemap).
 
 See `HANDOVER.md` for the current state and `docs/decisions/` for why things are the way
 they are.
+
+## Licence
+
+MIT, © 2026 yunniko and Claude (Anthropic): see `LICENSE`. The published programs bundle .NET,
+Avalonia, SkiaSharp and other components under their own licences: see `THIRD-PARTY-NOTICES.md`.

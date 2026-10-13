@@ -7,8 +7,8 @@ Comment: usr/lib/memory-map/MemoryMap is a self-contained .NET program: it
  dotnet-runtime-notices.txt.gz and skia-harfbuzz-notices.txt.gz.
 
 Files: *
-Copyright: 2026 yunniko
-License: other-all-rights-reserved
+Copyright: 2026 yunniko and Claude (Anthropic)
+License: Expat
 
 Files: usr/lib/memory-map/MemoryMap
 Copyright: .NET Foundation and Contributors
@@ -33,10 +33,6 @@ License: Expat and BSD-3-clause
 Comment: Native builds from the SkiaSharp.NativeAssets.Linux and
  HarfBuzzSharp.NativeAssets.Linux packages; their third-party notices are
  in skia-harfbuzz-notices.txt.gz, with HarfBuzz's own licence text.
-
-License: other-all-rights-reserved
- All rights reserved. No licence is granted to copy, modify or
- redistribute this program's own code.
 
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining a copy
