@@ -63,6 +63,12 @@ Completed goals: `docs/goals-archive.md`.
 - [ ] M3 — Draft release 0.5.0 with both Linux architectures; published after the Owner's OK.
 
 **Progress log** (newest first):
+- 2026-10-13 — **BLOCKED:** M3 waits for the Owner's OK to publish the draft release v0.5.0
+  (6487359, tag v0.5.0, release run 38453889975: windows, linux amd64 and arm64, release green; sign
+  skipped). Verified: Windows gate 334 (308 passed, 26 skipped); check run 38453883261 green;
+  `smoke-published.ps1` 0 failures in the release job; the six downloaded files match SHA256SUMS;
+  zip 14 MB, debs 10.3 / 9.0 MB, tarballs 13.7 / 12.8 MB; the exe reports 0.5.0, unsigned, and its
+  two libraries keep valid signatures. Question: publish v0.5.0, and what becomes of draft v0.4.1?
 - 2026-10-13 — M2 done (992dbc9, 38aae6d, 0e08d6c; D044). AOT in `publish.ps1`, `publish-linux.sh`, CI and
   the release workflow; the Windows zip and Linux tarballs replace the single files. Verified: Windows
   gate 334 (308 passed, 26 skipped); WSL 251/251; CI run 38452888393 all green with `smoke-published.ps1`

@@ -1,5 +1,5 @@
 # memory-map — Handover
-Last verified: 2026-10-13 at 0e08d6c
+Last verified: 2026-10-13 at 6487359
 
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
 G-001 to G-004 are done (`docs/goals-archive.md`): the map, the Startup tab, the Linux version
@@ -220,8 +220,11 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - G-006 M2 (Owner): the draft release v0.4.1 (run 38437251400; amd64 and arm64 packages, deb-check
   passed on both) waits for the Owner to install the arm64 `.deb` on the Chromebook and say to publish.
-- G-007 M3: version 0.5.0 with a changelog entry, tag it, and leave the draft release for the Owner
-  to publish. Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
+- BLOCKED (G-007 M3, Owner): the draft release v0.5.0 (6487359, run 38453889975, all jobs green,
+  signing skipped) waits for the Owner's OK to publish. Its six files match SHA256SUMS; the zip's exe
+  reports 0.5.0. Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
+- Open (Owner): the older draft v0.4.1 is superseded by v0.5.0, which has the same arm64 `.deb`
+  layout; testing 0.5.0's arm64 package on the Chromebook could settle G-006 M2 too.
 - Not done: C:\bin still holds 0.4.0's exe (the Owner's copy was running); `scripts/publish.ps1`
   reinstalls it once that copy is exited.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
