@@ -30,8 +30,11 @@ Completed goals: `docs/goals-archive.md`.
   Linux builds run in ubuntu:22.04 (`scripts/publish-linux-container.sh`), `publish-linux.sh` refuses
   a build needing glibc above 2.35, deb-check installs on ubuntu:24.04, ubuntu:22.04 and debian:12;
   version 0.5.1. WSL: the amd64 build needs glibc 2.34 (Depends libc6 >= 2.34) and passes deb-check on
-  all three images; the floor check refuses 0.5.0's binary and accepts 0.5.1's. **BLOCKED:** M2 waits
-  for the Owner to install `memory-map_0.5.1_arm64.deb` from draft v0.5.1 and say whether to publish.
+  all three images; the floor check refuses 0.5.0's binary and accepts 0.5.1's. CI 38460183737 green:
+  the arm64 build needs glibc 2.34 and passes deb-check on debian:12 too. 0.5.1 also carries the new
+  app icon (D046; CI 38461207401 green). Release run 38461725450 made draft v0.5.1 (7 files; the
+  notices zip holds the icon's Apache-2.0 text). **BLOCKED:** M2 waits for the Owner to install
+  `memory-map_0.5.1_arm64.deb` from draft v0.5.1 on the Chromebook and say whether to publish.
 - 2026-10-13 — Draft v0.4.1 deleted unpublished (Owner); v0.5.0 (G-007) is
   published with both architectures, so criterion 3 holds there. (resolved above) **BLOCKED:** M2 waits for the Owner to
   install `memory-map_0.5.0_arm64.deb` from the v0.5.0 release on the Chromebook (criterion 4).
