@@ -1,5 +1,5 @@
 # memory-map — Handover
-Last verified: 2026-10-13 at 3e700a5
+Last verified: 2026-10-13 at 133d57e
 
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
 G-001 to G-004 are done (`docs/goals-archive.md`): the map, the Startup tab, the Linux version
@@ -11,8 +11,14 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - **Installed and running as one file.** `scripts/publish.ps1` builds a self-contained
   97 MB exe into `publish\` and copies it to C:\bin\MemoryMap.exe (D014). The installed
-  copy is built from 44933d1 (same hash as the publish output); its Startup tab, helper mode
-  and Store switch were checked (`docs/reviews/2026-10-12-g002-m4-end-to-end.md`).
+  copy is 0.4.0, built from 3e700a5. The Startup tab end-to-end record is
+  `docs/reviews/2026-10-12-g002-m4-end-to-end.md`.
+- **Releases (G-005, D040).** v0.4.0 is on GitHub, unsigned. `.github/workflows/release.yml` builds
+  a draft release from a `v*` tag: exe, single Linux file, `.deb` (deb-check), notices zip, SHA256SUMS,
+  notes from the newest `assets/linux/changelog` entry. Evidence it works: run 38361375257, all
+  jobs green with signing skipped.
+  The sign job runs once the repo variable `SIGNPATH_ORGANIZATION_ID` is set; SignPath has not yet
+  accepted the project. README carries the Code signing policy SignPath's terms ask for.
 - **The live map works.** It shows the six groups as framed areas with their apps inside,
   refreshed every second, with a summary line, a legend, a hover tooltip and a Table tab.
   Light and dark themes follow Windows.
@@ -95,9 +101,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
     the map as the user (46 MB RssAnon) with a WSLg Start menu shortcut, and `apt-get remove`
     leaves no file or shortcut. It is not installed there now.
   - Not run: a real desktop's tray, file manager and autostart settings (`docs/linux-checklist.md`).
-- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 332 tests
-  (306 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
-  pass over the whole solution: 249/249 (D030). GitHub Actions runs the gate on windows-2025 and
+- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 334 tests
+  (308 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
+  pass over the whole solution: 251/251 (D030). GitHub Actions runs the gate on windows-2025 and
   ubuntu-24.04 on every push to main (D028), and a third job builds the .deb and runs `scripts/deb-check.sh`.
 - `scripts/crosscheck.ps1` against WMI: PASS, worst difference 1.4% of RAM (limit 2%).
 - Not run: the Windows critical-process refusal, because it needs an elevated session (on
@@ -162,8 +168,12 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 ## Rules in force
 
-- Nothing is published, released or signed without Owner approval; the private repo is the
-  only remote (Owner, 2026-10-12; VALUES.md → Restraint).
+- Nothing is published, released or signed without Owner approval (VALUES.md → Restraint). The
+  Owner approved the public repo and GitHub releases (2026-10-13; D039, D040).
+- A release is created as a draft and published by a person; every SignPath signing request is
+  approved by hand (SignPath Foundation's terms; D040).
+- The exe's product name stays "Memory Map" and its product version the bare version: SignPath's
+  artifact configuration checks both (SignPath's terms; D040).
 - Core holds no OS rules: samplers stay behind `IMemorySampler` and supply names and figures
   (G-001 constraint, G-003 plan; D025).
 - Process tiles are sized by private working set on Windows (G-001 criterion 1; D003) and by
@@ -194,8 +204,11 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 ## Next steps and open questions
 
-- G-005: release workflow (M1), repo ready for SignPath's application (M2), then a signed release
-  once the Owner's application is accepted (M3).
+- BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
+  the repo variable `SIGNPATH_ORGANIZATION_ID` and secret `SIGNPATH_API_TOKEN`. In SignPath: project
+  `memory-map`, policy `release-signing`, artifact configuration from
+  `.signpath/artifact-configurations/default.xml`. Then: bump to 0.4.1 (with a changelog entry), tag
+  `v0.4.1`, approve the request, check the exe with `Get-AuthenticodeSignature`, publish the draft.
 - Not run, signed off without: `docs/linux-checklist.md` on a real Linux PC (G-003) and part A of
   `docs/second-pc-checklist.md`, the real administrator prompt (G-002).
 - Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
