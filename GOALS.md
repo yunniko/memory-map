@@ -25,6 +25,9 @@ Completed goals: `docs/goals-archive.md`.
   after the Owner's check and OK.
 
 **Progress log** (newest first):
+- 2026-10-13 — Owner: draft v0.5.1's arm64 `.deb` installs and runs on the Chromebook ("it is ok now
+  and runs on chromebook"), so criterion 4 holds and the BLOCKED entry below is resolved. M2's last
+  step is publishing v0.5.1, which waits for the Owner's explicit go-ahead.
 - 2026-10-13 — The Owner's install of 0.5.0's arm64 `.deb` failed on the Chromebook: it needs libc6
   >= 2.38 and Debian 12 has 2.36 (`fmod@GLIBC_2.38`, from building on Ubuntu 24.04). Fix (D045):
   Linux builds run in ubuntu:22.04 (`scripts/publish-linux-container.sh`), `publish-linux.sh` refuses
