@@ -4,10 +4,8 @@ A desktop app for Windows and Linux that shows the PC's RAM as a live treemap â€
 for disk space â€” so you can see at a glance what is using memory, including memory no
 app owns (kernel pools, shared pages).
 
-Built in C# (.NET 10) with Avalonia. **State:** G-001 (the map) is done; G-002 (managing other
-programs' autostart) is built, works on a second PC (Windows 10) and awaits the Owner's check of the
-admin prompt (`docs/second-pc-checklist.md`, `GOALS.md`); G-003 (the Linux version, with a `.deb`) is built and
-awaits the Owner's checks on a Linux PC (`docs/linux-checklist.md`). Source: `github.com/yunniko/memory-map` (private).
+Built in C# (.NET 10) with Avalonia. **State:** version 0.4.0 runs on Windows and Linux; signed
+Windows releases are in progress (`GOALS.md`). Source: `github.com/yunniko/memory-map`.
 
 ## What it does
 

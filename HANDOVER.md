@@ -2,10 +2,9 @@
 Last verified: 2026-10-13 at 3e700a5
 
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
-G-001 is done (`docs/goals-archive.md`); G-002, a Startup view, is built and awaits the Owner's
-checks and sign-off; G-003, the Linux version with a `.deb`, is built (M1–M4) and awaits the
-Owner's Linux checklist and sign-off (`GOALS.md`); G-004, optional group titles, is built and
-awaits sign-off.
+G-001 to G-004 are done (`docs/goals-archive.md`): the map, the Startup tab, the Linux version
+with a `.deb`, optional group titles. G-005, signed Windows releases through SignPath Foundation,
+is active (`GOALS.md`).
 Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
@@ -195,14 +194,12 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 ## Next steps and open questions
 
-- Awaiting the Owner: G-004 sign-off (group titles optional in Settings).
-
-- Awaiting the Owner: `docs/linux-checklist.md` on their Linux PC (tray, file manager, the desktop's
-  own autostart settings, apt install and remove), then G-003 sign-off.
+- G-005: release workflow (M1), repo ready for SignPath's application (M2), then a signed release
+  once the Owner's application is accepted (M3).
+- Not run, signed off without: `docs/linux-checklist.md` on a real Linux PC (G-003) and part A of
+  `docs/second-pc-checklist.md`, the real administrator prompt (G-002).
 - Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
   package name added in `scripts/publish-linux.sh` (only Ubuntu 24.04 is checked, D036).
-- Awaiting the Owner: part A of `docs/second-pc-checklist.md` (the real administrator prompt and
-  Task Manager on this PC), then G-002 sign-off. Part B (second PC) is done: the app works on Windows 10.
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
 - Open, step B.5 of the checklist: whether switching a machine-wide entry off in Settings
