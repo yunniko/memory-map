@@ -1,22 +1,25 @@
 # memory-map — Handover
-Last verified: 2026-10-13 at 659d259
+Last verified: 2026-10-13 at 0e08d6c
 
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
 G-001 to G-004 are done (`docs/goals-archive.md`): the map, the Startup tab, the Linux version
-with a `.deb`, optional group titles. G-005, signed Windows releases through SignPath Foundation,
-is active (`GOALS.md`).
+with a `.deb`, optional group titles. Active (`GOALS.md`): G-005 signed Windows releases through
+SignPath Foundation, G-006 arm64 Linux, G-007 smaller downloads.
 Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CLAUDE\COMPANY\`.
 
 ## Current state
 
-- **Installed and running as one file.** `scripts/publish.ps1` builds a self-contained
-  97 MB exe into `publish\` and copies it to C:\bin\MemoryMap.exe (D014). The installed
-  copy is 0.4.0, built from 3e700a5. The Startup tab end-to-end record is
-  `docs/reviews/2026-10-12-g002-m4-end-to-end.md`.
+- **Native AOT builds (G-007 M2, D043, D044).** `scripts/publish.ps1` builds `publish\win-x64\`:
+  MemoryMap.exe with `libSkiaSharp.dll` and `libHarfBuzzSharp.dll` beside it, 35 MB (0.4.1: one
+  97 MB exe), and copies the three into C:\bin. The installed copy is still 0.4.0's single exe
+  (3e700a5). `scripts/smoke-published.ps1` drives the published exe through UI Automation: every tab,
+  the settings file saved and read back in both directions. It refuses to run beside another
+  MemoryMap. Startup tab end-to-end record: `docs/reviews/2026-10-12-g002-m4-end-to-end.md`.
 - **Releases (G-005, D040).** v0.4.0 is on GitHub, unsigned. `.github/workflows/release.yml` builds
-  a draft release from a `v*` tag: exe, single Linux file, `.deb` (deb-check), notices zip, SHA256SUMS,
-  notes from the newest `assets/linux/changelog` entry. Evidence it works: run 38361375257, all
-  jobs green with signing skipped.
+  a draft release from a `v*` tag: the Windows zip, a tarball and a `.deb` per Linux architecture
+  (deb-check), notices zip, SHA256SUMS, notes from the newest `assets/linux/changelog` entry. The AOT
+  layout's build-only run 38449811250 is green with signing and release skipped; `scripts/release-files.sh`
+  on its artifacts gives a 14.7 MB zip, 14.4 / 13.5 MB tarballs, and the same checksums on a rerun.
   The sign job runs once the repo variable `SIGNPATH_ORGANIZATION_ID` is set; SignPath has not yet
   accepted the project. README carries the Code signing policy SignPath's terms ask for.
 - **The live map works.** It shows the six groups as framed areas with their apps inside,
@@ -89,9 +92,10 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
   - `scripts/startup-roundtrip-linux.py` on WSL: every check agrees with
     `systemd-xdg-autostart-generator`; system file unchanged; exit 0. Real session: 4 entries.
     Record: `docs/reviews/2026-10-12-g003-m3-startup-on-linux.md`.
-- **Linux package (G-003 M4; arm64 by G-006, D041).** `scripts/publish-linux.sh` builds, for the
-  machine's own architecture, publish/linux-<x64|arm64>/MemoryMap (97 / 104 MB single file) and
-  publish/memory-map_<version>_<amd64|arm64>.deb (30 / 27 MB): the program in
+- **Linux package (G-003 M4; arm64 by G-006, D041; AOT by G-007, D043).** `scripts/publish-linux.sh`
+  builds, for the machine's own architecture, publish/linux-<x64|arm64>/ (MemoryMap and its two
+  libraries, 32 MB) and publish/memory-map_<version>_<amd64|arm64>.deb (10.8 / 9.4 MB; 0.4.1: 30 / 27 MB).
+  It needs clang, not zlib1g-dev (WSL and CI build without it). The package holds the program in
   /usr/lib/memory-map with its two libraries, the `memory-map` command, menu entry, icon and man
   page (D035). Depends is dpkg-shlibdeps' output plus the libraries opened at run time (D036).
   Record: `docs/reviews/2026-10-12-g003-m4-deb.md`.
@@ -106,7 +110,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
   (308 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
   pass over the whole solution: 251/251 (D030). GitHub Actions runs the gate on windows-2025,
   ubuntu-24.04 and ubuntu-24.04-arm on every push to main (D028, D041), and builds the .deb on both
-  Linux runners and runs `scripts/deb-check.sh` (659d259: all green; arm64 251/251, deb-check passed).
+  Linux runners and runs `scripts/deb-check.sh`, and publishes the Windows app and runs
+  `scripts/smoke-published.ps1` on it (0e08d6c, run 38452888393: all green; smoke 14/14; deb-check
+  passed on both architectures).
 - `scripts/crosscheck.ps1` against WMI: PASS, worst difference 1.4% of RAM (limit 2%).
 - Not run: the Windows critical-process refusal, because it needs an elevated session (on
   Linux, init's refusal is tested).
@@ -157,6 +163,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
   and lintian overrides; `scripts/publish-linux.sh` stages them. `src/MemoryMap.App/Program.cs` sets
   the X11 window class `memory-map` to match the entry's StartupWMClass; `scripts/deb-check.sh`
   checks the window by that class.
+- Native AOT: `MemoryMap.App.csproj` sets `PublishAot` and excludes ANGLE's package at restore; the
+  three shipped libraries set `IsAotCompatible`, so AOT warnings fail every build. `MemoryMap.Cli`
+  (reflection JSON) is not shipped and sets neither. Settings JSON is source-generated (`SettingsJson`).
 - `MemoryMap.App`:
   - `Program.cs` selects software rendering.
   - `MainViewModel.cs` applies the latest breakdown on the UI thread. It feeds the history
@@ -201,6 +210,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 - The app stays unelevated; a machine-wide change goes through the one-shot helper, one admin
   prompt per change (G-002 constraint; D024). The helper refuses user-scope ids: elevated, it
   would see the administrator's HKCU (D024).
+- CI runs the shipped builds: the published Windows exe through `scripts/smoke-published.ps1` and
+  each `.deb` through `scripts/deb-check.sh` (STANDARDS.md → "Verified means the path production runs";
+  G-007 constraint; D044).
 - `scripts/check.ps1` is the merge gate on both OSes over the whole solution, locally and in CI
   (STANDARDS.md → formatter in CI; G-003 criteria 5 and 7; D028, D030).
 
@@ -208,9 +220,10 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - G-006 M2 (Owner): the draft release v0.4.1 (run 38437251400; amd64 and arm64 packages, deb-check
   passed on both) waits for the Owner to install the arm64 `.deb` on the Chromebook and say to publish.
-- G-007 M2: make the Native AOT build (D043) the real one in `scripts/publish.ps1`,
-  `scripts/publish-linux.sh`, CI and the release workflow, with CI running the published Windows app.
-  Then M3, draft 0.5.0. Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
+- G-007 M3: version 0.5.0 with a changelog entry, tag it, and leave the draft release for the Owner
+  to publish. Measurements: `docs/reviews/2026-10-13-g007-m1-size-options.md`.
+- Not done: C:\bin still holds 0.4.0's exe (the Owner's copy was running); `scripts/publish.ps1`
+  reinstalls it once that copy is exited.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
   the repo variable `SIGNPATH_ORGANIZATION_ID` and secret `SIGNPATH_API_TOKEN`. In SignPath: project
   `memory-map`, policy `release-signing`, artifact configuration from
