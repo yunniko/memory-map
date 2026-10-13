@@ -5,6 +5,7 @@
         x:Class="MemoryMap.App.MainWindow"
         x:DataType="app:MainViewModel"
         Title="Memory Map"
+        Icon="avares://MemoryMap/Assets/memory-map.ico"
         Width="1180" Height="800" MinWidth="560" MinHeight="420"
         Background="{DynamicResource Map.Page}">
   <DockPanel Margin="16,12,16,16">

@@ -28,6 +28,22 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public void Windows_carry_the_app_icon_and_it_decodes()
+    {
+        var (window, _) = Open(Breakdown());
+        var (dialog, _) = ShowConfirm(new ConfirmRequest("End this?", "Detail", "End"));
+        Assert.NotNull(window.Icon);
+        Assert.NotNull(dialog.Icon);
+
+        // X11 gets the window icon by decoding the resource, so it must decode as a picture, not just exist.
+        using var stream = Avalonia.Platform.AssetLoader.Open(new Uri("avares://MemoryMap/Assets/memory-map.ico"));
+        using var bitmap = new Avalonia.Media.Imaging.Bitmap(stream);
+        Assert.True(bitmap.PixelSize.Width >= 16);
+        Assert.Equal(bitmap.PixelSize.Width, bitmap.PixelSize.Height);
+        dialog.Close();
+    }
+
+    [AvaloniaFact]
     public void Turning_titles_off_leaves_each_group_an_outline()
     {
         var b = Breakdown();

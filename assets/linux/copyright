@@ -34,6 +34,16 @@ Comment: Native builds from the SkiaSharp.NativeAssets.Linux and
  HarfBuzzSharp.NativeAssets.Linux packages; their third-party notices are
  in skia-harfbuzz-notices.txt.gz, with HarfBuzz's own licence text.
 
+Files: usr/share/icons/hicolor/scalable/apps/memory-map.svg
+Copyright: Google LLC
+ 2026 yunniko and Claude (Anthropic)
+License: Apache-2.0
+Comment: The app icon, also built into usr/lib/memory-map/MemoryMap as its
+ window icon. Adapted from the Material Symbols Light "memory-sharp" and
+ "bento-sharp" icons (https://github.com/google/material-design-icons): the
+ two combined, the bento's dot left out, the tiles recoloured and set on a
+ dark tile.
+
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -79,3 +89,19 @@ License: BSD-3-clause
  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ use this file except in compliance with the License. You may obtain a copy
+ of the License at
+ .
+     http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ License for the specific language governing permissions and limitations
+ under the License.
+ .
+ On Debian systems, the complete text of the Apache License, Version 2.0 can
+ be found in "/usr/share/common-licenses/Apache-2.0".

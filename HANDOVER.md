@@ -110,8 +110,8 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
     the map as the user (46 MB RssAnon) with a WSLg Start menu shortcut, and `apt-get remove`
     leaves no file or shortcut. It is not installed there now.
   - Not run: a real desktop's tray, file manager and autostart settings (`docs/linux-checklist.md`).
-- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 334 tests
-  (308 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
+- `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 335 tests
+  (309 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
   pass over the whole solution: 251/251 (D030). GitHub Actions runs the gate on windows-2025,
   ubuntu-24.04 and ubuntu-24.04-arm on every push to main (D028, D041), and builds the .deb on both
   Linux runners and runs `scripts/deb-check.sh`, and publishes the Windows app and runs
@@ -162,7 +162,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
   (through `Command.cs`). `src/MemoryMap.Core/ProcessPathCache.cs` serves both OSes' `IProcessPaths`.
 - `MemoryMap.Cli` picks the sampler by OS; the app picks all its OS services once, in
   `src/MemoryMap.App/PlatformServices.cs`. The app targets plain `net10.0` for both OSes.
-- Linux packaging: `assets/linux/` holds the menu entry, icon, man page, Debian changelog (its head
+- App icon (D046): `assets/memory-map.svg` is the source; `scripts/make-icon.ps1` makes
+  `assets/memory-map.ico` (exe icon and window icon, an AvaloniaResource); the `.deb` installs the SVG.
+- Linux packaging: `assets/linux/` holds the menu entry, man page, Debian changelog (its head
   version must equal `Version` in `Directory.Build.props`; the script refuses otherwise), copyright
   and lintian overrides; `scripts/publish-linux.sh` stages them. `src/MemoryMap.App/Program.cs` sets
   the X11 window class `memory-map` to match the entry's StartupWMClass; `scripts/deb-check.sh`

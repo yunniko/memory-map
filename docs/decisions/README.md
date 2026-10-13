@@ -45,3 +45,4 @@
 - D043 — The published app is a Native AOT build, with its two native libraries beside it — active
 - D044 — AOT releases: a flat Windows zip, Linux tarballs with a folder, the published app run in CI — active
 - D045 — Linux packages are built in an Ubuntu 22.04 container, with glibc 2.35 as the floor — active
+- D046 — The app icon combines two Material Symbols, one SVG source for every platform — active

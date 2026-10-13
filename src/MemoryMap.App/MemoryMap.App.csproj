@@ -7,6 +7,8 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!-- Published as Native AOT (D043); also turns on the AOT and trim analyzers in every build. -->
     <PublishAot>true</PublishAot>
+    <!-- Made from assets/memory-map.svg by scripts/make-icon.ps1 (D046). -->
+    <ApplicationIcon>..\..\assets\memory-map.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,6 +17,11 @@
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <!-- ANGLE (OpenGL over Direct3D) is never loaded: the app renders in software (Program.cs, D043). -->
     <PackageReference Include="Avalonia.Angle.Windows.Natives" ExcludeAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The windows' icon: their title bar and taskbar button, and on Linux the X11 window icon. -->
+    <AvaloniaResource Include="..\..\assets\memory-map.ico" Link="Assets\memory-map.ico" />
   </ItemGroup>
 
   <ItemGroup>

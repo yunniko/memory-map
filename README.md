@@ -117,4 +117,5 @@ it makes no network connections.
 ## Licence
 
 MIT, © 2026 yunniko and Claude (Anthropic): see `LICENSE`. The published programs bundle .NET,
-Avalonia, SkiaSharp and other components under their own licences: see `THIRD-PARTY-NOTICES.md`.
+Avalonia, SkiaSharp and other components under their own licences, and the icon is adapted from
+Google's Material Symbols (Apache-2.0): see `THIRD-PARTY-NOTICES.md`.

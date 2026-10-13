@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <!-- Memory Map's icon: a treemap in the map's dark-theme group colours (App.axaml). Drawn for this project. -->
-  <rect x="2" y="2" width="60" height="60" rx="10" fill="#1a1a19"/>
-  <rect x="8" y="8" width="28" height="30" rx="3" fill="#3987e5"/>
-  <rect x="40" y="8" width="16" height="18" rx="3" fill="#d95926"/>
-  <rect x="40" y="30" width="16" height="8" rx="3" fill="#199e70"/>
-  <rect x="8" y="42" width="18" height="14" rx="3" fill="#c3c2b7"/>
-  <rect x="30" y="42" width="26" height="14" rx="3" fill="#6e6d68"/>
-</svg>

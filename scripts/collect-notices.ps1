@@ -24,7 +24,8 @@ $copies = [ordered]@{
     # SkiaSharp's and HarfBuzzSharp's packages carry the same file, covering both.
     'skia-harfbuzz-notices.txt'  = "skiasharp.nativeassets.win32/$(Version-Of 'SkiaSharp.NativeAssets.Win32')/THIRD-PARTY-NOTICES.txt"
 }
-Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') $out
+Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md'),
+    (Join-Path $root 'assets/licenses/material-symbols-LICENSE.txt') $out
 foreach ($entry in $copies.GetEnumerator()) {
     Copy-Item (Join-Path $packages $entry.Value) (Join-Path $out $entry.Key)
 }
