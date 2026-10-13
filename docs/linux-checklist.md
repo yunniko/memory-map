@@ -4,13 +4,13 @@ What automation could not check: a real desktop with a tray, a file manager and 
 autostart settings. Each step says what to expect; note anything different. Any switch flipped
 here can be flipped back from the app or the desktop's settings.
 
-You need: an x64 Debian-family system (Ubuntu, Debian, Mint, Pop!_OS …) with a desktop, and
-the two files from `publish/` (built by `scripts/publish-linux.sh`): `memory-map_<version>_amd64.deb`
-and `linux-x64/MemoryMap`.
+You need: a Debian-family system (Ubuntu, Debian, Mint, Pop!_OS …) with a desktop, on Intel/AMD
+(amd64) or 64-bit ARM (arm64; `dpkg --print-architecture` says which), and that architecture's two
+files from a release: `memory-map_<version>_<arch>.deb` and `MemoryMap-<version>-linux-<x64|arm64>`.
 
 ## A. Install the package
 
-1. In a terminal in the folder holding the file: `sudo apt install ./memory-map_*_amd64.deb`
+1. In a terminal in the folder holding the file: `sudo apt install ./memory-map_*.deb`
    (the `./` matters). Expect: apt lists Memory Map and any libraries it needs, and installs them.
 2. Open the applications menu and search "Memory Map". Expect: an entry with a small treemap icon,
    under System or Utilities. Start it from there.
@@ -54,7 +54,7 @@ and Settings says "This desktop shows no tray icons, so closing the window quits
 
 1. Quit the app, then `sudo apt remove memory-map`. Expect: the menu entry and the `memory-map`
    command are gone. Your settings in `~/.config/MemoryMap/` stay (apt never touches your home folder).
-2. Copy `linux-x64/MemoryMap` anywhere, `chmod +x MemoryMap`, run `./MemoryMap`. Expect: the same app.
+2. Copy the single file (`MemoryMap-<version>-linux-…`) anywhere, `chmod +x MemoryMap`, run `./MemoryMap`. Expect: the same app.
    It needs the system libraries the package listed; if it does not start, `sudo apt install libice6 libsm6`
    (the two a desktop most often lacks) and try again.
 

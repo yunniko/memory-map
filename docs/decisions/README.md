@@ -40,3 +40,4 @@
 - D038 — The app's own code is MIT-licensed, credited to yunniko and Claude — active
 - D039 — The repo and its releases are public — active
 - D040 — Releases are built by a tag-triggered workflow; SignPath signs the Windows exe — active
+- D041 — Linux packages are built for amd64 and arm64, each on its own architecture's runner — active

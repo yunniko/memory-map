@@ -1,4 +1,5 @@
-# Builds a release from a version tag (D040): the Windows exe, the Linux single file and the .deb, each
+# Builds a release from a version tag (D040): the Windows exe, and the Linux single file and .deb for
+# amd64 and arm64 (D041), each
 # built and checked here from the tagged source. The exe goes to SignPath for signing once the
 # SIGNPATH_ORGANIZATION_ID variable is set (each request is approved by hand there); until then it is
 # released unsigned. The release is created as a draft, published by hand after a look.
@@ -75,7 +76,13 @@ jobs:
           if-no-files-found: error
 
   linux:
-    runs-on: ubuntu-24.04
+    # Each architecture builds and checks on its own runner (D041).
+    strategy:
+      matrix:
+        include:
+          - { arch: amd64, runner: ubuntu-24.04 }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -83,13 +90,13 @@ jobs:
         with:
           global-json-file: global.json
       - run: bash scripts/publish-linux.sh
-      - run: bash scripts/deb-check.sh publish/memory-map_*_amd64.deb
+      - run: bash scripts/deb-check.sh publish/memory-map_*.deb
       - uses: actions/upload-artifact@v4
         with:
-          name: linux
+          name: linux-${{ matrix.arch }}
           path: |
-            publish/linux-x64/MemoryMap
-            publish/memory-map_*_amd64.deb
+            publish/linux-*/MemoryMap
+            publish/memory-map_*.deb
           if-no-files-found: error
 
   release:

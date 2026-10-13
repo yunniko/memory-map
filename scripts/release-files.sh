@@ -10,14 +10,23 @@ files=$out/files
 rm -rf "$out" && mkdir -p "$files" && files=$(cd "$files" && pwd)
 
 if [[ $SIGNED == true ]]; then exe=$in/windows-signed/MemoryMap.exe; else exe=$in/windows-unsigned/MemoryMap.exe; fi
-deb=$in/linux/memory-map_${VERSION}_amd64.deb
-for f in "$exe" "$in/linux/linux-x64/MemoryMap" "$deb" "$in/notices/LICENSE"; do
+# Each Linux architecture's artifact (linux-<deb arch>) holds <rid>/MemoryMap and its .deb (D041).
+linux=("amd64 linux-x64" "arm64 linux-arm64")
+needed=("$exe" "$in/notices/LICENSE")
+for pair in "${linux[@]}"; do
+  read -r arch rid <<< "$pair"
+  needed+=("$in/linux-$arch/$rid/MemoryMap" "$in/linux-$arch/memory-map_${VERSION}_$arch.deb")
+done
+for f in "${needed[@]}"; do
   [[ -f $f ]] || { echo "missing: $f" >&2; exit 1; }
 done
 
 cp "$exe" "$files/MemoryMap-$VERSION-win-x64.exe"
-cp "$in/linux/linux-x64/MemoryMap" "$files/MemoryMap-$VERSION-linux-x64"
-cp "$deb" "$files/"
+for pair in "${linux[@]}"; do
+  read -r arch rid <<< "$pair"
+  cp "$in/linux-$arch/$rid/MemoryMap" "$files/MemoryMap-$VERSION-$rid"
+  cp "$in/linux-$arch/memory-map_${VERSION}_$arch.deb" "$files/"
+done
 (cd "$in/notices" && zip -q -X "$files/MemoryMap-$VERSION-notices.zip" ./*)
 (cd "$files" && sha256sum -- * > SHA256SUMS)
 
@@ -40,8 +49,10 @@ $changes
 | File | For |
 |---|---|
 | \`MemoryMap-$VERSION-win-x64.exe\` | Windows 10/11, 64-bit: one file, run it. |
-| \`memory-map_${VERSION}_amd64.deb\` | Debian, Ubuntu and similar: \`sudo apt install ./memory-map_${VERSION}_amd64.deb\` |
-| \`MemoryMap-$VERSION-linux-x64\` | Other 64-bit Linux: \`chmod +x\` it and run it. |
+| \`memory-map_${VERSION}_amd64.deb\` | Debian, Ubuntu and similar on Intel or AMD: \`sudo apt install ./memory-map_${VERSION}_amd64.deb\` |
+| \`memory-map_${VERSION}_arm64.deb\` | The same on 64-bit ARM (such as an ARM Chromebook's Linux): \`sudo apt install ./memory-map_${VERSION}_arm64.deb\` |
+| \`MemoryMap-$VERSION-linux-x64\` | Other Linux on Intel or AMD: \`chmod +x\` it and run it. |
+| \`MemoryMap-$VERSION-linux-arm64\` | Other Linux on 64-bit ARM: \`chmod +x\` it and run it. |
 | \`MemoryMap-$VERSION-notices.zip\` | The licence and the bundled components' notices. |
 
 $signing [Code signing policy]($repo#code-signing-policy)

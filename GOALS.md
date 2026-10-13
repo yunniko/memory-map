@@ -2,6 +2,33 @@
 
 Completed goals: `docs/goals-archive.md`.
 
+### G-006 · Linux packages for 64-bit ARM — ACTIVE
+- **What:** An arm64 `.deb` and an arm64 single file beside the amd64 ones, built and checked in CI and
+  carried by every release.
+- **Why:** The Owner's Chromebook Linux is arm64 (`dpkg --print-architecture`, 2026-10-13); the amd64
+  `.deb` cannot install there ("libc6:amd64 … not installable").
+- **Acceptance criteria:**
+  1. `scripts/publish-linux.sh` builds for the machine's own architecture (amd64 or arm64), naming the
+     files by it; any other architecture is refused.
+  2. CI builds the arm64 package on an ARM runner and `deb-check` passes there (lintian, install, the
+     window shown, run-time libraries in Depends, clean remove); the merge gate also runs on ARM.
+  3. The release workflow attaches both architectures' `.deb` and single file, with checksums and
+     notes naming which is which.
+  4. The arm64 `.deb` installs and runs on the Owner's Chromebook (the Owner checks, from a draft).
+- **Constraints:** Each package is built on its own architecture, so dpkg-shlibdeps reads that
+  architecture's libraries (D036). Publishing a release waits for the Owner (VALUES.md → Restraint).
+
+**Milestones:**
+- [ ] M1 — Scripts and CI: architecture-aware `publish-linux.sh`, ARM jobs in `check.yml`, both
+  architectures in `release.yml` and `release-files.sh`, version 0.4.1; CI green on ARM.
+- [ ] M2 — A draft release with both architectures for the Owner to try on the Chromebook; published
+  after the Owner's check and OK.
+
+**Progress log** (newest first):
+- 2026-10-13 — Goal created from the Owner's failed install on an arm64 Chromebook; the Owner's reply
+  ("arm64") to the proposed fix is the go-ahead. The Linux code's only raw syscalls (pidfd 424, 434)
+  share their numbers on every architecture.
+
 ### G-005 · Signed Windows releases through SignPath Foundation — ACTIVE
 - **What:** Releases built by GitHub Actions from a version tag: the Windows exe signed with a
   SignPath Foundation certificate, the `.deb` and the Linux single file beside it, all attached to
@@ -26,7 +53,7 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M2 — Repo ready for the application: code signing policy section, attribution, roles,
   privacy statement, exe metadata, SignPath artifact configuration; application answers drafted
   for the Owner.
-- [ ] M3 — After acceptance: SignPath project and GitHub secrets set, a signed release (v0.4.1)
+- [ ] M3 — After acceptance: SignPath project and GitHub secrets set, a signed release (the next version)
   verified with `Get-AuthenticodeSignature`. Needs the Owner first.
 
 **Progress log** (newest first):

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Builds the Linux app (D035) into publish/:
-#   linux-x64/MemoryMap               one self-contained file to copy anywhere and run;
-#   memory-map_<version>_amd64.deb    the same build as a package, its two native libraries beside it.
-# Runs on Linux with the .NET SDK, python3, dpkg-deb and dpkg-shlibdeps (dpkg-dev).
+# Builds the Linux app (D035) for this machine's architecture, amd64 or arm64, into publish/:
+#   linux-<x64|arm64>/MemoryMap          one self-contained file to copy anywhere and run;
+#   memory-map_<version>_<arch>.deb      the same build as a package, its two native libraries beside it.
+# Each architecture is built on its own kind of machine, so dpkg-shlibdeps reads that architecture's
+# libraries (D041). Runs on Linux with the .NET SDK, python3, dpkg-deb and dpkg-shlibdeps (dpkg-dev).
 # Check the package with scripts/deb-check.sh.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -15,15 +16,21 @@ if [[ $version != "$changelog_version" ]]; then
     echo "Version $version (Directory.Build.props) has no entry in assets/linux/changelog ($changelog_version)." >&2
     exit 1
 fi
+arch=$(dpkg --print-architecture)
+case $arch in
+    amd64) rid=linux-x64 ;;
+    arm64) rid=linux-arm64 ;;
+    *) echo "No build for architecture $arch: only amd64 and arm64 are built (D041)." >&2; exit 1 ;;
+esac
 
 publish() {
-    dotnet publish "$app" -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:DebugType=none \
+    dotnet publish "$app" -c Release -r "$rid" --self-contained -p:PublishSingleFile=true -p:DebugType=none \
         -nologo -v q "$@"
 }
 
 # The single file: Skia and HarfBuzz go inside and are unpacked under ~/.net on first run (as on Windows, D014).
-publish -p:IncludeNativeLibrariesForSelfExtract=true -o "$out/linux-x64"
-echo "Built $out/linux-x64/MemoryMap"
+publish -p:IncludeNativeLibrariesForSelfExtract=true -o "$out/$rid"
+echo "Built $out/$rid/MemoryMap"
 
 # The package: the libraries stay beside the program, so it unpacks nothing into users' homes.
 stage=$(mktemp -d)
@@ -49,23 +56,23 @@ install -m 644 "$assets/lintian-overrides" "$pkg/usr/share/lintian/overrides/mem
 
 # The bundled components' own notices, from the exact package versions this build restored.
 packages=$(dotnet nuget locals global-packages --list | sed 's/^global-packages: //')
-read -r runtime skia < <(python3 - "$app/obj/project.assets.json" <<'EOF'
+read -r runtime skia < <(python3 - "$app/obj/project.assets.json" "$rid" <<'EOF'
 import json, sys
-assets = json.load(open(sys.argv[1]))
+assets, rid = json.load(open(sys.argv[1])), sys.argv[2]
 runtime = next(d['version'].strip('[]').split(',')[0].strip()
                for d in assets['project']['frameworks']['net10.0']['downloadDependencies']
-               if d['name'] == 'Microsoft.NETCore.App.Runtime.linux-x64')
-skia = next(k.split('/')[1] for k in assets['targets']['net10.0/linux-x64'] if k.startswith('SkiaSharp.NativeAssets.Linux/'))
+               if d['name'] == f'Microsoft.NETCore.App.Runtime.{rid}')
+skia = next(k.split('/')[1] for k in assets['targets'][f'net10.0/{rid}'] if k.startswith('SkiaSharp.NativeAssets.Linux/'))
 print(runtime, skia)
 EOF
 )
-gzip -9n < "$packages/microsoft.netcore.app.runtime.linux-x64/$runtime/THIRD-PARTY-NOTICES.TXT" > "$doc/dotnet-runtime-notices.txt.gz"
+gzip -9n < "$packages/microsoft.netcore.app.runtime.$rid/$runtime/THIRD-PARTY-NOTICES.TXT" > "$doc/dotnet-runtime-notices.txt.gz"
 gzip -9n < "$packages/skiasharp.nativeassets.linux/$skia/THIRD-PARTY-NOTICES.txt" > "$doc/skia-harfbuzz-notices.txt.gz"
 
 # Libraries the files link against, as dpkg computes them, and those the app opens at run time
 # (measured with LD_DEBUG under WSLg: docs/reviews/2026-10-12-g003-m4-deb.md; deb-check.sh re-checks it, D036).
 mkdir -p "$stage/debian"
-printf 'Source: memory-map\n\nPackage: memory-map\nArchitecture: amd64\n' > "$stage/debian/control"
+printf 'Source: memory-map\n\nPackage: memory-map\nArchitecture: %s\n' "$arch" > "$stage/debian/control"
 linked=$(cd "$stage" && dpkg-shlibdeps -O "$lib/MemoryMap" "$lib/libSkiaSharp.so" "$lib/libHarfBuzzSharp.so" \
     | sed -n 's/^shlibs:Depends=//p')
 [[ $linked == *libc6* ]] || { echo "dpkg-shlibdeps found no libc6 dependency: '$linked'" >&2; exit 1; }
@@ -73,7 +80,7 @@ opened="libx11-6, libxext6, libxfixes3, libxi6, libxrandr2, libice6, libsm6, lib
 cat > "$pkg/DEBIAN/control" <<EOF
 Package: memory-map
 Version: $version
-Architecture: amd64
+Architecture: $arch
 Maintainer: yunniko <29886186+yunniko@users.noreply.github.com>
 Installed-Size: $(du -sk --exclude=DEBIAN "$pkg" | cut -f1)
 Depends: $linked, $opened
@@ -92,8 +99,8 @@ Description: live treemap of what is using the computer's memory
 EOF
 (cd "$pkg" && find usr -type f -print0 | sort -z | xargs -0 md5sum) > "$pkg/DEBIAN/md5sums"
 chmod 644 "$pkg/DEBIAN/control" "$pkg/DEBIAN/md5sums"
-deb=$out/memory-map_${version}_amd64.deb
-rm -f "$out"/memory-map_*_amd64.deb # one package in publish/, so `publish/memory-map_*_amd64.deb` names it
+deb=$out/memory-map_${version}_$arch.deb
+rm -f "$out"/memory-map_*.deb # one package in publish/, so `publish/memory-map_*.deb` names it
 dpkg-deb --root-owner-group -Zxz --build "$pkg" "$deb" > /dev/null
 echo "Built $deb"
 dpkg-deb --field "$deb" Depends

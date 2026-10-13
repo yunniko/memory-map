@@ -10,7 +10,8 @@
 #   3. every library the app opens at run time (dlopen, seen with LD_DEBUG) belongs to a package
 #      named in Depends, so the hand-measured list in publish-linux.sh cannot drift (D036);
 #   4. `apt-get remove` leaves none of its files behind.
-# Usage: scripts/deb-check.sh publish/memory-map_<version>_amd64.deb   (needs docker)
+# Usage: scripts/deb-check.sh publish/memory-map_<version>_<arch>.deb   (needs docker, on a machine of
+# the package's architecture: the containers are of the machine's own)
 set -euo pipefail
 deb=$(realpath "$1")
 image=ubuntu:24.04

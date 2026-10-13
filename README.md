@@ -11,8 +11,11 @@ Windows releases are in progress (`GOALS.md`). Source: `github.com/yunniko/memor
 
 [Releases](https://github.com/yunniko/memory-map/releases) carry, for each version:
 - `MemoryMap-<version>-win-x64.exe` — Windows 10/11, 64-bit: one file, nothing to install.
-- `memory-map_<version>_amd64.deb` — Debian, Ubuntu and similar: `sudo apt install ./memory-map_<version>_amd64.deb`.
-- `MemoryMap-<version>-linux-x64` — any 64-bit Linux: `chmod +x` it and run it.
+- `memory-map_<version>_amd64.deb` — Debian, Ubuntu and similar on Intel or AMD:
+  `sudo apt install ./memory-map_<version>_amd64.deb`. From 0.4.1, `memory-map_<version>_arm64.deb` is
+  the same for 64-bit ARM, such as an ARM Chromebook's Linux (`dpkg --print-architecture` says which).
+- `MemoryMap-<version>-linux-x64` (Intel or AMD) and, from 0.4.1, `MemoryMap-<version>-linux-arm64`
+  (64-bit ARM) — any Linux: `chmod +x` it and run it.
 - `MemoryMap-<version>-notices.zip` and `SHA256SUMS` — the licences and the checksums.
 
 Releases are built by GitHub Actions from a version tag (`.github/workflows/release.yml`). See the
@@ -62,11 +65,12 @@ quits), and the Startup tab lists XDG autostart entries (switchable) and systemd
 
 ## Use on Linux
 
-- `sudo apt install ./memory-map_*_amd64.deb` — installs the app (menu entry "Memory Map" and the
+- `sudo apt install ./memory-map_*.deb` — installs the app (menu entry "Memory Map" and the
   `memory-map` command); `sudo apt remove memory-map` removes it.
-- `publish/linux-x64/MemoryMap` — the same app as one file to copy anywhere and run.
-- `bash scripts/publish-linux.sh` — build both into `publish/` (on Linux, with the .NET SDK and dpkg-dev).
-- `bash scripts/deb-check.sh publish/memory-map_*_amd64.deb` — lintian, then install, run and remove the
+- `publish/linux-x64/MemoryMap` (`linux-arm64` on ARM) — the same app as one file to copy anywhere and run.
+- `bash scripts/publish-linux.sh` — build both into `publish/` for the machine's own architecture, amd64
+  or arm64 (on Linux, with the .NET SDK and dpkg-dev).
+- `bash scripts/deb-check.sh publish/memory-map_*.deb` — lintian, then install, run and remove the
   package in throwaway Ubuntu containers (needs docker).
 - `python3 scripts/crosscheck-linux.py` — compare the sampler's totals with `free` and `ps`.
 - `python3 scripts/startup-roundtrip-linux.py` — switch throwaway autostart entries in temp folders and

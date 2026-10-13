@@ -1,6 +1,7 @@
 # The merge gate (scripts/check.ps1): format check, warnings-as-errors build, every test that runs on
-# the OS. Both build the whole solution; Ubuntu runs all but the Windows tests (D030), with the live /proc
-# and process-action tests. The package job builds the .deb and checks it in containers (D036).
+# the OS. All build the whole solution; Ubuntu (amd64 and arm64) runs all but the Windows tests (D030),
+# with the live /proc and process-action tests. The package job builds each architecture's .deb on its
+# own runner and checks it in containers (D036, D041).
 name: check
 on:
   push:
@@ -13,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2025, ubuntu-24.04]
+        os: [windows-2025, ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
@@ -26,7 +27,11 @@ jobs:
         if: runner.os == 'Linux'
         run: python3 scripts/crosscheck-linux.py
   package:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -34,4 +39,4 @@ jobs:
         with:
           global-json-file: global.json
       - run: bash scripts/publish-linux.sh
-      - run: bash scripts/deb-check.sh publish/memory-map_*_amd64.deb
+      - run: bash scripts/deb-check.sh publish/memory-map_*.deb
