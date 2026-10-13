@@ -57,8 +57,8 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
     82 MB private; Calendar's switch opened Settings' Startup page and stayed Off.
   - `scripts/startup-helper-check.ps1`: 8/8 (both exes in helper mode, unelevated, refusals
     and an unregistered id; nothing written). Record: `docs/reviews/2026-10-12-g002-m3-elevated-switch.md`.
-  - Not run: the real administrator prompt (secure desktop) and a second PC; both are in
-    `docs/second-pc-checklist.md` for the Owner.
+  - A second PC (Windows 10): works, per the Owner (2026-10-13). Not run: the real administrator
+    prompt (secure desktop), part A of `docs/second-pc-checklist.md`.
   - `scripts/startup-roundtrip.ps1`: 0 failures (app and Settings, both directions, two throwaway
     entries, removed afterwards). `scripts/startup-crosscheck.ps1`: 41/41 names, one state
     differs (Killer Control Center: registry on, Settings Off; unexplained, D019).
@@ -199,8 +199,8 @@ Source: github.com/yunniko/memory-map (private, D023). Charter: `E:\CLAUDE\COMPA
   reserved; the bundled components keep their own (Expat, BSD-3-clause and the runtime's notices).
 - Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
   package name added in `scripts/publish-linux.sh` (only Ubuntu 24.04 is checked, D036).
-- Awaiting the Owner: `docs/second-pc-checklist.md` (the real administrator prompt and Task
-  Manager on this PC; a second PC for criterion 6), then G-002 sign-off.
+- Awaiting the Owner: part A of `docs/second-pc-checklist.md` (the real administrator prompt and
+  Task Manager on this PC), then G-002 sign-off. Part B (second PC) passed on Windows 10.
 - Known: Settings hides a Run entry whose program is missing; the app lists it with a problem note.
 - Open: why Settings shows Killer Control Center Off while its task state reads on (D019).
 - Open, step B.5 of the checklist: whether switching a machine-wide entry off in Settings

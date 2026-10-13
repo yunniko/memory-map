@@ -51,6 +51,9 @@ Completed goals: `docs/goals-archive.md`.
   and a short checklist for the Owner's second-PC run.
 
 **Progress log** (newest first):
+- 2026-10-13 — Owner reports the second-PC run (checklist part B) on Windows 10: "on windows 10
+  other pc it works". Criterion 6 confirmed by the Owner. Still open: part A on this PC (the real
+  administrator prompt, Task Manager and Settings agreeing), then G-002 sign-off.
 - 2026-10-12 — **M4 done; G-002 built, awaiting the Owner's checks and sign-off.** Installed
   C:\bin\MemoryMap.exe from 44933d1 (hash matches publish). Verified: `check.ps1` 237/237;
   helper check 4/4 on the installed exe, 8/8 on Release builds; UI smoke of the installed exe
