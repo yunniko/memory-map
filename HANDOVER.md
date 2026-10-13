@@ -11,7 +11,7 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 - **Native AOT builds (G-007 M2, D043, D044).** `scripts/publish.ps1` builds `publish\win-x64\`:
   MemoryMap.exe with `libSkiaSharp.dll` and `libHarfBuzzSharp.dll` beside it, 35 MB (0.4.1: one
-  97 MB exe), and copies the three into C:\bin. The installed copy is v0.5.0, the release's own
+  97 MB exe), and copies the three into C:\bin. The installed copy is draft v0.5.1, the release's own
   files. `scripts/smoke-published.ps1` drives the published exe through UI Automation: every tab,
   the settings file saved and read back in both directions. It refuses to run beside another
   MemoryMap. Startup tab end-to-end record: `docs/reviews/2026-10-12-g002-m4-end-to-end.md`.
@@ -254,6 +254,7 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 | 2026-10-12 | 27ddf24 | Installed C:\bin\MemoryMap.exe (local only, D014) | Map and Settings tabs captured; close-to-tray checked |
 | 2026-10-12 | 44933d1 | Reinstalled C:\bin\MemoryMap.exe with the Startup tab (local only) | Hash matches publish; helper check 4/4; UI smoke 41/41 switches |
 | 2026-10-13 | 2255e21 | Reinstalled C:\bin\MemoryMap.exe with optional group titles (local only) | Started from C:\bin; window "Memory Map" responding, 118 MB |
+| 2026-10-13 | 85a7d4e | C:\bin replaced with draft v0.5.1's three files (Owner, local only) | Zip matches the draft's SHA256SUMS, copies match; started from C:\bin: version 0.5.1, responding, 33 MB private |
 | 2026-10-13 | 6487359 | C:\bin replaced with v0.5.0's three files from the release zip (Owner, local only) | Hashes match the release; started from C:\bin: version 0.5.0, window responding, 36 MB private |
 | 2026-10-13 | 6487359 | GitHub release v0.5.0, Native AOT: Windows zip, amd64 and arm64 `.deb` and tarballs, notices zip (Owner's OK); draft v0.4.1 deleted | Release run 38453889975 green, smoke 0 failures; assets match SHA256SUMS, also downloaded anonymously |
 | 2026-10-13 | 3e700a5 | GitHub release v0.4.0 (repo public since D039): Windows exe, .deb, Linux single file, notices zip; C:\bin reinstalled | CI green; deb-check passed; asset SHA-256 match the local builds |
