@@ -43,3 +43,4 @@
 - D041 — Linux packages are built for amd64 and arm64, each on its own architecture's runner — active
 - D042 — Windows shell COM calls use generated interop, and settings JSON a generated context — active
 - D043 — The published app is a Native AOT build, with its two native libraries beside it — active
+- D044 — AOT releases: a flat Windows zip, Linux tarballs with a folder, the published app run in CI — active

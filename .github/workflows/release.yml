@@ -1,8 +1,7 @@
-# Builds a release from a version tag (D040): the Windows exe, and the Linux single file and .deb for
-# amd64 and arm64 (D041), each
-# built and checked here from the tagged source. The exe goes to SignPath for signing once the
-# SIGNPATH_ORGANIZATION_ID variable is set (each request is approved by hand there); until then it is
-# released unsigned. The release is created as a draft, published by hand after a look.
+# Builds a release from a version tag (D040): the Windows program, and the Linux program and .deb for
+# amd64 and arm64 (D041), each compiled ahead of time (D043), built and checked here from the tagged
+# source. The Windows exe goes to SignPath for signing once the SIGNPATH_ORGANIZATION_ID variable is set
+# (each request is approved by hand there); until then it is released unsigned. The release is created as a draft, published by hand after a look.
 # A manual run builds and checks everything; with draft-tag it also makes a throwaway draft release.
 name: release
 on:
@@ -37,12 +36,14 @@ jobs:
           }
           "version=$v" >> $env:GITHUB_OUTPUT
       - run: pwsh scripts/publish.ps1 -NoInstall
+      - name: Run the published app
+        run: powershell -NoProfile -File scripts/smoke-published.ps1
       - run: pwsh scripts/collect-notices.ps1
       - id: upload
         uses: actions/upload-artifact@v4
         with:
           name: windows-unsigned
-          path: publish/MemoryMap.exe
+          path: publish/win-x64/
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
@@ -72,7 +73,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-signed
-          path: signed/MemoryMap.exe
+          path: signed/
           if-no-files-found: error
 
   linux:
@@ -89,13 +90,15 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+      - name: Install the AOT compiler's linker
+        run: sudo apt-get install -y -qq clang zlib1g-dev
       - run: bash scripts/publish-linux.sh
       - run: bash scripts/deb-check.sh publish/memory-map_*.deb
       - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.arch }}
           path: |
-            publish/linux-*/MemoryMap
+            publish/linux-*/
             publish/memory-map_*.deb
           if-no-files-found: error
 

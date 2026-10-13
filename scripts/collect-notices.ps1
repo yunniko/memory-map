@@ -15,15 +15,14 @@ function Version-Of([string]$name) {
 }
 
 $runtime = $assets.project.frameworks.'net10.0'.downloadDependencies |
-    Where-Object { $_.name -eq 'Microsoft.NETCore.App.Runtime.win-x64' } | Select-Object -First 1
-if (-not $runtime) { throw 'The win-x64 runtime pack is not in project.assets.json; publish for win-x64 first.' }
+    Where-Object { $_.name -eq 'Microsoft.NETCore.App.Runtime.NativeAOT.win-x64' } | Select-Object -First 1
+if (-not $runtime) { throw 'The win-x64 Native AOT runtime pack is not in project.assets.json; publish for win-x64 first.' }
 $runtimeVersion = $runtime.version.Trim('[', ']').Split(',')[0].Trim()
 
 $copies = [ordered]@{
-    'dotnet-runtime-notices.txt' = "microsoft.netcore.app.runtime.win-x64/$runtimeVersion/THIRD-PARTY-NOTICES.TXT"
+    'dotnet-runtime-notices.txt' = "microsoft.netcore.app.runtime.nativeaot.win-x64/$runtimeVersion/THIRD-PARTY-NOTICES.TXT"
     # SkiaSharp's and HarfBuzzSharp's packages carry the same file, covering both.
     'skia-harfbuzz-notices.txt'  = "skiasharp.nativeassets.win32/$(Version-Of 'SkiaSharp.NativeAssets.Win32')/THIRD-PARTY-NOTICES.txt"
-    'angle-license.txt'          = "avalonia.angle.windows.natives/$(Version-Of 'Avalonia.Angle.Windows.Natives')/LICENSE"
 }
 Copy-Item (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY-NOTICES.md') $out
 foreach ($entry in $copies.GetEnumerator()) {

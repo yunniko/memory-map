@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Builds the Linux app (D035) for this machine's architecture, amd64 or arm64, into publish/:
-#   linux-<x64|arm64>/MemoryMap          one self-contained file to copy anywhere and run;
-#   memory-map_<version>_<arch>.deb      the same build as a package, its two native libraries beside it.
+# Builds the Linux app (D035), compiled ahead of time (D043), for this machine's architecture, amd64 or
+# arm64, into publish/:
+#   linux-<x64|arm64>/                   MemoryMap and its two native libraries, to copy anywhere and run;
+#   memory-map_<version>_<arch>.deb      the same three files as a package.
 # Each architecture is built on its own kind of machine, so dpkg-shlibdeps reads that architecture's
-# libraries (D041). Runs on Linux with the .NET SDK, python3, dpkg-deb and dpkg-shlibdeps (dpkg-dev).
+# libraries (D041). Runs on Linux with the .NET SDK, clang and zlib1g-dev (the AOT compiler's linker
+# and a library it links), python3, dpkg-deb and dpkg-shlibdeps (dpkg-dev).
 # Check the package with scripts/deb-check.sh.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -23,29 +25,32 @@ case $arch in
     *) echo "No build for architecture $arch: only amd64 and arm64 are built (D041)." >&2; exit 1 ;;
 esac
 
-publish() {
-    dotnet publish "$app" -c Release -r "$rid" --self-contained -p:PublishSingleFile=true -p:DebugType=none \
-        -nologo -v q "$@"
-}
+command -v clang > /dev/null || { echo "clang is missing: apt install clang zlib1g-dev" >&2; exit 1; }
 
-# The single file: Skia and HarfBuzz go inside and are unpacked under ~/.net on first run (as on Windows, D014).
-publish -p:IncludeNativeLibrariesForSelfExtract=true -o "$out/$rid"
-echo "Built $out/$rid/MemoryMap"
+build=$out/$rid
+rm -rf "$build"
+dotnet publish "$app" -c Release -r "$rid" -p:DebugType=none -nologo -v q -o "$build"
+files=$(cd "$build" && LC_ALL=C && echo *)
+if [[ $files != "MemoryMap libHarfBuzzSharp.so libSkiaSharp.so" ]]; then
+    echo "Unexpected files in $build: $files" >&2
+    exit 1
+fi
+# Upstream ships the libraries with symbols; the AOT compiler has already stripped the program.
+strip --strip-unneeded --remove-section=.comment "$build/libSkiaSharp.so" "$build/libHarfBuzzSharp.so"
+strip --remove-section=.comment "$build/MemoryMap"
+chmod 755 "$build/MemoryMap" && chmod 644 "$build/libSkiaSharp.so" "$build/libHarfBuzzSharp.so"
+echo "Built $build ($(du -sh "$build" | cut -f1)): $files"
 
-# The package: the libraries stay beside the program, so it unpacks nothing into users' homes.
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT
-publish -o "$stage/build"
 pkg=$stage/pkg
 lib=$pkg/usr/lib/memory-map
 doc=$pkg/usr/share/doc/memory-map
 umask 022
 install -d "$lib" "$pkg/usr/bin" "$pkg/usr/share/applications" "$pkg/usr/share/icons/hicolor/scalable/apps" \
     "$pkg/usr/share/man/man1" "$doc" "$pkg/usr/share/lintian/overrides" "$pkg/DEBIAN"
-install -m 755 "$stage/build/MemoryMap" "$lib/"
-install -m 644 "$stage/build/libSkiaSharp.so" "$stage/build/libHarfBuzzSharp.so" "$lib/"
-# Upstream ships them with symbols; the program itself is a bundle and must not be stripped.
-strip --strip-unneeded --remove-section=.comment "$lib/libSkiaSharp.so" "$lib/libHarfBuzzSharp.so"
+install -m 755 "$build/MemoryMap" "$lib/"
+install -m 644 "$build/libSkiaSharp.so" "$build/libHarfBuzzSharp.so" "$lib/"
 ln -s ../lib/memory-map/MemoryMap "$pkg/usr/bin/memory-map"
 install -m 644 "$assets/memory-map.desktop" "$pkg/usr/share/applications/"
 install -m 644 "$assets/memory-map.svg" "$pkg/usr/share/icons/hicolor/scalable/apps/"
@@ -61,12 +66,12 @@ import json, sys
 assets, rid = json.load(open(sys.argv[1])), sys.argv[2]
 runtime = next(d['version'].strip('[]').split(',')[0].strip()
                for d in assets['project']['frameworks']['net10.0']['downloadDependencies']
-               if d['name'] == f'Microsoft.NETCore.App.Runtime.{rid}')
+               if d['name'] == f'Microsoft.NETCore.App.Runtime.NativeAOT.{rid}')
 skia = next(k.split('/')[1] for k in assets['targets'][f'net10.0/{rid}'] if k.startswith('SkiaSharp.NativeAssets.Linux/'))
 print(runtime, skia)
 EOF
 )
-gzip -9n < "$packages/microsoft.netcore.app.runtime.$rid/$runtime/THIRD-PARTY-NOTICES.TXT" > "$doc/dotnet-runtime-notices.txt.gz"
+gzip -9n < "$packages/microsoft.netcore.app.runtime.nativeaot.$rid/$runtime/THIRD-PARTY-NOTICES.TXT" > "$doc/dotnet-runtime-notices.txt.gz"
 gzip -9n < "$packages/skiasharp.nativeassets.linux/$skia/THIRD-PARTY-NOTICES.txt" > "$doc/skia-harfbuzz-notices.txt.gz"
 
 # Libraries the files link against, as dpkg computes them, and those the app opens at run time

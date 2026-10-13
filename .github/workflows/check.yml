@@ -1,7 +1,8 @@
 # The merge gate (scripts/check.ps1): format check, warnings-as-errors build, every test that runs on
 # the OS. All build the whole solution; Ubuntu (amd64 and arm64) runs all but the Windows tests (D030),
-# with the live /proc and process-action tests. The package job builds each architecture's .deb on its
-# own runner and checks it in containers (D036, D041).
+# with the live /proc and process-action tests. The package jobs build what releases ship, compiled
+# ahead of time (D043), and run it: the Windows app through UI Automation, and each architecture's .deb
+# on its own runner, checked in containers (D036, D041).
 name: check
 on:
   push:
@@ -26,6 +27,17 @@ jobs:
       - name: Cross-check against free and ps
         if: runner.os == 'Linux'
         run: python3 scripts/crosscheck-linux.py
+  package-windows:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: pwsh scripts/publish.ps1 -NoInstall
+      - name: Run the published app
+        run: powershell -NoProfile -File scripts/smoke-published.ps1
   package:
     strategy:
       fail-fast: false
@@ -38,5 +50,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+      - name: Install the AOT compiler's linker
+        run: sudo apt-get install -y -qq clang zlib1g-dev
       - run: bash scripts/publish-linux.sh
       - run: bash scripts/deb-check.sh publish/memory-map_*.deb

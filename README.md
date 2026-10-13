@@ -12,12 +12,15 @@ arm64); signed Windows releases and smaller downloads are in progress (`GOALS.md
 ## Download
 
 [Releases](https://github.com/yunniko/memory-map/releases) carry, for each version:
-- `MemoryMap-<version>-win-x64.exe` — Windows 10/11, 64-bit: one file, nothing to install.
+- `MemoryMap-<version>-win-x64.zip` — Windows 10/11, 64-bit: extract it and run `MemoryMap.exe`, keeping
+  its two libraries beside it; nothing to install. Up to 0.4.1 this was one file,
+  `MemoryMap-<version>-win-x64.exe`.
 - `memory-map_<version>_amd64.deb` — Debian, Ubuntu and similar on Intel or AMD:
   `sudo apt install ./memory-map_<version>_amd64.deb`. From 0.4.1, `memory-map_<version>_arm64.deb` is
   the same for 64-bit ARM, such as an ARM Chromebook's Linux (`dpkg --print-architecture` says which).
-- `MemoryMap-<version>-linux-x64` (Intel or AMD) and, from 0.4.1, `MemoryMap-<version>-linux-arm64`
-  (64-bit ARM) — any Linux: `chmod +x` it and run it.
+- `MemoryMap-<version>-linux-x64.tar.gz` (Intel or AMD) and `MemoryMap-<version>-linux-arm64.tar.gz`
+  (64-bit ARM) — any Linux: extract it and run `MemoryMap` in its folder. Up to 0.4.1 these were single
+  files, `MemoryMap-<version>-linux-x64` and `-linux-arm64`.
 - `MemoryMap-<version>-notices.zip` and `SHA256SUMS` — the licences and the checksums.
 
 Releases are built by GitHub Actions from a version tag (`.github/workflows/release.yml`). See the
@@ -48,8 +51,11 @@ quits), and the Startup tab lists XDG autostart entries (switchable) and systemd
 
 ## Use
 
-- `./scripts/publish.ps1` — build the one-file exe into `publish\` and copy it to `C:\bin`
-  (`-NoInstall` to skip the copy; exit the running app first).
+- `./scripts/publish.ps1` — build the app, compiled ahead of time, into `publish\win-x64\` and copy its
+  three files to `C:\bin` (`-NoInstall` to skip the copy; exit the running app first). Needs Visual
+  Studio's C++ build tools.
+- `powershell -File scripts/smoke-published.ps1` — start the published app, open every tab and save and
+  read back a setting through UI Automation (the real settings file is restored after).
 - `dotnet run --project src/MemoryMap.App -c Release` — run from source.
 - `dotnet run --project src/MemoryMap.Cli -- --json` — one snapshot as text or JSON;
   `-- --startup` lists the programs Windows starts at sign-in, with their state and memory;
@@ -69,9 +75,9 @@ quits), and the Startup tab lists XDG autostart entries (switchable) and systemd
 
 - `sudo apt install ./memory-map_*.deb` — installs the app (menu entry "Memory Map" and the
   `memory-map` command); `sudo apt remove memory-map` removes it.
-- `publish/linux-x64/MemoryMap` (`linux-arm64` on ARM) — the same app as one file to copy anywhere and run.
+- `publish/linux-x64/` (`linux-arm64` on ARM) — the same app as a folder to copy anywhere and run.
 - `bash scripts/publish-linux.sh` — build both into `publish/` for the machine's own architecture, amd64
-  or arm64 (on Linux, with the .NET SDK and dpkg-dev).
+  or arm64 (on Linux, with the .NET SDK, clang, zlib1g-dev and dpkg-dev).
 - `bash scripts/deb-check.sh publish/memory-map_*.deb` — lintian, then install, run and remove the
   package in throwaway Ubuntu containers (needs docker).
 - `python3 scripts/crosscheck-linux.py` — compare the sampler's totals with `free` and `ps`.
@@ -92,8 +98,8 @@ Free code signing provided by [SignPath.io](https://about.signpath.io), certific
 pending; releases up to 0.4.0 are unsigned.*
 
 - Only the Windows exe built by the release workflow from this repository's tagged source is
-  signed; nothing built elsewhere is submitted. The libraries bundled inside it come unmodified
-  from their upstream packages (see `THIRD-PARTY-NOTICES.md`).
+  signed; nothing built elsewhere is submitted. The two libraries beside it come unmodified, with
+  their own signatures, from their upstream packages (see `THIRD-PARTY-NOTICES.md`).
 - Every signing request is approved by hand in SignPath before it is signed.
 - Committers and reviewers: [yunniko](https://github.com/yunniko). Approvers:
   [yunniko](https://github.com/yunniko). The code is written with Claude (Anthropic's AI model)

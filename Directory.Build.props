@@ -15,4 +15,9 @@
     <Deterministic>true</Deterministic>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
+  <!-- The app ships as Native AOT (D043): every build analyses the code compiled into it. memmap-dump
+       (MemoryMap.Cli) is a development tool that ships in no release. -->
+  <PropertyGroup Condition="$([MSBuild]::MakeRelative($(MSBuildThisFileDirectory), $(MSBuildProjectDirectory)).StartsWith('src')) and '$(MSBuildProjectName)' != 'MemoryMap.Cli'">
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
 </Project>

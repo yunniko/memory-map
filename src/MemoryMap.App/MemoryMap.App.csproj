@@ -5,7 +5,16 @@
     <RootNamespace>MemoryMap.App</RootNamespace>
     <AssemblyName>MemoryMap</AssemblyName>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Published as Native AOT (D043); also turns on the AOT and trim analyzers in every build. -->
+    <PublishAot>true</PublishAot>
   </PropertyGroup>
+
+  <!-- ANGLE (OpenGL over Direct3D) is never loaded: the app renders in software (Program.cs, D043). -->
+  <Target Name="LeaveOutAngle" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Filename)' == 'av_libglesv2'" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" />
