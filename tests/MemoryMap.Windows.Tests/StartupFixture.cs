@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using System.Runtime.Versioning;
 using MemoryMap.Windows.Startup;
 using Microsoft.Win32;
@@ -75,17 +73,17 @@ internal sealed class StartupFixture : IDisposable
     /// <summary>Writes a .lnk shortcut through the Shell, as Explorer would; the target need not exist.</summary>
     public static void Link(string lnkPath, string target, string arguments = "")
     {
-        var link = new Shortcut.ShellLink();
+        var link = Shortcut.NewShellLink() ?? throw new InvalidOperationException("COM could not create a ShellLink.");
         try
         {
-            var shell = (Shortcut.IShellLinkW)link;
+            var shell = (Shortcut.IShellLinkW)(object)link;
             shell.SetPath(target);
             shell.SetArguments(arguments);
-            ((IPersistFile)link).Save(lnkPath, true);
+            ((Shortcut.IPersistFile)(object)link).Save(lnkPath, 1);
         }
         finally
         {
-            Marshal.ReleaseComObject(link);
+            link.FinalRelease();
         }
     }
 

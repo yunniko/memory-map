@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MemoryMap.Core;
 
@@ -62,8 +63,6 @@ public sealed record AppSettings
 /// an unreadable one means defaults plus a problem to show, never a crash at startup.</summary>
 public static class SettingsStore
 {
-    private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
-
     public static (AppSettings Settings, string? Problem) Load(string path)
     {
         try
@@ -72,7 +71,7 @@ public static class SettingsStore
             {
                 return (new AppSettings(), null);
             }
-            var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), Json) ?? new AppSettings();
+            var settings = JsonSerializer.Deserialize(File.ReadAllText(path), SettingsJson.Default.AppSettings) ?? new AppSettings();
             return (settings.Normalized(), null);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
@@ -100,7 +99,12 @@ public static class SettingsStore
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         var temp = path + ".tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(settings, Json));
+        File.WriteAllText(temp, JsonSerializer.Serialize(settings, SettingsJson.Default.AppSettings));
         File.Move(temp, path, overwrite: true);
     }
 }
+
+/// <summary>The settings file's JSON code, generated at build time so a trimmed build keeps it (G-007).</summary>
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(AppSettings))]
+internal sealed partial class SettingsJson : JsonSerializerContext;

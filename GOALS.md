@@ -36,7 +36,7 @@ Completed goals: `docs/goals-archive.md`.
   ("arm64") to the proposed fix is the go-ahead. The Linux code's only raw syscalls (pidfd 424, 434)
   share their numbers on every architecture.
 
-### G-007 · Smaller downloads — DRAFT (plan awaiting the Owner's acceptance)
+### G-007 · Smaller downloads — ACTIVE
 - **What:** A smaller Windows exe, Linux single file and `.deb`, with every feature still working and
   no worse startup or memory.
 - **Why:** The Owner asked whether the app must weigh 90 MB (2026-10-13). Most of it is the whole .NET
@@ -63,6 +63,18 @@ Completed goals: `docs/goals-archive.md`.
 - [ ] M3 — Draft release 0.5.0 with both Linux architectures; published after the Owner's OK.
 
 **Progress log** (newest first):
+- 2026-10-13 — **BLOCKED:** M2 waits for the Owner's choice of build. Only Native AOT passes criteria
+  1, 3 and 4 (35 MB against 97 MB, start 0.7 s against 2.7 s, 16–46% less private memory), but it is
+  three files, so the Windows download becomes a 14.5 MB zip instead of one exe. One-file options:
+  trimmed and compressed (21 MB, 0.8 s slower start) or trimmed with ReadyToRun (63 MB, faster start).
+  Recommended: AOT. A draft D043 (AOT, superseding D014) is ready for that answer.
+- 2026-10-13 — M1 measured (`docs/reviews/2026-10-13-g007-m1-size-options.md`): seven options on
+  Windows, five on Linux; sizes, startup, 10-minute memory and CPU. Trim/AOT-safe interop and settings
+  JSON (D042) build with no warnings. Every tab, settings save and load, close-to-tray and the startup
+  helper check pass in the published AOT build (Windows; Linux under WSLg). Gates: Windows 334 total
+  (308 passed, 26 Linux-only skipped), WSL 251/251.
+- 2026-10-13 — Owner accepted the plan ("accept"): the go-ahead for M1–M3. D014 (untrimmed,
+  uncompressed) was a judgment to revisit if size mattered; M1 measures its memory concern.
 - 2026-10-13 — Goal planned at the Owner's request ("yes, plan it please"). Found: compiled bindings
   already on (`AvaloniaUseCompiledBindingsByDefault`); the settings file uses reflection-based JSON
   (`src/MemoryMap.Core/AppSettings.cs`), which trimming needs replaced.
