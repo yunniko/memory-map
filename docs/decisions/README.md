@@ -22,7 +22,7 @@
 - D020 — An entry that starts a host program (cmd, rundll32, a script host) is credited with no processes — active
 - D021 — A startup switch writes the same StartupApproved bytes Windows Settings writes — active
 - D022 — The startup list is read when the tab opens; samples are matched only while it is shown — active
-- D023 — The code lives in a private GitHub repo; CI runs the local gate on a Windows runner — runner superseded by D028
+- D023 — The code lives in a private GitHub repo; CI runs the local gate on a Windows runner — private repo superseded by D039
 - D024 — Machine-wide startup changes run this exe elevated in a one-shot helper mode — active
 - D025 — System memory is OS-neutral: totals, named figures and names, all supplied by the sampler — active
 - D026 — A Linux process is sized by RssAnon; memory of processes not visible is its own figure — active
@@ -38,3 +38,4 @@
 - D036 — The .deb declares measured dependencies and keeps Skia's embedded libraries — active
 - D037 — Without titles a group is an outline, and the whole frame answers the pointer — active
 - D038 — The app's own code is MIT-licensed, credited to yunniko and Claude — active
+- D039 — The repo and its releases are public — active

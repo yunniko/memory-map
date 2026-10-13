@@ -204,6 +204,8 @@ Completed goals: `docs/goals-archive.md`.
 - [x] M1 — Setting, untitled layout and outline, hit-testing over the whole frame (D037), tests.
 
 **Progress log** (newest first):
+- 2026-10-13 — Owner: "can you make it public?" → repo and release v0.4.0 public (D039) after a
+  history scan at 67707dd: no keys, tokens, email addresses or files over 500 KB.
 - 2026-10-13 — Owner: "Add open source licensing which would just need mentioning me and you as
   author" → MIT, © yunniko and Claude (D038); and "push it please to git along with precompiled
   packages" → version 0.4.0 (3e700a5), GitHub release v0.4.0 on the private repo with the Windows
