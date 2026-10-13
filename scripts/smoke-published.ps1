@@ -7,6 +7,8 @@
 param([string]$Exe = (Join-Path (Split-Path $PSScriptRoot) 'publish\win-x64\MemoryMap.exe'))
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path $Exe)) { throw "Not built: $Exe (run scripts/publish.ps1)" }
+# A running MemoryMap writes the same settings file; exit it first (tray menu > Exit).
+if (Get-Process MemoryMap -ErrorAction SilentlyContinue) { throw 'MemoryMap is running; exit it and run this again.' }
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type -Namespace SmokeTest -Name User32 -MemberDefinition @'
 [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
@@ -81,21 +83,24 @@ try {
         if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force; $p.WaitForExit() }
     }
 
-    # The file read at start: write the opposite of the saved value, start again, and look at the switch.
-    try {
-        $json = Get-Content $settings -Raw | ConvertFrom-Json
-        $json.ShowGroupTitles = -not $json.ShowGroupTitles
-        $json | ConvertTo-Json | Set-Content $settings -Encoding UTF8
-        $p, $win = Start-App
-        Check $win 'window opened again'
-        if ($win) {
-            WaitFor { SelectTab $win 'Settings'; $true } | Out-Null
-            $state = WaitFor { "$((Titles $win).Current.ToggleState)" }
-            Check (($state -eq 'On') -eq $json.ShowGroupTitles) 'setting read from the file at start'
+    # The file read at start: write each value of the switch in turn, start again, and look at it.
+    # One of the two is not the default, so a file that failed to load cannot pass both.
+    foreach ($round in 1, 2) {
+        try {
+            $json = Get-Content $settings -Raw | ConvertFrom-Json
+            $json.ShowGroupTitles = -not $json.ShowGroupTitles
+            [IO.File]::WriteAllText($settings, ($json | ConvertTo-Json -Depth 10))
+            $p, $win = Start-App
+            Check $win "window opened again ($round)"
+            if ($win) {
+                WaitFor { SelectTab $win 'Settings'; $true } | Out-Null
+                $state = WaitFor { "$((Titles $win).Current.ToggleState)" }
+                Check (($state -eq 'On') -eq $json.ShowGroupTitles) "setting read from the file at start ($($json.ShowGroupTitles))"
+            }
         }
-    }
-    finally {
-        if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force; $p.WaitForExit() }
+        finally {
+            if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force; $p.WaitForExit() }
+        }
     }
 }
 finally { Restore-Settings }

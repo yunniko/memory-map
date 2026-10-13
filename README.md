@@ -77,7 +77,7 @@ quits), and the Startup tab lists XDG autostart entries (switchable) and systemd
   `memory-map` command); `sudo apt remove memory-map` removes it.
 - `publish/linux-x64/` (`linux-arm64` on ARM) — the same app as a folder to copy anywhere and run.
 - `bash scripts/publish-linux.sh` — build both into `publish/` for the machine's own architecture, amd64
-  or arm64 (on Linux, with the .NET SDK, clang, zlib1g-dev and dpkg-dev).
+  or arm64 (on Linux, with the .NET SDK, clang and dpkg-dev).
 - `bash scripts/deb-check.sh publish/memory-map_*.deb` — lintian, then install, run and remove the
   package in throwaway Ubuntu containers (needs docker).
 - `python3 scripts/crosscheck-linux.py` — compare the sampler's totals with `free` and `ps`.

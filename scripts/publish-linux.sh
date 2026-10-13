@@ -4,8 +4,8 @@
 #   linux-<x64|arm64>/                   MemoryMap and its two native libraries, to copy anywhere and run;
 #   memory-map_<version>_<arch>.deb      the same three files as a package.
 # Each architecture is built on its own kind of machine, so dpkg-shlibdeps reads that architecture's
-# libraries (D041). Runs on Linux with the .NET SDK, clang and zlib1g-dev (the AOT compiler's linker
-# and a library it links), python3, dpkg-deb and dpkg-shlibdeps (dpkg-dev).
+# libraries (D041). Runs on Linux with the .NET SDK, clang (the AOT compiler's linker), python3,
+# dpkg-deb and dpkg-shlibdeps (dpkg-dev).
 # Check the package with scripts/deb-check.sh.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -25,7 +25,7 @@ case $arch in
     *) echo "No build for architecture $arch: only amd64 and arm64 are built (D041)." >&2; exit 1 ;;
 esac
 
-command -v clang > /dev/null || { echo "clang is missing: apt install clang zlib1g-dev" >&2; exit 1; }
+command -v clang > /dev/null || { echo "clang is missing: apt install clang" >&2; exit 1; }
 
 build=$out/$rid
 rm -rf "$build"

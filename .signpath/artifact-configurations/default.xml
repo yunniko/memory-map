@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- What SignPath signs in the release workflow's windows-unsigned artifact (a zip holding MemoryMap.exe
-     and its two native libraries, which keep their upstream signatures and pass through unchanged).
+     and its two native libraries). Only the exe is signed; release-files.sh takes the libraries, which
+     keep their upstream signatures, from the unsigned artifact.
      SignPath reads this from its project settings; this copy is the reviewed source to paste there.
      The metadata restrictions are SignPath Foundation's terms: product name and version must match. -->
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">

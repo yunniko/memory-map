@@ -9,6 +9,9 @@ $out = Join-Path $root 'publish\win-x64'
 
 # The AOT compiler finds the C++ linker through vswhere, which is not on PATH outside a developer prompt.
 $env:PATH = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer;$env:PATH"
+if (-not $NoInstall -and (Get-Process MemoryMap -ErrorAction SilentlyContinue | Where-Object Path -eq (Join-Path $Install 'MemoryMap.exe'))) {
+    throw "MemoryMap.exe is running from $Install; exit it (tray menu > Exit) and run this again."
+}
 Remove-Item $out -Recurse -Force -ErrorAction SilentlyContinue
 dotnet publish (Join-Path $root 'src/MemoryMap.App') -c Release -r win-x64 -p:DebugType=none -nologo -o $out
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)" }
@@ -19,9 +22,6 @@ $names = ($files.Name | Sort-Object) -join ', '
 if ($names -ne 'libHarfBuzzSharp.dll, libSkiaSharp.dll, MemoryMap.exe') { throw "Unexpected files in ${out}: $names" }
 "Built $out ($([math]::Round(($files | Measure-Object Length -Sum).Sum / 1MB)) MB): $names"
 if (-not $NoInstall) {
-    if (Get-Process MemoryMap -ErrorAction SilentlyContinue | Where-Object Path -eq (Join-Path $Install 'MemoryMap.exe')) {
-        throw "MemoryMap.exe is running from $Install; exit it (tray menu > Exit) and run this again."
-    }
     # Into the folder, never as a file named after it. The exe keeps its 0.4.1 path (D044).
     New-Item -ItemType Directory -Force $Install | Out-Null
     Copy-Item $files.FullName $Install -Force

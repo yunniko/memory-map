@@ -10,12 +10,16 @@ files=$out/files
 rm -rf "$out" && mkdir -p "$files" && files=$(cd "$files" && pwd)
 
 # Each build is a program and its two native libraries (D043).
-windows_files=(MemoryMap.exe libSkiaSharp.dll libHarfBuzzSharp.dll)
+windows_libs=(libSkiaSharp.dll libHarfBuzzSharp.dll)
 linux_libs=(libSkiaSharp.so libHarfBuzzSharp.so)
-if [[ $SIGNED == true ]]; then windows=$in/windows-signed; else windows=$in/windows-unsigned; fi
+# Only the exe is signed by SignPath; the libraries keep their upstream signatures and always come
+# from the unsigned build.
+if [[ $SIGNED == true ]]; then exe=$in/windows-signed/MemoryMap.exe; else exe=$in/windows-unsigned/MemoryMap.exe; fi
+# Every archived file gets the commit's time, so two runs for one tag give the same checksums.
+stamp=$(git -C "$root" log -1 --format=%ct)
 # Each Linux architecture's artifact (linux-<deb arch>) holds <rid>/ and its .deb (D041).
 linux=("amd64 linux-x64" "arm64 linux-arm64")
-needed=("${windows_files[@]/#/$windows/}" "$in/notices/LICENSE")
+needed=("$exe" "${windows_libs[@]/#/$in/windows-unsigned/}" "$in/notices/LICENSE")
 for pair in "${linux[@]}"; do
   read -r arch rid <<< "$pair"
   needed+=("$in/linux-$arch/$rid/MemoryMap" "${linux_libs[@]/#/$in/linux-$arch/$rid/}"
@@ -26,7 +30,10 @@ for f in "${needed[@]}"; do
 done
 
 # Windows: the three files at the zip's top, so "Extract all" makes one folder holding them.
-(cd "$windows" && zip -q -X "$files/MemoryMap-$VERSION-win-x64.zip" "${windows_files[@]}")
+mkdir -p "$out/zip"
+cp "$exe" "${windows_libs[@]/#/$in/windows-unsigned/}" "$out/zip/"
+touch -d "@$stamp" "$out/zip/"*
+(cd "$out/zip" && zip -q -X "$files/MemoryMap-$VERSION-win-x64.zip" MemoryMap.exe "${windows_libs[@]}")
 # Linux: one folder in the archive. Artifacts lose file modes, so they are set here.
 for pair in "${linux[@]}"; do
   read -r arch rid <<< "$pair"
@@ -34,9 +41,11 @@ for pair in "${linux[@]}"; do
   mkdir -p "$out/tar/$dir"
   install -m 755 "$in/linux-$arch/$rid/MemoryMap" "$out/tar/$dir/"
   install -m 644 "${linux_libs[@]/#/$in/linux-$arch/$rid/}" "$out/tar/$dir/"
-  tar -C "$out/tar" --owner=0 --group=0 --numeric-owner -czf "$files/$dir.tar.gz" "$dir"
+  tar -C "$out/tar" --sort=name --mtime="@$stamp" --owner=0 --group=0 --numeric-owner -cf - "$dir" \
+    | gzip -9n > "$files/$dir.tar.gz"
   cp "$in/linux-$arch/memory-map_${VERSION}_$arch.deb" "$files/"
 done
+touch -d "@$stamp" "$in/notices/"*
 (cd "$in/notices" && zip -q -X "$files/MemoryMap-$VERSION-notices.zip" ./*)
 (cd "$files" && sha256sum -- * > SHA256SUMS)
 

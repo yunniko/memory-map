@@ -91,7 +91,7 @@ jobs:
         with:
           global-json-file: global.json
       - name: Install the AOT compiler's linker
-        run: sudo apt-get install -y -qq clang zlib1g-dev
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq clang
       - run: bash scripts/publish-linux.sh
       - run: bash scripts/deb-check.sh publish/memory-map_*.deb
       - uses: actions/upload-artifact@v4
