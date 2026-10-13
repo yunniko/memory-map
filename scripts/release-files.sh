@@ -10,13 +10,15 @@ files=$out/files
 rm -rf "$out" && mkdir -p "$files" && files=$(cd "$files" && pwd)
 
 # Each build is a program and its two native libraries (D043).
+windows_files=(MemoryMap.exe libSkiaSharp.dll libHarfBuzzSharp.dll)
+linux_libs=(libSkiaSharp.so libHarfBuzzSharp.so)
 if [[ $SIGNED == true ]]; then windows=$in/windows-signed; else windows=$in/windows-unsigned; fi
 # Each Linux architecture's artifact (linux-<deb arch>) holds <rid>/ and its .deb (D041).
 linux=("amd64 linux-x64" "arm64 linux-arm64")
-needed=("$windows/MemoryMap.exe" "$windows/libSkiaSharp.dll" "$windows/libHarfBuzzSharp.dll" "$in/notices/LICENSE")
+needed=("${windows_files[@]/#/$windows/}" "$in/notices/LICENSE")
 for pair in "${linux[@]}"; do
   read -r arch rid <<< "$pair"
-  needed+=("$in/linux-$arch/$rid/MemoryMap" "$in/linux-$arch/$rid/libSkiaSharp.so" "$in/linux-$arch/$rid/libHarfBuzzSharp.so"
+  needed+=("$in/linux-$arch/$rid/MemoryMap" "${linux_libs[@]/#/$in/linux-$arch/$rid/}"
     "$in/linux-$arch/memory-map_${VERSION}_$arch.deb")
 done
 for f in "${needed[@]}"; do
@@ -24,14 +26,14 @@ for f in "${needed[@]}"; do
 done
 
 # Windows: the three files at the zip's top, so "Extract all" makes one folder holding them.
-(cd "$windows" && zip -q -X "$files/MemoryMap-$VERSION-win-x64.zip" MemoryMap.exe libSkiaSharp.dll libHarfBuzzSharp.dll)
+(cd "$windows" && zip -q -X "$files/MemoryMap-$VERSION-win-x64.zip" "${windows_files[@]}")
 # Linux: one folder in the archive. Artifacts lose file modes, so they are set here.
 for pair in "${linux[@]}"; do
   read -r arch rid <<< "$pair"
   dir=MemoryMap-$VERSION-$rid
   mkdir -p "$out/tar/$dir"
   install -m 755 "$in/linux-$arch/$rid/MemoryMap" "$out/tar/$dir/"
-  install -m 644 "$in/linux-$arch/$rid/libSkiaSharp.so" "$in/linux-$arch/$rid/libHarfBuzzSharp.so" "$out/tar/$dir/"
+  install -m 644 "${linux_libs[@]/#/$in/linux-$arch/$rid/}" "$out/tar/$dir/"
   tar -C "$out/tar" --owner=0 --group=0 --numeric-owner -czf "$files/$dir.tar.gz" "$dir"
   cp "$in/linux-$arch/memory-map_${VERSION}_$arch.deb" "$files/"
 done

@@ -50,11 +50,11 @@ and Settings says "This desktop shows no tray icons, so closing the window quits
    system entry (from `/etc/xdg/autostart`), `ls ~/.config/autostart` shows no copy of it left,
    unless you edited that copy in between (then it is yours and is kept).
 
-## E. Remove, and the single file
+## E. Remove, and the archive
 
 1. Quit the app, then `sudo apt remove memory-map`. Expect: the menu entry and the `memory-map`
    command are gone. Your settings in `~/.config/MemoryMap/` stay (apt never touches your home folder).
-2. Copy the single file (`MemoryMap-<version>-linux-…`) anywhere, `chmod +x MemoryMap`, run `./MemoryMap`. Expect: the same app.
+2. Extract `MemoryMap-<version>-linux-….tar.gz` anywhere and run `./MemoryMap` in its folder. Expect: the same app.
    It needs the system libraries the package listed; if it does not start, `sudo apt install libice6 libsm6`
    (the two a desktop most often lacks) and try again.
 

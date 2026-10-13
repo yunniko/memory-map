@@ -30,15 +30,16 @@ command -v clang > /dev/null || { echo "clang is missing: apt install clang zlib
 build=$out/$rid
 rm -rf "$build"
 dotnet publish "$app" -c Release -r "$rid" -p:DebugType=none -nologo -v q -o "$build"
-files=$(cd "$build" && LC_ALL=C && echo *)
-if [[ $files != "MemoryMap libHarfBuzzSharp.so libSkiaSharp.so" ]]; then
+libs=("$build/libSkiaSharp.so" "$build/libHarfBuzzSharp.so")
+files=$(ls "$build" | LC_ALL=C sort | tr '\n' ' ')
+if [[ $files != "MemoryMap libHarfBuzzSharp.so libSkiaSharp.so " ]]; then
     echo "Unexpected files in $build: $files" >&2
     exit 1
 fi
 # Upstream ships the libraries with symbols; the AOT compiler has already stripped the program.
-strip --strip-unneeded --remove-section=.comment "$build/libSkiaSharp.so" "$build/libHarfBuzzSharp.so"
+strip --strip-unneeded --remove-section=.comment "${libs[@]}"
 strip --remove-section=.comment "$build/MemoryMap"
-chmod 755 "$build/MemoryMap" && chmod 644 "$build/libSkiaSharp.so" "$build/libHarfBuzzSharp.so"
+chmod 755 "$build/MemoryMap" && chmod 644 "${libs[@]}"
 echo "Built $build ($(du -sh "$build" | cut -f1)): $files"
 
 stage=$(mktemp -d)
@@ -50,7 +51,7 @@ umask 022
 install -d "$lib" "$pkg/usr/bin" "$pkg/usr/share/applications" "$pkg/usr/share/icons/hicolor/scalable/apps" \
     "$pkg/usr/share/man/man1" "$doc" "$pkg/usr/share/lintian/overrides" "$pkg/DEBIAN"
 install -m 755 "$build/MemoryMap" "$lib/"
-install -m 644 "$build/libSkiaSharp.so" "$build/libHarfBuzzSharp.so" "$lib/"
+install -m 644 "${libs[@]}" "$lib/"
 ln -s ../lib/memory-map/MemoryMap "$pkg/usr/bin/memory-map"
 install -m 644 "$assets/memory-map.desktop" "$pkg/usr/share/applications/"
 install -m 644 "$assets/memory-map.svg" "$pkg/usr/share/icons/hicolor/scalable/apps/"

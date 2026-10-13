@@ -27,13 +27,23 @@ function SelectTab($win, $name) {
         (New-Object Windows.Automation.PropertyCondition($A::NameProperty, $name)))))
     $item.GetCurrentPattern([Windows.Automation.SelectionItemPattern]::Pattern).Select()
 }
-function TitlesSaved { (Get-Content $settings -Raw | ConvertFrom-Json).ShowGroupTitles }
+function Titles($win) { (ById $win 'TitlesBox').GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern) }
+function TitlesSaved { if (Test-Path $settings) { (Get-Content $settings -Raw | ConvertFrom-Json).ShowGroupTitles } }
+# Polls $condition every 100 ms until it returns something true (returned) or $seconds pass ($null).
+# UI Automation throws while the window is still building its tree; that counts as not yet.
+function WaitFor([scriptblock]$condition, [int]$seconds = 15) {
+    for ($i = 0; $i -lt $seconds * 10; $i++) {
+        try { $result = & $condition; if ($result) { return $result } } catch { }
+        Start-Sleep -Milliseconds 100
+    }
+    $null
+}
 function Start-App {
     $p = Start-Process $Exe -PassThru
-    $win = $null
-    for ($i = 0; $i -lt 300 -and -not $win -and -not $p.HasExited; $i++) {
-        Start-Sleep -Milliseconds 100
-        $win = $A::RootElement.FindFirst('Children', (New-Object Windows.Automation.PropertyCondition($A::ProcessIdProperty, $p.Id)))
+    $win = WaitFor -seconds 30 {
+        if (-not $p.HasExited) {
+            $A::RootElement.FindFirst('Children', (New-Object Windows.Automation.PropertyCondition($A::ProcessIdProperty, $p.Id)))
+        }
     }
     $p, $win
 }
@@ -47,25 +57,24 @@ try {
     try {
         Check $win 'window opened within 30 s'
         if (-not $win) { throw 'no window' }
-        Start-Sleep 3
         [void][SmokeTest.User32]::SetForegroundWindow([IntPtr]$win.Current.NativeWindowHandle)
-        Check ((ById $win 'SummaryText').Current.Name -like 'In use*') 'summary shows memory in use'
-        Check ((ChildCount (ById $win 'LegendList')) -ge 5) 'legend lists the groups'
+        Check (WaitFor { (ById $win 'SummaryText').Current.Name -like 'In use*' }) 'summary shows memory in use'
+        Check (WaitFor { (ChildCount (ById $win 'LegendList')) -ge 5 }) 'legend lists the groups'
         # Each tab and an element only its content has (the treemap itself has no automation peer).
         $tabs = [ordered]@{ Map = 'BackButton'; Table = 'TableList'; History = 'SeriesLegend'; Startup = 'StartupList'; Settings = 'RefreshPicker' }
         foreach ($tab in $tabs.Keys) {
             SelectTab $win $tab
-            Start-Sleep 3
-            $el = ById $win $tabs[$tab]
-            $shown = if ($tab -in 'Table', 'History', 'Startup') { (ChildCount $el) -gt 0 } else { [bool]$el }
+            $list = $tab -in 'Table', 'History', 'Startup'
+            $shown = WaitFor { $el = ById $win $tabs[$tab]; if ($list) { (ChildCount $el) -gt 0 } else { [bool]$el } }
             Check ($shown -and -not $p.HasExited) "$tab tab shows its content"
         }
         # "Titles above the map's groups", switched in the window: the file follows, and back.
-        $toggle = (ById $win 'TitlesBox').GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern)
-        $toggle.Toggle(); Start-Sleep 2
-        $first = TitlesSaved
-        $toggle.Toggle(); Start-Sleep 2
-        Check (($null -ne $first) -and ((TitlesSaved) -eq (-not $first))) 'settings file saved a change and the change back'
+        $toggle = Titles $win
+        $before = TitlesSaved
+        $toggle.Toggle()
+        $first = WaitFor { $v = TitlesSaved; if ($null -ne $v -and $v -ne $before) { "$v" } }
+        $toggle.Toggle()
+        Check ($first -and (WaitFor { "$(TitlesSaved)" -ne $first })) 'settings file saved a change and the change back'
         Check (-not $p.HasExited) 'still running after every tab'
     }
     finally {
@@ -80,9 +89,8 @@ try {
         $p, $win = Start-App
         Check $win 'window opened again'
         if ($win) {
-            Start-Sleep 3
-            SelectTab $win 'Settings'; Start-Sleep 1
-            $state = (ById $win 'TitlesBox').GetCurrentPattern([Windows.Automation.TogglePattern]::Pattern).Current.ToggleState
+            WaitFor { SelectTab $win 'Settings'; $true } | Out-Null
+            $state = WaitFor { "$((Titles $win).Current.ToggleState)" }
             Check (($state -eq 'On') -eq $json.ShowGroupTitles) 'setting read from the file at start'
         }
     }

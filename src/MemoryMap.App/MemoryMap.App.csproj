@@ -9,17 +9,12 @@
     <PublishAot>true</PublishAot>
   </PropertyGroup>
 
-  <!-- ANGLE (OpenGL over Direct3D) is never loaded: the app renders in software (Program.cs, D043). -->
-  <Target Name="LeaveOutAngle" AfterTargets="ComputeResolvedFilesToPublishList">
-    <ItemGroup>
-      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Filename)' == 'av_libglesv2'" />
-    </ItemGroup>
-  </Target>
-
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
+    <!-- ANGLE (OpenGL over Direct3D) is never loaded: the app renders in software (Program.cs, D043). -->
+    <PackageReference Include="Avalonia.Angle.Windows.Natives" ExcludeAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

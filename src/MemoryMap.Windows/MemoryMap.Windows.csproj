@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Compiled into the Native AOT app (D043): every build runs the AOT analyzers. -->
+    <IsAotCompatible>true</IsAotCompatible>
     <RootNamespace>MemoryMap.Windows</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
