@@ -1,3 +1,13 @@
+memory-map (0.5.0) unstable; urgency=medium
+
+  * Much smaller downloads. Windows gets a zip of three files, 35 MB
+    unpacked (0.4.1's program was 97 MB); keep them in one folder. The
+    Linux packages are about a third of their old size.
+  * Other Linux systems get a .tar.gz with the program and its two
+    libraries in one folder, instead of a single large file.
+
+ -- yunniko <29886186+yunniko@users.noreply.github.com>  Tue, 13 Oct 2026 19:17:52 +0000
+
 memory-map (0.4.1) unstable; urgency=medium
 
   * Packages for 64-bit ARM Linux (arm64), such as an ARM Chromebook's

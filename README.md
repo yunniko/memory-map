@@ -6,8 +6,8 @@ app owns (kernel pools, shared pages).
 
 ![Memory Map's map tab on Ubuntu under WSL: a few apps, kernel memory, shared memory, cache and free memory as framed areas](assets/screenshots/map-on-linux.png)
 
-Built in C# (.NET 10) with Avalonia. **State:** version 0.4.1 runs on Windows and Linux (amd64 and
-arm64); signed Windows releases and smaller downloads are in progress (`GOALS.md`). Source: `github.com/yunniko/memory-map`.
+Built in C# (.NET 10) with Avalonia. **State:** version 0.5.0 runs on Windows and Linux (amd64 and
+arm64), compiled ahead of time; signed Windows releases are in progress (`GOALS.md`). Source: `github.com/yunniko/memory-map`.
 
 ## Download
 
