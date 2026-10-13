@@ -19,15 +19,53 @@ Completed goals: `docs/goals-archive.md`.
   architecture's libraries (D036). Publishing a release waits for the Owner (VALUES.md → Restraint).
 
 **Milestones:**
-- [ ] M1 — Scripts and CI: architecture-aware `publish-linux.sh`, ARM jobs in `check.yml`, both
+- [x] M1 — Scripts and CI: architecture-aware `publish-linux.sh`, ARM jobs in `check.yml`, both
   architectures in `release.yml` and `release-files.sh`, version 0.4.1; CI green on ARM.
 - [ ] M2 — A draft release with both architectures for the Owner to try on the Chromebook; published
   after the Owner's check and OK.
 
 **Progress log** (newest first):
+- 2026-10-13 — M1 done (659d259, D041). CI check run 38437233862 green on windows-2025 (334: 308 passed,
+  26 skipped), ubuntu-24.04 and ubuntu-24.04-arm (251/251; crosscheck PASS 0.10%); deb-check passed on
+  both runners, arm64 included (window shown, 9 run-time libraries in Depends, clean remove). Local:
+  amd64 build and deb-check in WSL exit 0; `release-files.sh` with fake artifacts lists both
+  architectures and fails when one is missing. Release run 38437251400 made draft v0.4.1 (7 files,
+  no tag yet). **BLOCKED:** M2 waits for the Owner to install `memory-map_0.4.1_arm64.deb` from the
+  draft on the Chromebook and say whether to publish.
 - 2026-10-13 — Goal created from the Owner's failed install on an arm64 Chromebook; the Owner's reply
   ("arm64") to the proposed fix is the go-ahead. The Linux code's only raw syscalls (pidfd 424, 434)
   share their numbers on every architecture.
+
+### G-007 · Smaller downloads — DRAFT (plan awaiting the Owner's acceptance)
+- **What:** A smaller Windows exe, Linux single file and `.deb`, with every feature still working and
+  no worse startup or memory.
+- **Why:** The Owner asked whether the app must weigh 90 MB (2026-10-13). Most of it is the whole .NET
+  runtime and libraries packed in untrimmed: the exe is 97 MB, the `.deb` 30 MB.
+- **Acceptance criteria:**
+  1. The exe and the Linux single file are at most half their 0.4.1 size (proposed target; the
+     measured options in M1 may show more or less is possible, and the Owner may set it).
+  2. Everything still works in the shipped build, not just the test build: the gate, deb-check on
+     amd64 and arm64, every tab opened in the published app on Windows and Linux, settings saved and
+     read back, the startup helper check against the published exe.
+  3. Time to the first map and private memory after 10 minutes are no worse than 0.4.1's, measured
+     the same way, and the 150 MB and 2% CPU limit (G-001 criterion 9) still holds.
+  4. The build shows no trimming or AOT warnings (warnings already fail the build).
+- **Constraints:** CI runs the shipped (trimmed or compiled) build, not only the test build
+  (STANDARDS.md → "Verified means the path production runs"). Publishing waits for the Owner.
+
+**Milestones:**
+- [ ] M1 — Measure: 0.4.1's size, startup and memory; then build and measure the options: compressed
+  single file; trimmed; trimmed and compressed; a Native AOT trial. Results in `docs/reviews/`, the
+  choice as a decision: the smallest option that passes criteria 2–4.
+- [ ] M2 — Make it the real build: source-generated JSON for the settings file, the chosen settings in
+  `publish.ps1`, `publish-linux.sh` and CI, and a CI step that starts the published Windows exe and
+  checks its window and a settings round trip (deb-check already runs the published Linux app).
+- [ ] M3 — Draft release 0.5.0 with both Linux architectures; published after the Owner's OK.
+
+**Progress log** (newest first):
+- 2026-10-13 — Goal planned at the Owner's request ("yes, plan it please"). Found: compiled bindings
+  already on (`AvaloniaUseCompiledBindingsByDefault`); the settings file uses reflection-based JSON
+  (`src/MemoryMap.Core/AppSettings.cs`), which trimming needs replaced.
 
 ### G-005 · Signed Windows releases through SignPath Foundation — ACTIVE
 - **What:** Releases built by GitHub Actions from a version tag: the Windows exe signed with a

@@ -1,5 +1,5 @@
 # memory-map — Handover
-Last verified: 2026-10-13 at 133d57e
+Last verified: 2026-10-13 at 659d259
 
 A desktop app (C#, Avalonia) showing RAM as a live treemap, on Windows and Linux.
 G-001 to G-004 are done (`docs/goals-archive.md`): the map, the Startup tab, the Linux version
@@ -89,8 +89,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
   - `scripts/startup-roundtrip-linux.py` on WSL: every check agrees with
     `systemd-xdg-autostart-generator`; system file unchanged; exit 0. Real session: 4 entries.
     Record: `docs/reviews/2026-10-12-g003-m3-startup-on-linux.md`.
-- **Linux package (G-003 M4).** `scripts/publish-linux.sh` builds publish/linux-x64/MemoryMap
-  (97 MB single file) and publish/memory-map_0.4.0_amd64.deb (30 MB): the program in
+- **Linux package (G-003 M4; arm64 by G-006, D041).** `scripts/publish-linux.sh` builds, for the
+  machine's own architecture, publish/linux-<x64|arm64>/MemoryMap (97 / 104 MB single file) and
+  publish/memory-map_<version>_<amd64|arm64>.deb (30 / 27 MB): the program in
   /usr/lib/memory-map with its two libraries, the `memory-map` command, menu entry, icon and man
   page (D035). Depends is dpkg-shlibdeps' output plus the libraries opened at run time (D036).
   Record: `docs/reviews/2026-10-12-g003-m4-deb.md`.
@@ -103,8 +104,9 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
   - Not run: a real desktop's tray, file manager and autostart settings (`docs/linux-checklist.md`).
 - `scripts/check.ps1` passes on Windows: format clean, Release build with 0 warnings, 334 tests
   (308 passed, 26 skipped: the Linux-only tests). On WSL Ubuntu, which has no pwsh, the same steps
-  pass over the whole solution: 251/251 (D030). GitHub Actions runs the gate on windows-2025 and
-  ubuntu-24.04 on every push to main (D028), and a third job builds the .deb and runs `scripts/deb-check.sh`.
+  pass over the whole solution: 251/251 (D030). GitHub Actions runs the gate on windows-2025,
+  ubuntu-24.04 and ubuntu-24.04-arm on every push to main (D028, D041), and builds the .deb on both
+  Linux runners and runs `scripts/deb-check.sh` (659d259: all green; arm64 251/251, deb-check passed).
 - `scripts/crosscheck.ps1` against WMI: PASS, worst difference 1.4% of RAM (limit 2%).
 - Not run: the Windows critical-process refusal, because it needs an elevated session (on
   Linux, init's refusal is tested).
@@ -204,11 +206,14 @@ Source: github.com/yunniko/memory-map (public, D039; MIT, D038). Charter: `E:\CL
 
 ## Next steps and open questions
 
+- G-006 M2 (Owner): the draft release v0.4.1 (run 38437251400; amd64 and arm64 packages, deb-check
+  passed on both) waits for the Owner to install the arm64 `.deb` on the Chromebook and say to publish.
+- G-007 (smaller downloads) is planned in `GOALS.md` and awaits the Owner's acceptance.
 - BLOCKED (G-005 M3, Owner): GitHub two-factor sign-in, the SignPath Foundation application, then
   the repo variable `SIGNPATH_ORGANIZATION_ID` and secret `SIGNPATH_API_TOKEN`. In SignPath: project
   `memory-map`, policy `release-signing`, artifact configuration from
-  `.signpath/artifact-configurations/default.xml`. Then: bump to 0.4.1 (with a changelog entry), tag
-  `v0.4.1`, approve the request, check the exe with `Get-AuthenticodeSignature`, publish the draft.
+  `.signpath/artifact-configurations/default.xml`. Then: bump the version (with a changelog entry), tag
+  it, approve the request, check the exe with `Get-AuthenticodeSignature`, publish the draft.
 - Not run, signed off without: `docs/linux-checklist.md` on a real Linux PC (G-003) and part A of
   `docs/second-pc-checklist.md`, the real administrator prompt (G-002).
 - Known: Depends accepts ICU 76, 74, 72 or 70; a distribution with only a newer ICU needs its
